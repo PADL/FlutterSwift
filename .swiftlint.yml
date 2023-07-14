@@ -1,0 +1,21 @@
+disabled_rules:
+  - trailing_comma
+  - identifier_name
+  - void_return
+  - operator_whitespace
+  - nesting
+  - cyclomatic_complexity
+  - multiple_closures_with_trailing_closure
+  - type_name
+  - todo
+  - large_tuple
+  - opening_brace
+
+line_length: 100
+
+function_body_length:
+  - 50
+
+included:
+  - Sources
+  - Tests

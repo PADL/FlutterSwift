@@ -1,0 +1,334 @@
+// MIT License
+//
+// Copyright (c) 2022 fwcd
+// Portions Copyright (c) 2023 fwcd
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import Foundation
+
+/// The internal state used by the decoders.
+class FlutterStandardDecodingState {
+    private var data: Data
+
+    var isAtEnd: Bool { data.isEmpty }
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    private func peekStandardField() throws -> FlutterStandardField {
+        guard let byte = data.first else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        guard let fieldType = FlutterStandardField(rawValue: byte) else {
+            throw FlutterChannelError.unknownStandardFieldType
+        }
+        return fieldType
+    }
+
+    private func decodeStandardField() throws -> FlutterStandardField {
+        guard let byte = data.popFirst() else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        guard let fieldType = FlutterStandardField(rawValue: byte) else {
+            throw FlutterChannelError.unknownStandardFieldType
+        }
+        return fieldType
+    }
+
+    func assertStandardField(_ assertedFieldType: FlutterStandardField) throws {
+        let fieldType = try decodeStandardField()
+        guard fieldType == assertedFieldType else {
+            throw FlutterChannelError.unexpectedStandardFieldType
+        }
+    }
+
+    func decodeSize() throws -> Int {
+        guard let byte = data.popFirst() else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        if byte < 254 {
+            return Int(byte)
+        } else if byte == 254 {
+            return try Int(decodeInteger(UInt16.self))
+        } else if byte == 255 {
+            return try Int(decodeInteger(UInt32.self))
+        } else {
+            fatalError("notreached")
+        }
+    }
+
+    private func assertAlignment(_ alignment: Int) throws {
+        let mod = data.count % alignment
+        guard data.count >= mod else {
+            throw FlutterChannelError.invalidAlignment
+        }
+        data.removeFirst(mod)
+    }
+
+    private func decodeData() throws -> Data {
+        try assertStandardField(.uint8Data)
+        let length = try decodeSize()
+        try assertAlignment(1)
+        let raw = data.prefix(length)
+        guard raw.count == length else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        data.removeFirst(length)
+        return Data(raw)
+    }
+
+    func decodeDiscriminant() throws -> UInt8 {
+        guard let byte = data.popFirst() else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        return byte
+    }
+
+    func decodeNil() throws -> Bool {
+        let fieldType = try peekStandardField()
+        if fieldType == .nil {
+            data.removeFirst()
+            return true
+        } else {
+            return false
+        }
+    }
+
+    private func decodeArray<Value>(
+        _ fieldType: FlutterStandardField,
+        _ block: () throws -> Value
+    ) throws -> [Value] {
+        try assertStandardField(fieldType)
+        let count = try decodeSize()
+        try assertAlignment(MemoryLayout<Value>.alignment)
+        var values = [Value]()
+        for _ in 0..<count {
+            values.append(try block())
+        }
+        return values
+    }
+
+    private func decodeArray(_ type: UInt8.Type) throws -> [UInt8] {
+        try decodeArray(.uint8Data) {
+            try decodeInteger(type)
+        }
+    }
+
+    private func decodeArray(_ type: Int32.Type) throws -> [Int32] {
+        try decodeArray(.int32Data) {
+            try decodeInteger(type)
+        }
+    }
+
+    private func decodeArray(_ type: Int64.Type) throws -> [Int64] {
+        try decodeArray(.int64Data) {
+            try decodeInteger(type)
+        }
+    }
+
+    private func decodeArray(_ type: Double.Type) throws -> [Double] {
+        try decodeArray(.float64Data) {
+            let bitPattern = try decodeInteger(UInt64.self)
+            return Double(bitPattern: bitPattern)
+        }
+    }
+
+    private func decodeArray(_ type: Float.Type) throws -> [Float] {
+        try decodeArray(.float32Data) {
+            let bitPattern = try decodeInteger(UInt32.self)
+            return Float(bitPattern: bitPattern)
+        }
+    }
+
+    private func decodeList<Value: Decodable>(
+        _ type: Value.Type,
+        codingPath: [CodingKey]
+    ) throws -> [Value] {
+        try assertStandardField(.list)
+        let count = try decodeSize()
+        var values = [Value]()
+        for _ in 0..<count {
+            values.append(try decode(type, codingPath: codingPath))
+        }
+        return values
+    }
+
+    private func decodeMap<Map: FlutterMapRepresentable>(
+        _ type: Map.Type,
+        codingPath: [CodingKey]
+    ) throws -> [Map.Key: Map.Value] {
+        try assertStandardField(.map)
+        let count = try decodeSize()
+        var values = [Map.Key: Map.Value]()
+        for _ in 0..<count {
+            let key = try decode(Map.Key.self, codingPath: codingPath)
+            let value = try decode(Map.Value.self, codingPath: codingPath)
+            values[key] = value
+        }
+        return values
+    }
+
+    private func decodeInteger<Integer>(_ type: Integer.Type) throws -> Integer
+        where Integer: FixedWidthInteger
+    {
+        let byteWidth = Integer.bitWidth / 8
+        guard data.count >= byteWidth else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        let value = data.withUnsafeBytes {
+            $0.loadUnaligned(as: type)
+        }
+        data.removeFirst(byteWidth)
+        return value
+    }
+
+    func decode(_ type: Bool.Type) throws -> Bool {
+        switch try decodeStandardField() {
+        case .true:
+            return true
+        case .false:
+            return false
+        default:
+            throw FlutterChannelError.unexpectedStandardFieldType
+        }
+    }
+
+    func decode(_ type: String.Type) throws -> String {
+        try assertStandardField(.string)
+        let length = try decodeSize()
+        let raw = data.prefix(length)
+        guard raw.count == length else {
+            throw FlutterChannelError.eofTooEarly
+        }
+        data.removeFirst(length)
+        guard let value = String(data: raw, encoding: .utf8) else {
+            throw FlutterChannelError.stringNotDecodable(raw)
+        }
+        return value
+    }
+
+    func decode(_ type: Double.Type) throws -> Double {
+        try assertStandardField(.float64)
+        try assertAlignment(MemoryLayout<Double>.alignment)
+        return Double(bitPattern: try decodeInteger(UInt64.self))
+    }
+
+    func decode(_ type: Float.Type) throws -> Float {
+        Float(try decode(Double.self))
+    }
+
+    func decode(_ type: Int.Type) throws -> Int {
+        if Int.bitWidth == 64 {
+            return Int(try decodeInteger(Int64.self))
+        } else if Int.bitWidth == 32 {
+            return Int(try decodeInteger(Int32.self))
+        } else {
+            fatalError("unsupporterd UInt.bitWidth")
+        }
+    }
+
+    func decode(_ type: Int8.Type) throws -> Int8 {
+        guard let value = Int8(exactly: try decode(Int32.self)) else {
+            throw FlutterChannelError.integerOutOfRange
+        }
+        return value
+    }
+
+    func decode(_ type: Int16.Type) throws -> Int16 {
+        guard let value = Int16(exactly: try decode(Int32.self)) else {
+            throw FlutterChannelError.integerOutOfRange
+        }
+        return value
+    }
+
+    func decode(_ type: Int32.Type) throws -> Int32 {
+        try assertStandardField(.int32)
+        try assertAlignment(MemoryLayout<Int32>.alignment)
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: Int64.Type) throws -> Int64 {
+        try assertStandardField(.int64)
+        try assertAlignment(MemoryLayout<Int64>.alignment)
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt.Type) throws -> UInt {
+        guard let value = UInt(exactly: try decodeInteger(Int.self)) else {
+            throw FlutterChannelError.integerOutOfRange
+        }
+        return value
+    }
+
+    func decode(_ type: UInt8.Type) throws -> UInt8 {
+        guard let value = UInt8(exactly: try decode(Int32.self)) else {
+            throw FlutterChannelError.integerOutOfRange
+        }
+        return value
+    }
+
+    func decode(_ type: UInt16.Type) throws -> UInt16 {
+        guard let value = UInt16(exactly: try decode(Int32.self)) else {
+            throw FlutterChannelError.integerOutOfRange
+        }
+        return value
+    }
+
+    func decode(_ type: UInt32.Type) throws -> UInt32 {
+        UInt32(bitPattern: try decode(Int32.self))
+    }
+
+    func decode(_ type: UInt64.Type) throws -> UInt64 {
+        UInt64(bitPattern: try decode(Int64.self))
+    }
+
+    func decode<T>(_ type: T.Type, codingPath: [any CodingKey]) throws -> T where T: Decodable {
+        var count: Int? = nil
+        let value: T
+
+        switch type {
+        case is Data.Type:
+            value = try decodeData() as! T
+        case is [UInt8].Type:
+            value = try decodeArray(UInt8.self) as! T
+        case is [Int32].Type:
+            value = try decodeArray(Int32.self) as! T
+        case is [Int64].Type:
+            value = try decodeArray(Int64.self) as! T
+        case is [Float].Type:
+            value = try decodeArray(Float.self) as! T
+        case is [Double].Type:
+            value = try decodeArray(Double.self) as! T
+        case is FlutterListRepresentable.Type:
+            try assertStandardField(.list)
+            count = try decodeSize()
+            fallthrough
+        default:
+            value = try T(from: FlutterStandardDecoderImpl(
+                state: self,
+                codingPath: codingPath,
+                count: count
+            ))
+        }
+
+        return value
+    }
+}
