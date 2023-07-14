@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import AnyCodable
 import Foundation
 
 /**
@@ -19,19 +18,19 @@ import Foundation
 public final class FlutterJSONMethodCodec: FlutterMethodCodec {
     public var shared: FlutterJSONMethodCodec = .init()
 
-    public func encode(method call: FlutterMethodCall) throws -> Data {
+    public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
         try JSONEncoder().encode(call)
     }
 
-    public func decode(method message: Data) throws -> FlutterMethodCall {
-        try JSONDecoder().decode(FlutterMethodCall.self, from: message)
+    public func decode<T>(method message: Data) throws -> FlutterMethodCall<T> {
+        try JSONDecoder().decode(FlutterMethodCall<T>.self, from: message)
     }
 
-    public func encode(envelope: FlutterEnvelope) throws -> Data {
+    public func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data {
         try JSONEncoder().encode(envelope)
     }
 
-    public func decode(envelope: Data) throws -> FlutterEnvelope {
-        try JSONDecoder().decode(FlutterEnvelope.self, from: envelope)
+    public func decode<T>(envelope: Data) throws -> FlutterEnvelope<T> {
+        try JSONDecoder().decode(FlutterEnvelope<T>.self, from: envelope)
     }
 }

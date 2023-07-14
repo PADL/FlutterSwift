@@ -55,7 +55,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             replyThunk = { bytes, count in
                 let data: Data?
                 if let bytes, count > 0 {
-                    data = Data(bytes: bytes, count: count)
+                    data = Data(bytesNoCopy: bytes, count: count, deallocator: .none)
                 } else {
                     data = nil
                 }
@@ -74,7 +74,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
                 replyThunk
             )
         }) == true else {
-            throw FlutterChannelError.messageSendFailure
+            throw FlutterSwiftError.messageSendFailure
         }
     }
 

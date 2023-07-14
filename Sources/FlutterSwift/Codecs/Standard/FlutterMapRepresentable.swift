@@ -24,8 +24,15 @@ struct KeyValuePair<Key: Hashable & Codable, Value: Codable>: Codable, Hashable 
 protocol FlutterMapRepresentable<Key, Value> {
     associatedtype Key: Codable & Hashable
     associatedtype Value: Codable
+
     init(map: Set<KeyValuePair<Key, Value>>)
     var map: Set<KeyValuePair<Key, Value>> { get }
+}
+
+extension FlutterMapRepresentable {
+    static var pairType: KeyValuePair<Key, Value>.Type {
+        KeyValuePair<Key, Value>.self
+    }
 }
 
 extension Dictionary: FlutterMapRepresentable where Key: Codable, Value: Codable {

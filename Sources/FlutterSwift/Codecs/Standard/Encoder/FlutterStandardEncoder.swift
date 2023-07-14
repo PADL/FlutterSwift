@@ -24,6 +24,9 @@ import Foundation
 
 struct FlutterStandardEncoder {
     public func encode<Value>(_ value: Value) throws -> Data where Value: Encodable {
+        if value is any ExpressibleByNilLiteral {
+            return Data()
+        }
         let state = FlutterStandardEncodingState()
         try state.encode(value, codingPath: [])
         return state.data

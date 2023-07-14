@@ -12,13 +12,10 @@ import FlutterMacOS
 #endif
 
 public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
-    private let wrapped = (
-        NSApplication.shared.mainWindow!.contentViewController as! FlutterMacOS
-            .FlutterViewController
-    )
+    private let platformBinaryMessenger: FlutterMacOS.FlutterBinaryMessenger
 
-    private var binaryMessenger: FlutterMacOS.FlutterBinaryMessenger {
-        wrapped.engine.binaryMessenger
+    public init(wrapping platformBinaryMessenger: FlutterMacOS.FlutterBinaryMessenger) {
+        self.platformBinaryMessenger = platformBinaryMessenger
     }
 
     public func setMessageHandler(
@@ -27,9 +24,12 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         priority: TaskPriority?
     ) async -> FlutterBinaryMessengerConnection {
         guard let handler else {
-            return binaryMessenger.setMessageHandlerOnChannel(channel, binaryMessageHandler: nil)
+            return platformBinaryMessenger.setMessageHandlerOnChannel(
+                channel,
+                binaryMessageHandler: nil
+            )
         }
-        return binaryMessenger.setMessageHandlerOnChannel(channel) { message, callback in
+        return platformBinaryMessenger.setMessageHandlerOnChannel(channel) { message, callback in
             Task(priority: priority) { @MainActor in
                 callback(try await handler(message!))
             }
@@ -37,7 +37,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     }
 
     public func send(on channel: String, message: Data?) {
-        binaryMessenger.send(onChannel: channel, message: message)
+        platformBinaryMessenger.send(onChannel: channel, message: message)
     }
 
     public func send(
@@ -47,7 +47,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     ) async throws -> Data? {
         let asyncChannel = AsyncChannel<Data?>()
 
-        binaryMessenger.send(onChannel: channel, message: message) { reply in
+        platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
             Task(priority: priority) {
                 await asyncChannel.send(reply)
                 asyncChannel.finish()
@@ -58,7 +58,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     }
 
     public func cleanUp(connection: FlutterBinaryMessengerConnection) {
-        binaryMessenger.cleanUpConnection(connection)
+        platformBinaryMessenger.cleanUpConnection(connection)
     }
 }
 #endif

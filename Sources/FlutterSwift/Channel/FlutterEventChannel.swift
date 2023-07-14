@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import AnyCodable
 import Foundation
 
 /**
@@ -10,12 +9,15 @@ import Foundation
  *
  * @param event The event.
  */
-public typealias FlutterEventSink = ((any Codable)?) throws -> ()
+public typealias FlutterEventSink<Event: Codable> = (Result<Event?, Error>) throws -> ()
 
 /**
  * A strategy for exposing an event stream to the Flutter side.
  */
 public protocol FlutterStreamHandler {
+    associatedtype Arguments: Codable
+    associatedtype Event: Codable
+
     /**
      * Sets up an event stream and begin emitting events.
      *
@@ -30,7 +32,10 @@ public protocol FlutterStreamHandler {
      *     successful events.
      * @return A FlutterError instance, if setup fails.
      */
-    func onListen(arguments: any Codable, eventSink: FlutterEventSink) throws
+    func onListen(
+        with arguments: Arguments?,
+        eventSink: FlutterEventSink<Event>
+    ) throws
 
     /**
      * Tears down an event stream.
@@ -45,7 +50,7 @@ public protocol FlutterStreamHandler {
      * @param arguments Arguments for the stream.
      * @return A FlutterError instance, if teardown fails.
      */
-    func onCancel(arguments: (any Codable)?) throws
+    func onCancel(with arguments: Arguments?) throws
 }
 
 /**
@@ -53,7 +58,7 @@ public protocol FlutterStreamHandler {
  */
 public actor FlutterEventChannel: FlutterChannel {
     let name: String
-    let messenger: FlutterBinaryMessenger
+    let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
     let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
@@ -69,61 +74,63 @@ public actor FlutterEventChannel: FlutterChannel {
      * Flutter side. This protocol is implemented by `FlutterEngine` and `FlutterViewController`.
      *
      * @param name The channel name.
-     * @param messenger The binary messenger.
+     * @param binaryMessenger The binary messenger.
      * @param codec The method codec.
      * @param taskQueue The FlutterTaskQueue that executes the handler (see
-                        -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
+     -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
      */
-
-    init(
+    public init(
         name: String,
-        messenger: FlutterBinaryMessenger,
+        binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
         priority: TaskPriority? = nil
     ) {
         self.name = name
-        self.messenger = messenger
+        self.binaryMessenger = binaryMessenger
         self.codec = codec
         self.priority = priority
     }
 
-    private func onMethod(
-        call: FlutterMethodCall,
-        handler: FlutterStreamHandler
-    ) throws -> FlutterEnvelope? {
-        let envelope: FlutterEnvelope?
-        var currentSink: FlutterEventSink?
+    private func onMethod<Result: Codable, Handler: FlutterStreamHandler>(
+        call: FlutterMethodCall<Handler.Arguments>,
+        handler: Handler
+    ) throws -> FlutterEnvelope<Result>? {
+        let envelope: FlutterEnvelope<Result>?
+        var currentSink: FlutterEventSink<Handler.Event>?
 
         switch call.method {
         case "listen":
             if currentSink != nil {
-                try handler.onCancel(arguments: nil)
+                try handler.onCancel(with: nil)
             }
             currentSink = { [self] event in
-                if let error = event as? FlutterChannelError,
-                   error == .endOfEventStream
-                {
-                    try messenger.send(on: name, message: nil)
-                } else if let error = event as? FlutterError {
-                    let envelope = FlutterEnvelope.error(error)
-                    try messenger.send(on: name, message: try codec.encode(envelope))
-                } else {
-                    let envelope = FlutterEnvelope.success(AnyCodable(event))
-                    try messenger.send(on: name, message: try codec.encode(envelope))
+                switch event {
+                case let .success(success):
+                    let envelope = FlutterEnvelope<Handler.Event>.success(success)
+                    try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                case let .failure(error):
+                    if let error = error as? FlutterSwiftError, error == .endOfEventStream {
+                        try binaryMessenger.send(on: name, message: nil)
+                    } else if let error = error as? FlutterError {
+                        let envelope = FlutterEnvelope<Result>.failure(error)
+                        try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                    } else {
+                        throw FlutterSwiftError.invalidEvent
+                    }
                 }
             }
             do {
                 try handler.onListen(
-                    arguments: call.arguments,
+                    with: call.arguments,
                     eventSink: currentSink!
                 )
                 envelope = .success(nil)
             } catch let error as FlutterError {
-                envelope = .error(error)
+                envelope = .failure(error)
             }
         case "cancel":
             if currentSink == nil {
-                envelope = .error(FlutterError(
+                envelope = .failure(FlutterError(
                     code: "error",
                     message: "No active stream to cancel",
                     details: nil
@@ -131,10 +138,10 @@ public actor FlutterEventChannel: FlutterChannel {
             } else {
                 currentSink = nil
                 do {
-                    try handler.onCancel(arguments: call.arguments)
+                    try handler.onCancel(with: call.arguments)
                     envelope = .success(nil)
                 } catch let error as FlutterError {
-                    envelope = .error(error)
+                    envelope = .failure(error)
                 }
             }
         default:
@@ -152,15 +159,15 @@ public actor FlutterEventChannel: FlutterChannel {
      *
      * @param handler The stream handler.
      */
-    func setStreamHandler(handler: FlutterStreamHandler?) async throws {
+    public func setStreamHandler<Handler: FlutterStreamHandler>(_ handler: Handler?) async throws {
         try await setMessageHandler(handler) { [self] unwrappedHandler in
             { [self] message in
                 guard let message else {
-                    throw FlutterChannelError.methodNotImplemented
+                    throw FlutterSwiftError.methodNotImplemented
                 }
 
-                let call: FlutterMethodCall = try self.codec.decode(message)
-                let envelope = try onMethod(
+                let call: FlutterMethodCall<Handler.Arguments> = try self.codec.decode(message)
+                let envelope: FlutterEnvelope<Handler.Arguments>? = try onMethod(
                     call: call,
                     handler: unwrappedHandler
                 )

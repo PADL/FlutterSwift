@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import AnyCodable
 import Foundation
 
 /**
@@ -15,7 +14,8 @@ import Foundation
  *     method was unknown. Any other values, including `nil`, are interpreted as
  *     successful results.  This can be invoked from any thread.
  */
-public typealias FlutterMethodCallHandler = (FlutterMethodCall) async throws -> (any Codable)?
+public typealias FlutterMethodCallHandler<Arguments: Codable, Result: Codable> =
+    (FlutterMethodCall<Arguments>) async throws -> Result
 
 /**
  * Creates a method call for invoking the specified named method with the
@@ -24,9 +24,30 @@ public typealias FlutterMethodCallHandler = (FlutterMethodCall) async throws -> 
  * @param method the name of the method to call.
  * @param arguments the arguments value.
  */
-public struct FlutterMethodCall: Codable {
+public struct FlutterMethodCall<Arguments: Codable>: Codable {
+    enum CodingKeys: String, CodingKey {
+        case method
+        case arguments = "args"
+    }
+
     let method: String
-    let arguments: AnyCodable
+    let arguments: Arguments?
+}
+
+extension FlutterMethodCall: Equatable where Arguments: Codable & Equatable {
+    public static func == (
+        lhs: FlutterMethodCall<Arguments>,
+        rhs: FlutterMethodCall<Arguments>
+    ) -> Bool {
+        lhs.method == rhs.method && lhs.arguments == rhs.arguments
+    }
+}
+
+extension FlutterMethodCall: Hashable where Arguments: Codable & Hashable {
+    public func hash(into hasher: inout Hasher) {
+        method.hash(into: &hasher)
+        arguments?.hash(into: &hasher)
+    }
 }
 
 /**
@@ -35,59 +56,66 @@ public struct FlutterMethodCall: Codable {
  */
 public actor FlutterMethodChannel: FlutterChannel {
     let name: String
-    let messenger: FlutterBinaryMessenger
+    let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
     let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
 
-    init(
+    public init(
         name: String,
-        messenger: FlutterBinaryMessenger,
+        binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
         priority: TaskPriority? = nil
     ) {
         self.name = name
-        self.messenger = messenger
+        self.binaryMessenger = binaryMessenger
         self.codec = codec
         self.priority = priority
     }
 
-    func invoke(method: String, arguments: Any?) throws {
-        let methodCall = FlutterMethodCall(method: method, arguments: AnyCodable(arguments))
-        try messenger.send(on: name, message: codec.encode(methodCall))
+    public func invoke<Arguments: Codable>(method: String, arguments: Arguments?) throws {
+        let methodCall = FlutterMethodCall<Arguments>(method: method, arguments: arguments)
+        try binaryMessenger.send(on: name, message: codec.encode(methodCall))
     }
 
-    func invoke(method: String, arguments: Any?) async throws -> Any? {
-        let methodCall = FlutterMethodCall(method: method, arguments: AnyCodable(arguments))
-        let reply = try await messenger.send(
+    public func invoke<Arguments: Codable, Result: Codable>(
+        method: String,
+        arguments: Arguments?
+    ) async throws -> Result? {
+        let methodCall = FlutterMethodCall<Arguments>(
+            method: method,
+            arguments: arguments
+        )
+        let reply = try await binaryMessenger.send(
             on: name,
             message: codec.encode(methodCall),
             priority: priority
         )
-        guard let reply else { throw FlutterChannelError.methodNotImplemented }
-        let envelope: FlutterEnvelope = try codec.decode(reply)
+        guard let reply else { throw FlutterSwiftError.methodNotImplemented }
+        let envelope: FlutterEnvelope<Result> = try codec.decode(reply)
         switch envelope {
         case let .success(value):
-            return value.value
-        case let .error(error):
+            return value
+        case let .failure(error):
             throw error
         }
     }
 
-    func setMethodCallHandler(handler: FlutterMethodCallHandler?) async throws {
+    public func setMethodCallHandler<
+        Arguments: Codable,
+        Result: Codable
+    >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
         try await setMessageHandler(handler) { [self] unwrappedHandler in
             { message in
                 guard let message else {
-                    // FIXME: should we return an error here
-                    throw FlutterChannelError.methodNotImplemented
+                    throw FlutterSwiftError.methodNotImplemented
                 }
-                let call: FlutterMethodCall = try self.codec.decode(message)
-                let envelope: FlutterEnvelope
+                let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
+                let envelope: FlutterEnvelope<Result>
                 do {
-                    envelope =
-                        .success(AnyCodable(try await unwrappedHandler(call)))
+                    envelope = .success(try await unwrappedHandler(call))
                 } catch let error as FlutterError {
-                    envelope = .error(error)
+                    envelope = .failure(error)
                 }
                 return try self.codec.encode(envelope)
             }

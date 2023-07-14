@@ -23,22 +23,44 @@
 import Foundation
 
 /// A decoder that decodes Swift structures from a flat binary representation.
-public struct BinaryDecoder {
+public struct FlutterStandardDecoder {
     /// Decodes a value from a flat binary representation.
     public func decode<Value>(_ type: Value.Type, from data: Data) throws -> Value
         where Value: Decodable
     {
+        if Value.self is ExpressibleByNilLiteral.Type, data.count == 0 {
+            // FIXME: abstraction violation
+            return Any?.none as! Value
+        }
         let state = FlutterStandardDecodingState(data: data)
         var count: Int? = nil
-        if type is FlutterListRepresentable.Type {
-            // FIXME: abstraction violation, should this be here?
+        let value: Value
+
+        // FIXME: DRY
+        switch type {
+        case is Data.Type:
+            value = try state.decodeData() as! Value
+        case is [UInt8].Type:
+            value = try state.decodeArray(UInt8.self) as! Value
+        case is [Int32].Type:
+            value = try state.decodeArray(Int32.self) as! Value
+        case is [Int64].Type:
+            value = try state.decodeArray(Int64.self) as! Value
+        case is [Float].Type:
+            value = try state.decodeArray(Float.self) as! Value
+        case is [Double].Type:
+            value = try state.decodeArray(Double.self) as! Value
+        case is any FlutterListRepresentable.Type:
             try state.assertStandardField(.list)
             count = try state.decodeSize()
+            fallthrough
+        default:
+            value = try Value(from: FlutterStandardDecoderImpl(
+                state: state,
+                codingPath: [],
+                count: count
+            ))
         }
-        return try Value(from: FlutterStandardDecoderImpl(
-            state: state,
-            codingPath: [],
-            count: count
-        ))
+        return value
     }
 }

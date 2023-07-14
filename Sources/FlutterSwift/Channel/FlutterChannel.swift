@@ -6,7 +6,7 @@ import Foundation
 
 protocol FlutterChannel: Actor {
     var name: String { get }
-    var messenger: FlutterBinaryMessenger { get }
+    var binaryMessenger: FlutterBinaryMessenger { get }
     var codec: FlutterMessageCodec { get }
     var priority: TaskPriority? { get }
     var connection: FlutterBinaryMessengerConnection { get set }
@@ -19,14 +19,18 @@ extension FlutterChannel {
     ) async throws {
         guard let unwrappedHandler = optionalHandler else {
             if connection > 0 {
-                messenger.cleanUp(connection: connection)
+                binaryMessenger.cleanUp(connection: connection)
                 connection = 0
             } else {
-                _ = await messenger.setMessageHandler(on: name, handler: nil, priority: priority)
+                _ = await binaryMessenger.setMessageHandler(
+                    on: name,
+                    handler: nil,
+                    priority: priority
+                )
             }
             return
         }
-        connection = await messenger.setMessageHandler(
+        connection = await binaryMessenger.setMessageHandler(
             on: name,
             handler: block(unwrappedHandler),
             priority: priority

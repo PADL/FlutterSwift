@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import AnyCodable
 import Foundation
 
 /**
@@ -11,7 +10,8 @@ import Foundation
  *
  * @param message The message.
  */
-public typealias FlutterMessageHandler = (any Decodable) async -> any Encodable
+public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> = (Message?) async
+    -> Reply?
 
 private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
 
@@ -21,32 +21,32 @@ private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
  */
 public actor FlutterBasicMessageChannel: FlutterChannel {
     let name: String
-    let messenger: FlutterBinaryMessenger
+    let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
     let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
 
-    init(
+    public init(
         name: String,
-        messenger: FlutterBinaryMessenger,
+        binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
         priority: TaskPriority? = nil
     ) {
         self.name = name
-        self.messenger = messenger
+        self.binaryMessenger = binaryMessenger
         self.codec = codec
         self.priority = priority
     }
 
-    func send<Message: Encodable>(message: Message) throws {
-        try messenger.send(on: name, message: codec.encode(message))
+    public func send<Message: Encodable>(message: Message) throws {
+        try binaryMessenger.send(on: name, message: codec.encode(message))
     }
 
-    func send<Message: Encodable, Reply: Decodable>(
+    public func send<Message: Encodable, Reply: Decodable>(
         message: Message,
         reply type: Reply.Type
     ) async throws -> Reply? {
-        let reply = try await messenger.send(
+        let reply = try await binaryMessenger.send(
             on: name,
             message: codec.encode(message),
             priority: priority
@@ -55,24 +55,28 @@ public actor FlutterBasicMessageChannel: FlutterChannel {
         return try codec.decode(reply)
     }
 
-    func setMessageHandler(handler: FlutterMessageHandler?) async throws {
+    public func setMessageHandler<
+        Message: Decodable,
+        Reply: Encodable
+    >(handler: FlutterMessageHandler<Message, Reply>?) async throws {
         try await setMessageHandler(handler) { [self] unwrappedHandler in
             { message in
-                let decoded: AnyDecodable
+                let decoded: Message?
+
                 if let message {
                     decoded = try self.codec.decode(message)
                 } else {
-                    decoded = AnyDecodable(())
+                    decoded = nil
                 }
                 let reply = await unwrappedHandler(decoded)
-                return try self.codec.encode(AnyCodable(reply))
+                return try self.codec.encode(reply)
             }
         }
     }
 
-    func resizeChannelBuffer(_ newSize: Int) throws {
+    public func resizeChannelBuffer(_ newSize: Int) throws {
         let messageString = "resize\r\(name)\r\(newSize)"
         let message = messageString.data(using: .utf8)!
-        try messenger.send(on: kFlutterChannelBuffersChannel, message: message)
+        try binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
     }
 }

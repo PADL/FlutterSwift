@@ -30,11 +30,11 @@ class FlutterStandardEncodingState {
         self.data = data
     }
 
-    private func encodeStandardField(_ fieldType: FlutterStandardField) throws {
+    func encodeStandardField(_ fieldType: FlutterStandardField) throws {
         withUnsafeBytes(of: fieldType) { data += $0 }
     }
 
-    private func encodeSize(_ size: Int) throws {
+    func encodeSize(_ size: Int) throws {
         if size < 254 {
             data += [UInt8(size)]
         } else if size <= UInt16.max {
@@ -44,7 +44,7 @@ class FlutterStandardEncodingState {
             data += [255]
             withUnsafeBytes(of: UInt32(size)) { data += $0 }
         } else {
-            throw FlutterChannelError.variableSizedTypeTooBig
+            throw FlutterSwiftError.variableSizedTypeTooBig
         }
     }
 
@@ -103,19 +103,28 @@ class FlutterStandardEncodingState {
         try value.forEach { try encodeInteger($0.bitPattern) }
     }
 
-    private func encodeList(_ value: FlutterListRepresentable, codingPath: [CodingKey]) throws {
+    private func encodeList(
+        _ value: some FlutterListRepresentable,
+        codingPath: [CodingKey]
+    ) throws {
         try encodeStandardField(.list)
         try encodeSize(value.count)
-        try value.forEach { try encode($0, codingPath: codingPath) }
+        try value.forEach {
+            try $0
+                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
+        }
     }
 
     private func encodeMap(_ value: some FlutterMapRepresentable, codingPath: [CodingKey]) throws {
-        try encodeStandardField(.map)
         let map = value.map
-        try encode(map, codingPath: codingPath)
+
+        try encodeStandardField(.map)
+        try encodeSize(map.count)
         try map.forEach {
-            try encode($0.key, codingPath: codingPath)
-            try encode($0.value, codingPath: codingPath)
+            try $0.key
+                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
+            try $0.value
+                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
         }
     }
 
@@ -128,7 +137,7 @@ class FlutterStandardEncodingState {
     func encode(_ value: String) throws {
         try encodeStandardField(.string)
         guard let encoded = value.data(using: .utf8) else {
-            throw FlutterChannelError.stringNotEncodable(value)
+            throw FlutterSwiftError.stringNotEncodable(value)
         }
 
         try encodeSize(encoded.count)
@@ -153,20 +162,20 @@ class FlutterStandardEncodingState {
 
     func encode(_ value: Int) throws {
         if Int.bitWidth == 64 {
-            try encodeInteger(Int64(value))
+            try encode(Int64(value))
         } else if Int.bitWidth == 32 {
-            try encodeInteger(Int32(value))
+            try encode(Int32(value))
         } else {
             fatalError("unsupporterd Int.bitWidth")
         }
     }
 
     func encode(_ value: Int8) throws {
-        try encodeInteger(Int32(value))
+        try encode(Int32(value))
     }
 
     func encode(_ value: Int16) throws {
-        try encodeInteger(Int32(value))
+        try encode(Int32(value))
     }
 
     func encode(_ value: Int32) throws {
@@ -182,23 +191,23 @@ class FlutterStandardEncodingState {
     }
 
     func encode(_ value: UInt) throws {
-        try encodeInteger(Int(value))
+        try encode(Int(value))
     }
 
     func encode(_ value: UInt8) throws {
-        try encodeInteger(Int8(value))
+        try encode(Int32(value))
     }
 
     func encode(_ value: UInt16) throws {
-        try encodeInteger(Int16(value))
+        try encode(Int32(value))
     }
 
     func encode(_ value: UInt32) throws {
-        try encodeInteger(Int32(bitPattern: value))
+        try encode(Int32(bitPattern: value))
     }
 
     func encode(_ value: UInt64) throws {
-        try encodeInteger(Int64(bitPattern: value))
+        try encode(Int64(bitPattern: value))
     }
 
     func encode<T>(_ value: T, codingPath: [any CodingKey]) throws where T: Encodable {
@@ -215,12 +224,14 @@ class FlutterStandardEncodingState {
             try encodeArray(value)
         case let value as [Double]:
             try encodeArray(value)
-        case let value as FlutterListRepresentable:
+        case let value as any FlutterListRepresentable:
             try encodeList(value, codingPath: codingPath)
         case let value as any FlutterMapRepresentable:
             try encodeMap(value, codingPath: codingPath)
+        #if canImport(Foundation)
         case is NSNull:
             try encodeNil()
+        #endif
         default:
             try value
                 .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))

@@ -22,8 +22,8 @@ import Foundation
 public protocol FlutterMethodCodec {
     var shared: Self { get }
 
-    func encode(method: FlutterMethodCall) throws -> Data
-    func decode(method: Data) throws -> FlutterMethodCall
-    func encode(envelope: FlutterEnvelope) throws -> Data
-    func decode(envelope: Data) throws -> FlutterEnvelope
+    func encode<T>(method: FlutterMethodCall<T>) throws -> Data
+    func decode<T>(method: Data) throws -> FlutterMethodCall<T>
+    func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data
+    func decode<T>(envelope: Data) throws -> FlutterEnvelope<T>
 }

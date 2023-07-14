@@ -4,17 +4,18 @@
 
 import Foundation
 
-public enum FlutterChannelError: Error, Codable, Equatable {
+public enum FlutterSwiftError: Error, Codable, Equatable {
+    case endOfEventStream
+    case eofTooEarly
+    case integerOutOfRange
+    case invalidAlignment
+    case invalidEvent
     case messageSendFailure
     case methodNotImplemented
-    case endOfEventStream
     case stringNotDecodable(Data)
     case stringNotEncodable(String)
-    case variableSizedTypeTooBig
-    case eofTooEarly
-    case unknownStandardFieldType
-    case unexpectedStandardFieldType
-    case invalidAlignment
-    case integerOutOfRange
+    case unexpectedStandardFieldType(FlutterStandardField)
     case unknownDiscriminant
+    case unknownStandardFieldType(UInt8)
+    case variableSizedTypeTooBig
 }

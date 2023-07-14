@@ -63,11 +63,11 @@ public struct FlutterStandardTypedData {
 public final class FlutterStandardMessageCodec: FlutterMessageCodec {
     public static var shared: FlutterStandardMessageCodec = .init()
 
-    public func encode<Value>(_ message: Value) throws -> Data where Value: Encodable {
+    public func encode<T>(_ message: T) throws -> Data where T: Encodable {
         try FlutterStandardEncoder().encode(message)
     }
 
-    public func decode<Value>(_ message: Data) throws -> Value where Value: Decodable {
-        fatalError("unimplemented")
+    public func decode<T>(_ message: Data) throws -> T where T: Decodable {
+        try FlutterStandardDecoder().decode(T.self, from: message)
     }
 }
