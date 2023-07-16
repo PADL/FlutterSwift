@@ -8,12 +8,12 @@ let FlutterRoot = "/opt/flutter"
 let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64-release"
 let FlutterIncludePath = ""
 let FlutterBackend = ""
-let FlutterUnsafeCompilerFlags = [String:String]()
+let FlutterUnsafeCCompilerFlags = [String]()
+let FlutterUnsafeCXXCompilerFlags = [String]()
 let FlutterUnsafeLinkerFlags = [
-    "-Xlinker", "-F",
-    "-Xlinker", FlutterLibPath,
-    "-Xlinker", "-framework",
-    "-Xlinker", "FlutterMacOS",
+    "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
+    "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
+    "-Xlinker", "-framework", "-Xlinker", "FlutterMacOS",
     ]
 #elseif os(Linux)
 let FlutterRoot = "/opt/elinux"
@@ -59,8 +59,8 @@ let package = Package(
 	.target(
 	    name: "FlutterSwift",
 	    dependencies: [
+		.target(name: "CFlutterSwift", condition: .when(platforms: [.linux])),
 		"AnyCodable",
-		"CFlutterSwift",
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
 	    ],
             cSettings: [

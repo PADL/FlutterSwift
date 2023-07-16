@@ -7,6 +7,8 @@
 
 #include <stdbool.h>
 
+#ifndef __APPLE__
+
 #include <flutter_messenger.h>
 
 #ifdef __cplusplus
@@ -44,5 +46,7 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallbackBlock(
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !__APPLE__ */
 
 #endif /* CFlutterSwift_h */

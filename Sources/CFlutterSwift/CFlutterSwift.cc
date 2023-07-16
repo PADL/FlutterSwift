@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef __APPLE__
+
 #include <stdlib.h>
 
 #include "CFlutterSwift.h"
@@ -55,3 +57,5 @@ void FlutterDesktopMessengerSetCallbackBlock(
                                               callbackBlock ? FlutterDesktopMessageCallbackThunk : nullptr,
                                               callbackBlock);
 }
+
+#endif /* !__APPLE__ */
