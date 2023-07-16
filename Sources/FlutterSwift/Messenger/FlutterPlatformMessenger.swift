@@ -12,9 +12,15 @@ import FlutterMacOS
 #endif
 
 public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
+    #if canImport(Flutter)
+    public typealias PlatformFlutterBinaryMessenger = Flutter.FlutterBinaryMessenger
+    #elseif canImport(FlutterMacOS)
+    public typealias PlatformFlutterBinaryMessenger = FlutterMacOS.FlutterBinaryMessenger
+    #endif
+
     private let platformBinaryMessenger: FlutterMacOS.FlutterBinaryMessenger
 
-    public init(wrapping platformBinaryMessenger: FlutterMacOS.FlutterBinaryMessenger) {
+    public init(wrapping platformBinaryMessenger: PlatformFlutterBinaryMessenger) {
         self.platformBinaryMessenger = platformBinaryMessenger
     }
 
