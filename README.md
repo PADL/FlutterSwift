@@ -36,7 +36,7 @@ import AsyncAlgorithms
 ...
 
 /// this should go inside MainFlutterWindow
-typealias Arguments = FlutterEmptyArguments
+typealias Arguments = FlutterNull
 typealias Event = Int32
 
 var flutterEventStream = FlutterEventStream<Event>()
