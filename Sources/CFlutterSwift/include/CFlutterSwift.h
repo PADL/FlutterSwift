@@ -15,7 +15,8 @@
 extern "C" {
 #endif
 
-// flutter_elinux.h can't be imported into C code because it uses ref params
+// FIXME: flutter_elinux.h can't be imported into C code because it uses ref params
+// https://github.com/sony/flutter-embedded-linux/issues/345
 struct FlutterDesktopEngine;
 typedef struct FlutterDesktopEngine* FlutterDesktopEngineRef;
 
