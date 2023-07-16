@@ -177,3 +177,5 @@ public actor FlutterEventChannel: FlutterChannel {
         }
     }
 }
+
+public struct FlutterEmptyArguments: Codable, Equatable {}
