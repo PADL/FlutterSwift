@@ -25,6 +25,8 @@ let FlutterUnsafeCCompilerFlags = [
     ]
 let FlutterUnsafeCXXCompilerFlags = [
     "-I", FlutterIncludePath,
+    // FIXME: we should find this automatically
+    "-I", "/opt/swift/usr/lib/swift",
     ]
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-L", "-Xlinker", FlutterLibPath,

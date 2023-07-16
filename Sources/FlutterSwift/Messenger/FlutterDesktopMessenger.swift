@@ -51,8 +51,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             replyThunk = { bytes, count in
                 let data: Data?
                 if let bytes, count > 0 {
-                    // FIXME: nocopy
-                    data = Data(bytes: bytes, count: count)
+                    data = Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
+                            count: count, deallocator: .none)
                 } else {
                     data = nil
                 }

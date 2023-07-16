@@ -6,13 +6,9 @@
 
 #include <stdlib.h>
 
-#include "CFlutterSwift.h"
+#include <Block/Block.h>
 
-// FIXME: how do we get the correct path to Block/Block.h?
-extern "C" {
-    void *_Block_copy(const void *aBlock);
-    void _Block_release(const void *aBlock);
-};
+#include "CFlutterSwift.h"
 
 // +1 on block because it goes out of scope and is only called once
 
