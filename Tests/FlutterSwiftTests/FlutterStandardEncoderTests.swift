@@ -152,11 +152,35 @@ final class FlutterStandardEncoderTests: XCTestCase {
 
         let method = FlutterMethodCall<[String]>(method: "hello", arguments: ["world", "moon"])
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: method)
+    }
 
+    func testConstructedStandardEncoderDecoder() throws {
+        let decoder = FlutterStandardDecoder()
+        let encoder = FlutterStandardEncoder()
+
+        let error = FlutterError(code: "1231231", message: "hello", details: "something")
         let envelope = FlutterEnvelope<String>("hello")
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope)
+
         let envelope2 = FlutterEnvelope<String>(error)
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope2)
+
+        let simple = Simple(x: 1, y: 2, z: 3)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: simple)
+
+        let composite = Composite(before: 1, inner: Composite.Inner(value: 99), after: 7_834_868)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: composite)
+
+        let variablePrefix = VariablePrefix(prefix: [2, 23], value: 99)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variablePrefix)
+
+        let variableSuffix = VariableSuffix(value: 78, suffix: [99, 11])
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variableSuffix)
+
+        let generic = Generic<String>(value: "Hello, world", additional: 255)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: generic)
+
+        // FIXME: Either -- enums are not supported, we need to interrogate metadata to determine number of keys, this is possible but probably useless because there is no direct equivalent on the Flutter side
     }
 
     private func assertThat<Value>(
