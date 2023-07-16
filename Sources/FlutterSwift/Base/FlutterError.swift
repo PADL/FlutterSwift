@@ -13,15 +13,18 @@ public struct FlutterError: Error, Codable {
     let code: String
     let message: String?
     let details: (any Codable)?
+    let stacktrace: String?
 
     public init(
         code: String,
-        message: String?,
-        details: (any Codable)?
+        message: String? = nil,
+        details: (any Codable)? = nil,
+        stacktrace: String? = nil
     ) {
         self.code = code
         self.message = message
         self.details = details
+        self.stacktrace = stacktrace
     }
 
     // according to FlutterCodecs.mm, errors are encoded as unkeyed arrays
@@ -30,6 +33,11 @@ public struct FlutterError: Error, Codable {
         code = try container.decode(String.self)
         message = try container.decodeIfPresent(String.self)
         details = try container.decodeIfPresent(AnyCodable.self)
+        if !container.isAtEnd {
+            stacktrace = try container.decodeIfPresent(String.self)
+        } else {
+            stacktrace = nil
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -44,6 +52,9 @@ public struct FlutterError: Error, Codable {
             try container.encode(AnyCodable(details))
         } else {
             try container.encodeNil()
+        }
+        if let stacktrace {
+            try container.encode(stacktrace)
         }
     }
 }
