@@ -2,56 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import AsyncAlgorithms
 import Foundation
 
 /**
- * An event sink callback.
- *
- * @param event The event.
+ * An asynchronous event stream.
  */
-public typealias FlutterEventSink<Event: Codable> = (Result<Event?, Error>) throws -> ()
-
-/**
- * A strategy for exposing an event stream to the Flutter side.
- */
-public protocol FlutterStreamHandler {
-    associatedtype Arguments: Codable
-    associatedtype Event: Codable
-
-    /**
-     * Sets up an event stream and begin emitting events.
-     *
-     * Invoked when the first listener is registered with the Stream associated to
-     * this channel on the Flutter side.
-     *
-     * @param arguments Arguments for the stream.
-     * @param events A callback to asynchronously emit events. Invoke the
-     *     callback with a `FlutterError` to emit an error event. Invoke the
-     *     callback with `FlutterEndOfEventStream` to indicate that no more
-     *     events will be emitted. Any other value, including `nil` are emitted as
-     *     successful events.
-     * @return A FlutterError instance, if setup fails.
-     */
-    func onListen(
-        with arguments: Arguments?,
-        eventSink: FlutterEventSink<Event>
-    ) throws
-
-    /**
-     * Tears down an event stream.
-     *
-     * Invoked when the last listener is deregistered from the Stream associated to
-     * this channel on the Flutter side.
-     *
-     * The channel implementation may call this method with `nil` arguments
-     * to separate a pair of two consecutive set up requests. Such request pairs
-     * may occur during Flutter hot restart.
-     *
-     * @param arguments Arguments for the stream.
-     * @return A FlutterError instance, if teardown fails.
-     */
-    func onCancel(with arguments: Arguments?) throws
-}
+public typealias FlutterEventStream<Event: Codable> = AsyncThrowingChannel<Event?, Error>
 
 /**
  * A channel for communicating with the Flutter side using event streams.
@@ -60,6 +17,7 @@ public actor FlutterEventChannel: FlutterChannel {
     let name: String
     let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
+    var task: Task<(), Error>?
     let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
 
@@ -91,59 +49,70 @@ public actor FlutterEventChannel: FlutterChannel {
         self.priority = priority
     }
 
-    private func onMethod<Result: Codable, Handler: FlutterStreamHandler>(
-        call: FlutterMethodCall<Handler.Arguments>,
-        handler: Handler
-    ) throws -> FlutterEnvelope<Result>? {
-        let envelope: FlutterEnvelope<Result>?
-        var currentSink: FlutterEventSink<Handler.Event>?
+    deinit {
+        task?.cancel()
+    }
 
-        switch call.method {
-        case "listen":
-            if currentSink != nil {
-                try handler.onCancel(with: nil)
-            }
-            currentSink = { [self] event in
-                switch event {
-                case let .success(success):
-                    let envelope = FlutterEnvelope<Handler.Event>.success(success)
-                    try binaryMessenger.send(on: name, message: try codec.encode(envelope))
-                case let .failure(error):
-                    if let error = error as? FlutterSwiftError, error == .endOfEventStream {
-                        try binaryMessenger.send(on: name, message: nil)
-                    } else if let error = error as? FlutterError {
-                        let envelope = FlutterEnvelope<Result>.failure(error)
-                        try binaryMessenger.send(on: name, message: try codec.encode(envelope))
-                    } else {
-                        throw FlutterSwiftError.invalidEvent
-                    }
-                }
-            }
+    private func withOptionalCallback<Arguments: Codable>(
+        arguments: Arguments?,
+        callback: ((Arguments?) throws -> ())?
+    )
+        throws -> FlutterEnvelope<Arguments>?
+    {
+        let envelope: FlutterEnvelope<Arguments>?
+
+        if let callback {
             do {
-                try handler.onListen(
-                    with: call.arguments,
-                    eventSink: currentSink!
-                )
+                try callback(arguments)
                 envelope = .success(nil)
             } catch let error as FlutterError {
                 envelope = .failure(error)
             }
-        case "cancel":
-            if currentSink == nil {
-                envelope = .failure(FlutterError(
-                    code: "error",
-                    message: "No active stream to cancel",
-                    details: nil
-                ))
-            } else {
-                currentSink = nil
+        } else {
+            envelope = .success(nil)
+        }
+
+        return envelope
+    }
+
+    private func onMethod<Event: Codable, Arguments: Codable>(
+        call: FlutterMethodCall<Arguments>,
+        stream: FlutterEventStream<Event>,
+        onListen: ((Arguments?) throws -> ())?,
+        onCancel: ((Arguments?) throws -> ())?
+    ) throws -> FlutterEnvelope<Arguments>? {
+        let envelope: FlutterEnvelope<Arguments>?
+
+        switch call.method {
+        case "listen":
+            if let task {
+                task.cancel()
+                self.task = nil
+            }
+            envelope = try withOptionalCallback(arguments: call.arguments, callback: onListen)
+            task = Task<(), Error>(priority: priority) { @MainActor in
                 do {
-                    try handler.onCancel(with: call.arguments)
-                    envelope = .success(nil)
+                    for try await event in stream {
+                        let envelope = FlutterEnvelope.success(event)
+                        try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                        try Task.checkCancellation()
+                    }
+                    try binaryMessenger.send(on: name, message: nil)
                 } catch let error as FlutterError {
-                    envelope = .failure(error)
+                    let envelope = FlutterEnvelope<Event>.failure(error)
+                    try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                } catch is CancellationError {
+                    // FIXME: send finish even when task cancelled?
+                } catch {
+                    throw FlutterSwiftError.invalidEventError
                 }
             }
+        case "cancel":
+            if let task {
+                task.cancel()
+                self.task = nil
+            }
+            envelope = try withOptionalCallback(arguments: call.arguments, callback: onCancel)
         default:
             envelope = nil
         }
@@ -159,17 +128,23 @@ public actor FlutterEventChannel: FlutterChannel {
      *
      * @param handler The stream handler.
      */
-    public func setStreamHandler<Handler: FlutterStreamHandler>(_ handler: Handler?) async throws {
-        try await setMessageHandler(handler) { [self] unwrappedHandler in
+    public func setEventStream<Event: Codable, Arguments: Codable>(
+        _ stream: FlutterEventStream<Event>?,
+        onListen: ((Arguments?) throws -> ())? = nil,
+        onCancel: ((Arguments?) throws -> ())? = nil
+    ) async throws {
+        try await setMessageHandler(stream) { [self] unwrappedStream in
             { [self] message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented
                 }
 
-                let call: FlutterMethodCall<Handler.Arguments> = try self.codec.decode(message)
-                let envelope: FlutterEnvelope<Handler.Arguments>? = try onMethod(
+                let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
+                let envelope: FlutterEnvelope<Arguments>? = try onMethod(
                     call: call,
-                    handler: unwrappedHandler
+                    stream: unwrappedStream,
+                    onListen: onListen,
+                    onCancel: onCancel
                 )
                 guard let envelope else { return nil }
                 return try codec.encode(envelope)

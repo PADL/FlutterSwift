@@ -5,11 +5,10 @@
 import Foundation
 
 public enum FlutterSwiftError: Error, Codable, Equatable {
-    case endOfEventStream
     case eofTooEarly
     case integerOutOfRange
     case invalidAlignment
-    case invalidEvent
+    case invalidEventError
     case messageSendFailure
     case methodNotImplemented
     case stringNotDecodable(Data)
