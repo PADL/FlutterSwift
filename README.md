@@ -88,7 +88,7 @@ private func methodCallHandler(
 override func awakeFromNib() {
 ...
 
-    letflutterMethodChannel = FlutterMethodChannel(
+    let flutterMethodChannel = FlutterMethodChannel(
         name: "com.padl.toggleCounter",
         binaryMessenger: platformBinaryMessenger
     )
