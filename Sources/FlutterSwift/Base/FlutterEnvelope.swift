@@ -30,6 +30,8 @@ public enum FlutterEnvelope<Success: Codable>: Codable {
             case 1:
                 self = .success(try container.decodeIfPresent(Success.self))
             case 3:
+                fallthrough
+            case 4: // contains stacktrace
                 self = .failure(try container.decode(FlutterError.self))
             default:
                 throw FlutterSwiftError.unknownDiscriminant

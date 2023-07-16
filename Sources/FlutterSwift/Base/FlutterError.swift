@@ -33,8 +33,8 @@ public struct FlutterError: Error, Codable {
         code = try container.decode(String.self)
         message = try container.decodeIfPresent(String.self)
         details = try container.decodeIfPresent(AnyCodable.self)
-        if !container.isAtEnd {
-            stacktrace = try container.decodeIfPresent(String.self)
+        if container.count ?? 0 > 3 {
+            stacktrace = try container.decode(String.self)
         } else {
             stacktrace = nil
         }
