@@ -26,6 +26,60 @@ override func awakeFromNib() {
 
 On Linux, you will use `FlutterDesktopMessenger`, however this code hasn't been built or tested yet.
 
+Message channel
+---------------
+
+
+```swift
+private func messageHandler(_ arguments: String?) async -> Int? {
+    debugPrint("Received message \(arguments)")
+    return 12345
+}       
+
+override func awakeFromNib() {
+...
+    flutterBasicMessageChannel = FlutterBasicMessageChannel(
+        name: "com.padl.example",
+        binaryMessenger: platformBinaryMessenger,
+        codec: FlutterJSONMessageCodec.shared
+    )
+
+    task = Task { @MainActor in
+        try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
+        ...
+    }
+}
+```
+
+Method channel
+--------------
+
+```swift
+
+var isRunning = true
+
+@MainActor
+private func methodCallHandler(
+    call: FlutterSwift
+        .FlutterMethodCall<Bool>
+) async throws -> Bool {
+    isRunning.toggle()
+    return isRunning
+}
+
+override func awakeFromNib() {
+...
+
+    let flutterMethodChannel = FlutterMethodChannel(
+        name: "com.padl.toggleCounter",
+        binaryMessenger: platformBinaryMessenger
+    )
+    task = Task { @MainActor in
+        try await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+    }
+}
+
+```
 Event channel
 -------------
 
@@ -69,31 +123,3 @@ override func awakeFromNib() {
 }
 ```
 
-Method channel
---------------
-
-```swift
-
-var isRunning = true
-
-@MainActor
-private func methodCallHandler(
-    call: FlutterSwift
-        .FlutterMethodCall<Bool>
-) async throws -> Bool {
-    isRunning.toggle()
-    return isRunning
-}
-
-override func awakeFromNib() {
-...
-
-    let flutterMethodChannel = FlutterMethodChannel(
-        name: "com.padl.toggleCounter",
-        binaryMessenger: platformBinaryMessenger
-    )
-    task = Task { @MainActor in
-        try await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
-    }
-}
-```
