@@ -29,6 +29,7 @@ let FlutterUnsafeCXXCompilerFlags = [
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-L", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
+    "-Xlinker", "-l", "-Xlinker", "flutter_engine",
     "-Xlinker", "-l", "-Xlinker", "flutter_elinux_\(FlutterBackend)"
     ]
 #endif
