@@ -22,7 +22,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
-    ) async -> FlutterBinaryMessengerConnection {
+    ) -> FlutterBinaryMessengerConnection {
         guard let handler else {
             return platformBinaryMessenger.setMessageHandlerOnChannel(
                 channel,

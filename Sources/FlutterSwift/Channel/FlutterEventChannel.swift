@@ -53,32 +53,9 @@ public actor FlutterEventChannel: FlutterChannel {
         task?.cancel()
     }
 
-    private func withOptionalCallback<Arguments: Codable>(
-        arguments: Arguments?,
-        callback: ((Arguments?) throws -> ())?
-    )
-        throws -> FlutterEnvelope<Arguments>?
-    {
-        let envelope: FlutterEnvelope<Arguments>?
-
-        if let callback {
-            do {
-                try callback(arguments)
-                envelope = .success(nil)
-            } catch let error as FlutterError {
-                envelope = .failure(error)
-            }
-        } else {
-            envelope = .success(nil)
-        }
-
-        return envelope
-    }
-
     private func onMethod<Event: Codable, Arguments: Codable>(
         call: FlutterMethodCall<Arguments>,
-        stream: FlutterEventStream<Event>,
-        onListen: ((Arguments?) throws -> ())?,
+        onListen: @escaping ((Arguments?) throws -> FlutterEventStream<Event>),
         onCancel: ((Arguments?) throws -> ())?
     ) throws -> FlutterEnvelope<Arguments>? {
         let envelope: FlutterEnvelope<Arguments>?
@@ -89,7 +66,7 @@ public actor FlutterEventChannel: FlutterChannel {
                 task.cancel()
                 self.task = nil
             }
-            envelope = try withOptionalCallback(arguments: call.arguments, callback: onListen)
+            let stream = try onListen(call.arguments)
             task = Task<(), Error>(priority: priority) { @MainActor in
                 do {
                     for try await event in stream {
@@ -102,17 +79,25 @@ public actor FlutterEventChannel: FlutterChannel {
                     let envelope = FlutterEnvelope<Event>.failure(error)
                     try binaryMessenger.send(on: name, message: try codec.encode(envelope))
                 } catch is CancellationError {
-                    // FIXME: send finish even when task cancelled?
+                    // FIXME: should we ignore this or send the finish message?
                 } catch {
                     throw FlutterSwiftError.invalidEventError
                 }
             }
+            envelope = FlutterEnvelope.success(nil)
         case "cancel":
             if let task {
                 task.cancel()
                 self.task = nil
             }
-            envelope = try withOptionalCallback(arguments: call.arguments, callback: onCancel)
+            do {
+                if let onCancel {
+                    try onCancel(call.arguments)
+                }
+                envelope = FlutterEnvelope.success(nil)
+            } catch let error as FlutterError {
+                envelope = FlutterEnvelope.failure(error)
+            }
         default:
             envelope = nil
         }
@@ -128,12 +113,11 @@ public actor FlutterEventChannel: FlutterChannel {
      *
      * @param handler The stream handler.
      */
-    public func setEventStream<Event: Codable, Arguments: Codable>(
-        _ stream: FlutterEventStream<Event>?,
-        onListen: ((Arguments?) throws -> ())? = nil,
-        onCancel: ((Arguments?) throws -> ())? = nil
-    ) async throws {
-        try await setMessageHandler(stream) { [self] unwrappedStream in
+    public func setStreamHandler<Event: Codable, Arguments: Codable>(
+        onListen: ((Arguments?) throws -> FlutterEventStream<Event>)?,
+        onCancel: ((Arguments?) throws -> ())?
+    ) throws {
+        try setMessageHandler(onListen) { [self] unwrappedHandler in
             { [self] message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented
@@ -142,8 +126,7 @@ public actor FlutterEventChannel: FlutterChannel {
                 let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
                 let envelope: FlutterEnvelope<Arguments>? = try onMethod(
                     call: call,
-                    stream: unwrappedStream,
-                    onListen: onListen,
+                    onListen: unwrappedHandler,
                     onCancel: onCancel
                 )
                 guard let envelope else { return nil }

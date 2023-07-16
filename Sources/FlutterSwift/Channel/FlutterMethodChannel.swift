@@ -105,7 +105,7 @@ public actor FlutterMethodChannel: FlutterChannel {
         Arguments: Codable,
         Result: Codable
     >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
-        try await setMessageHandler(handler) { [self] unwrappedHandler in
+        try setMessageHandler(handler) { [self] unwrappedHandler in
             { message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented

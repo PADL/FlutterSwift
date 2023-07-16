@@ -86,7 +86,6 @@ class FlutterStandardDecodingState {
     func decodeData() throws -> Data {
         try assertStandardField(.uint8Data)
         let length = try decodeSize()
-        try assertAlignment(1)
         let raw = data.prefix(length)
         guard raw.count == length else {
             throw FlutterSwiftError.eofTooEarly
@@ -118,7 +117,7 @@ class FlutterStandardDecodingState {
     ) throws -> [Value] {
         try assertStandardField(fieldType)
         let count = try decodeSize()
-        try assertAlignment(MemoryLayout<Value>.alignment)
+        try assertAlignment(MemoryLayout<Value>.stride)
         var values = [Value]()
         for _ in 0..<count {
             values.append(try block())
@@ -265,13 +264,11 @@ class FlutterStandardDecodingState {
 
     func decode(_ type: Int32.Type) throws -> Int32 {
         try assertStandardField(.int32)
-        try assertAlignment(MemoryLayout<Int32>.alignment)
         return try decodeInteger(type)
     }
 
     func decode(_ type: Int64.Type) throws -> Int64 {
         try assertStandardField(.int64)
-        try assertAlignment(MemoryLayout<Int64>.alignment)
         return try decodeInteger(type)
     }
 

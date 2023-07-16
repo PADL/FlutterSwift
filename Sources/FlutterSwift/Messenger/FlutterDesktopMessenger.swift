@@ -151,7 +151,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
-    ) async -> FlutterBinaryMessengerConnection {
+    ) -> FlutterBinaryMessengerConnection {
         guard let handler else {
             removeMessengerHandler(for: channel)
             return 0

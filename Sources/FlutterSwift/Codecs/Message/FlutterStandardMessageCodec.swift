@@ -5,37 +5,6 @@
 import Foundation
 
 /**
- * Type of numeric data items encoded in a `FlutterStandardDataType`.
- *
- * - FlutterStandardDataTypeUInt8: plain bytes
- * - FlutterStandardDataTypeInt32: 32-bit signed integers
- * - FlutterStandardDataTypeInt64: 64-bit signed integers
- * - FlutterStandardDataTypeFloat64: 64-bit floats
- */
-public enum FlutterStandardDataType {
-    case uint8
-    case int32
-    case int64
-    case float32
-    case float64
-}
-
-/**
- * A byte buffer holding `UInt8`, `SInt32`, `SInt64`, or `Float64` values, used
- * with `FlutterStandardMessageCodec` and `FlutterStandardMethodCodec`.
- *
- * Two's complement encoding is used for signed integers. IEEE754
- * double-precision representation is used for floats. The platform's native
- * endianness is assumed.
- */
-public struct FlutterStandardTypedData {
-    let data: Data
-    let type: FlutterStandardDataType
-    let elementCount: UInt32
-    let elementSize: UInt8
-}
-
-/**
  * A `FlutterMessageCodec` using the Flutter standard binary encoding.
  *
  * This codec is guaranteed to be compatible with the corresponding

@@ -16,13 +16,13 @@ extension FlutterChannel {
     func setMessageHandler<Handler>(
         _ optionalHandler: Handler?,
         _ block: (Handler) -> FlutterBinaryMessageHandler
-    ) async throws {
+    ) throws {
         guard let unwrappedHandler = optionalHandler else {
             if connection > 0 {
                 binaryMessenger.cleanUp(connection: connection)
                 connection = 0
             } else {
-                _ = await binaryMessenger.setMessageHandler(
+                _ = binaryMessenger.setMessageHandler(
                     on: name,
                     handler: nil,
                     priority: priority
@@ -30,7 +30,7 @@ extension FlutterChannel {
             }
             return
         }
-        connection = await binaryMessenger.setMessageHandler(
+        connection = binaryMessenger.setMessageHandler(
             on: name,
             handler: block(unwrappedHandler),
             priority: priority

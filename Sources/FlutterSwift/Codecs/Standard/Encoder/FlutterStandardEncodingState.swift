@@ -56,7 +56,6 @@ class FlutterStandardEncodingState {
     private func encode(_ value: Data) throws {
         try encodeStandardField(.uint8Data)
         try encodeSize(value.count)
-        try encodeAlignment(1)
         data += data
     }
 
@@ -71,35 +70,34 @@ class FlutterStandardEncodingState {
     private func encodeArray(_ value: [UInt8]) throws {
         try encodeStandardField(.uint8Data)
         try encodeSize(value.count)
-        try encodeAlignment(1)
         data += value
     }
 
     private func encodeArray(_ value: [Int32]) throws {
         try encodeStandardField(.int32Data)
         try encodeSize(value.count)
-        try encodeAlignment(MemoryLayout<Int32>.alignment)
+        try encodeAlignment(MemoryLayout<Int32>.stride)
         try value.forEach { try encodeInteger($0) }
     }
 
     private func encodeArray(_ value: [Int64]) throws {
         try encodeStandardField(.int32Data)
         try encodeSize(value.count)
-        try encodeAlignment(MemoryLayout<Int64>.alignment)
+        try encodeAlignment(MemoryLayout<Int64>.stride)
         try value.forEach { try encodeInteger($0) }
     }
 
     private func encodeArray(_ value: [Double]) throws {
         try encodeStandardField(.float64Data)
         try encodeSize(value.count)
-        try encodeAlignment(MemoryLayout<Double>.alignment)
+        try encodeAlignment(MemoryLayout<Double>.stride)
         try value.forEach { try encodeInteger($0.bitPattern) }
     }
 
     private func encodeArray(_ value: [Float]) throws {
         try encodeStandardField(.float32Data)
         try encodeSize(value.count)
-        try encodeAlignment(MemoryLayout<Float>.alignment)
+        try encodeAlignment(MemoryLayout<Float>.stride)
         try value.forEach { try encodeInteger($0.bitPattern) }
     }
 
@@ -180,13 +178,11 @@ class FlutterStandardEncodingState {
 
     func encode(_ value: Int32) throws {
         try encodeStandardField(.int32)
-        try encodeAlignment(MemoryLayout<Int32>.alignment)
         try encodeInteger(value)
     }
 
     func encode(_ value: Int64) throws {
         try encodeStandardField(.int64)
-        try encodeAlignment(MemoryLayout<Int64>.alignment)
         try encodeInteger(value)
     }
 
