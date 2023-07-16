@@ -1,0 +1,3 @@
+module CFlutterSwift {
+    umbrella header "CFlutterSwift.h"
+}

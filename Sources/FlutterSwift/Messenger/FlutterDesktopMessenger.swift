@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #if os(Linux)
+import CFlutterSwift
 import Foundation
 
 struct FlutterEngineHandlerInfo {
@@ -18,11 +19,6 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
 
     public init(engine: FlutterDesktopEngineRef) {
         messengerRef = FlutterDesktopEngineGetMessenger(engine)
-        FlutterDesktopMessengerAddRef(messengerRef)
-    }
-
-    deinit {
-        FlutterDesktopMessengerRelease(messengerRef)
     }
 
     private func withPriority<Value>(
@@ -55,7 +51,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             replyThunk = { bytes, count in
                 let data: Data?
                 if let bytes, count > 0 {
-                    data = Data(bytesNoCopy: bytes, count: count, deallocator: .none)
+                    // FIXME: nocopy
+                    data = Data(bytes: bytes, count: count)
                 } else {
                     data = nil
                 }

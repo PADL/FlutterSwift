@@ -5,16 +5,24 @@
 #ifndef CFlutterSwift_h
 #define CFlutterSwift_h
 
-#include "flutter_messenger.h"
+#include <stdbool.h>
+
+#include <flutter_messenger.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <Block.h>
+// flutter_elinux.h can't be imported into C code because it uses ref params
+struct FlutterDesktopEngine;
+typedef struct FlutterDesktopEngine* FlutterDesktopEngineRef;
+
+// Returns the messenger associated with the engine.
+FLUTTER_EXPORT FlutterDesktopMessengerRef _Nonnull
+FlutterDesktopEngineGetMessenger(_Nonnull FlutterDesktopEngineRef engine);
 
 typedef void (^FlutterDesktopBinaryReplyBlock)(
-    const uint8_t* data,
+    const uint8_t* _Nullable data,
     size_t data_size);
 
 FLUTTER_EXPORT bool FlutterDesktopMessengerSendWithReplyBlock(
@@ -25,13 +33,13 @@ FLUTTER_EXPORT bool FlutterDesktopMessengerSendWithReplyBlock(
     _Nullable FlutterDesktopBinaryReplyBlock replyBlock);
 
 typedef void (^FlutterDesktopMessageCallbackBlock)(
-    FlutterDesktopMessengerRef _Nonnull,
+    _Nonnull FlutterDesktopMessengerRef,
     const FlutterDesktopMessage *_Nonnull);
 
 FLUTTER_EXPORT void FlutterDesktopMessengerSetCallbackBlock(
-    FlutterDesktopMessengerRef messenger,
+    _Nonnull FlutterDesktopMessengerRef messenger,
     const char* _Nonnull channel,
-    FlutterDesktopMessageCallbackBlock callbackBlock);
+    _Nullable FlutterDesktopMessageCallbackBlock callbackBlock);
 
 #ifdef __cplusplus
 }
