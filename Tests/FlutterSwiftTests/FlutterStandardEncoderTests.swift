@@ -52,6 +52,76 @@ extension FlutterEnvelope: Equatable where Success: Codable & Equatable {
 final class FlutterStandardEncoderTests: XCTestCase {
     func testDefaultStandardEncoder() throws {
         let encoder = FlutterStandardEncoder()
+
+        try assertThat(encoder, encodes: FlutterNull?.none, to: [0x00])
+        try assertThat(encoder, encodes: true, to: [0x01])
+        try assertThat(encoder, encodes: false, to: [0x02])
+        try assertThat(encoder, encodes: UInt8(0xFE), to: [0x03, 0xFE, 0x00, 0x00, 0x00])
+        try assertThat(encoder, encodes: UInt16(0xFEDC), to: [0x03, 0xDC, 0xFE, 0x00, 0x00])
+        try assertThat(
+            encoder,
+            encodes: UInt64(0xFEDC_BA09),
+            to: [0x04, 0x09, 0xBA, 0xDC, 0xFE, 0x00, 0x00, 0x00, 0x00]
+        )
+        try assertThat(
+            encoder,
+            encodes: UInt64(0xFFFF_FFFF_FFFF_FFFA),
+            to: [0x04, 0xFA, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+        )
+        try assertThat(encoder, encodes: Int8(-2), to: [0x03, 0xFE, 0xFF, 0xFF, 0xFF])
+        try assertThat(
+            encoder,
+            encodes: Int16(bitPattern: 0xFEDC),
+            to: [0x03, 0xDC, 0xFE, 0xFF, 0xFF]
+        )
+        try assertThat(
+            encoder,
+            encodes: Int32(bitPattern: 0x1234_5678),
+            to: [0x03, 0x78, 0x56, 0x34, 0x12]
+        )
+        try assertThat(
+            encoder,
+            encodes: Int64(bitPattern: 0x1234_5678_90AB_CDEF),
+            to: [0x04, 0xEF, 0xCD, 0xAB, 0x90, 0x78, 0x56, 0x34, 0x12]
+        )
+        try assertThat(
+            encoder,
+            encodes: Double(3.14159265358979311599796346854),
+            to: [
+                0x06,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x18,
+                0x2D,
+                0x44,
+                0x54,
+                0xFB,
+                0x21,
+                0x09,
+                0x40,
+            ]
+        )
+        try assertThat(
+            encoder,
+            encodes: "hello world",
+            to: [0x07, 0x0B, 0x68, 0x65, 0x6C, 0x6C, 0x6F,
+                 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64]
+        )
+        try assertThat(
+            encoder,
+            encodes: "h\u{263A}w",
+            to: [0x07, 0x05, 0x68, 0xE2, 0x98, 0xBA, 0x77]
+        )
+        try assertThat(
+            encoder,
+            encodes: "h\u{0001F602}w",
+            to: [0x07, 0x06, 0x68, 0xF0, 0x9F, 0x98, 0x82, 0x77]
+        )
     }
 
     func testDefaultStandardEncoderDecoder() throws {
