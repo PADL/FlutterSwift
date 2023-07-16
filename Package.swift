@@ -1,7 +1,7 @@
 // swift-tools-version:5.7
 
-import PackageDescription
 import Foundation
+import PackageDescription
 
 #if os(macOS)
 let FlutterRoot = "/opt/flutter"
@@ -14,7 +14,7 @@ let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-framework", "-Xlinker", "FlutterMacOS",
-    ]
+]
 #elseif os(Linux)
 let FlutterRoot = "/opt/elinux"
 let FlutterLibPath = "\(FlutterRoot)/lib"
@@ -22,18 +22,18 @@ let FlutterIncludePath = "\(FlutterRoot)/include"
 let FlutterBackend = "x11"
 let FlutterUnsafeCCompilerFlags = [
     "-I", FlutterIncludePath,
-    ]
+]
 let FlutterUnsafeCXXCompilerFlags = [
     "-I", FlutterIncludePath,
     // FIXME: we should find this automatically
     "-I", "/opt/swift/usr/lib/swift",
-    ]
+]
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-L", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-l", "-Xlinker", "flutter_engine",
-    "-Xlinker", "-l", "-Xlinker", "flutter_elinux_\(FlutterBackend)"
-    ]
+    "-Xlinker", "-l", "-Xlinker", "flutter_elinux_\(FlutterBackend)",
+]
 #endif
 
 let package = Package(
@@ -46,43 +46,43 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "0.1.0"),
-        .package(url: "https://github.com/Flight-School/AnyCodable", from: "0.0.0")
+        .package(url: "https://github.com/Flight-School/AnyCodable", from: "0.0.0"),
     ],
     targets: [
         .target(
             name: "CFlutterSwift",
             dependencies: [],
             cxxSettings: [
-                .unsafeFlags(FlutterUnsafeCXXCompilerFlags)
+                .unsafeFlags(FlutterUnsafeCXXCompilerFlags),
             ],
             linkerSettings: [
-                .unsafeFlags(FlutterUnsafeLinkerFlags)
+                .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
         ),
-	.target(
-	    name: "FlutterSwift",
-	    dependencies: [
-		.target(name: "CFlutterSwift", condition: .when(platforms: [.linux])),
-		"AnyCodable",
+        .target(
+            name: "FlutterSwift",
+            dependencies: [
+                .target(name: "CFlutterSwift", condition: .when(platforms: [.linux])),
+                "AnyCodable",
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
-	    ],
+            ],
             cSettings: [
-                .unsafeFlags(FlutterUnsafeCCompilerFlags)
+                .unsafeFlags(FlutterUnsafeCCompilerFlags),
             ],
             linkerSettings: [
-                .unsafeFlags(FlutterUnsafeLinkerFlags)
+                .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
-	),
+        ),
         .testTarget(
             name: "FlutterSwiftTests",
             dependencies: [
                 .target(name: "FlutterSwift"),
             ],
             cSettings: [
-                .unsafeFlags(FlutterUnsafeCCompilerFlags)
+                .unsafeFlags(FlutterUnsafeCCompilerFlags),
             ],
             linkerSettings: [
-                .unsafeFlags(FlutterUnsafeLinkerFlags)
+                .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
         ),
     ]
