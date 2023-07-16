@@ -93,7 +93,7 @@ override func awakeFromNib() {
         binaryMessenger: platformBinaryMessenger
     )
     task = Task { @MainActor in
-        try await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
+        try await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
     }
 }
 ```
