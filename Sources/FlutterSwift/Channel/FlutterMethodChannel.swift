@@ -30,8 +30,8 @@ public struct FlutterMethodCall<Arguments: Codable>: Codable {
         case arguments = "args"
     }
 
-    let method: String
-    let arguments: Arguments?
+    public let method: String
+    public let arguments: Arguments?
 }
 
 extension FlutterMethodCall: Equatable where Arguments: Codable & Equatable {
