@@ -1,0 +1,4 @@
+module CWaylandEGL {
+    umbrella header "CWaylandEGL.h"
+    link "wayland-egl"
+}

@@ -1,0 +1,4 @@
+module CEGL {
+    umbrella header "CEGL.h"
+    link "EGL"
+}

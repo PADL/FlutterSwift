@@ -1,0 +1,4 @@
+module CWaylandCursor {
+    umbrella header "CWaylandCursor.h"
+    link "wayland-cursor"
+}

@@ -1,0 +1,4 @@
+module CKXBCommon {
+    umbrella header "CXKBCommon.h"
+    link "xkbcommon"
+}
