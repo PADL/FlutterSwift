@@ -42,6 +42,7 @@ let package = Package(
     ],
     products: [
         .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
+        .executable(name: "Counter", targets: ["Counter"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "0.1.0"),
@@ -79,7 +80,28 @@ let package = Package(
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
         ),
-        .testTarget(
+        .executableTarget(
+            name: "Counter",
+            dependencies: [
+                .target(name: "FlutterSwift"),
+            ],
+            path: "Examples/counter/swift",
+            cSettings: [
+                .unsafeFlags(FlutterUnsafeCCompilerFlags),
+            ],
+            cxxSettings: [
+                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
+            ],
+            swiftSettings: [
+                // FIXME: https://github.com/apple/swift-package-manager/issues/6661
+                .interoperabilityMode(.Cxx),
+                .unsafeFlags(["-cxx-interoperability-mode=default"]),
+            ],
+            linkerSettings: [
+                .unsafeFlags(FlutterUnsafeLinkerFlags),
+            ]
+         ),
+         .testTarget(
             name: "FlutterSwiftTests",
             dependencies: [
                 .target(name: "FlutterSwift"),
