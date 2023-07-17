@@ -21,6 +21,20 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         messengerRef = FlutterDesktopEngineGetMessenger(engine)
     }
 
+    private var isAvailable: Bool {
+        // FlutterDesktopMessengerIsAvailable(messengerRef)
+        true
+    }
+
+    private func withLockedMessenger<T>(_ block: () -> T) rethrows {
+        guard isAvailable else {
+            throw FlutterSwiftError.messengerNotAvailable
+        }
+        // FlutterDesktopMessengerLock(messengerRef)
+        // defer { FlutterDesktopMessengerUnlock(messengerRef)
+        return block()
+    }
+
     private func withPriority<Value>(
         _ priority: TaskPriority?,
         _ block: @escaping () async throws -> Value
@@ -45,36 +59,38 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         message: Data?,
         replyBlock: ((Data?) -> ())?
     ) throws {
-        let replyThunk: FlutterDesktopBinaryReplyBlock?
+        withLockedMessenger {
+            let replyThunk: FlutterDesktopBinaryReplyBlock?
 
-        if let replyBlock {
-            replyThunk = { bytes, count in
-                let data: Data?
-                if let bytes, count > 0 {
-                    data = Data(
-                        bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
-                        count: count,
-                        deallocator: .none
-                    )
-                } else {
-                    data = nil
+            if let replyBlock {
+                replyThunk = { bytes, count in
+                    let data: Data?
+                    if let bytes, count > 0 {
+                        data = Data(
+                            bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
+                            count: count,
+                            deallocator: .none
+                        )
+                    } else {
+                        data = nil
+                    }
+                    replyBlock(data)
                 }
-                replyBlock(data)
+            } else {
+                replyThunk = nil
             }
-        } else {
-            replyThunk = nil
-        }
 
-        guard withUnsafeBytes(of: message, { bytes in
-            FlutterDesktopMessengerSendWithReplyBlock(
-                messengerRef,
-                channel,
-                bytes.count > 0 ? bytes.baseAddress : nil,
-                bytes.count,
-                replyThunk
-            )
-        }) == true else {
-            throw FlutterSwiftError.messageSendFailure
+            guard withUnsafeBytes(of: message, { bytes in
+                FlutterDesktopMessengerSendWithReplyBlock(
+                    messengerRef,
+                    channel,
+                    bytes.count > 0 ? bytes.baseAddress : nil,
+                    bytes.count,
+                    replyThunk
+                )
+            }) == true else {
+                throw FlutterSwiftError.messageSendFailure
+            }
         }
     }
 
@@ -151,29 +167,33 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
-    ) -> FlutterBinaryMessengerConnection {
-        guard let handler else {
-            removeMessengerHandler(for: channel)
-            return 0
-        }
+    ) throws -> FlutterBinaryMessengerConnection {
+        withLockedMessenger {
+            guard let handler else {
+                removeMessengerHandler(for: channel)
+                return 0
+            }
 
-        currentMessengerConnection = currentMessengerConnection + 1
-        let handlerInfo = FlutterEngineHandlerInfo(
-            connection: currentMessengerConnection,
-            handler: handler,
-            priority: priority
-        )
-        messengerHandlers[channel] = handlerInfo
-        FlutterDesktopMessengerSetCallbackBlock(messengerRef, channel, onDesktopMessage)
-        return currentMessengerConnection
+            currentMessengerConnection = currentMessengerConnection + 1
+            let handlerInfo = FlutterEngineHandlerInfo(
+                connection: currentMessengerConnection,
+                handler: handler,
+                priority: priority
+            )
+            messengerHandlers[channel] = handlerInfo
+            FlutterDesktopMessengerSetCallbackBlock(messengerRef, channel, onDesktopMessage)
+            return currentMessengerConnection
+        }
     }
 
-    public func cleanUp(connection: FlutterBinaryMessengerConnection) {
-        guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
-        else {
-            return
+    public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
+        withLockedMessenger {
+            guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
+            else {
+                return
+            }
+            removeMessengerHandler(for: foundChannel.key)
         }
-        removeMessengerHandler(for: foundChannel.key)
     }
 }
 #endif

@@ -31,9 +31,9 @@ public protocol FlutterBinaryMessenger {
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
-    ) -> FlutterBinaryMessengerConnection
+    ) throws -> FlutterBinaryMessengerConnection
 
     func send(on channel: String, message: Data?) throws
     func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
-    func cleanUp(connection: FlutterBinaryMessengerConnection)
+    func cleanUp(connection: FlutterBinaryMessengerConnection) throws
 }

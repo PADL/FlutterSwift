@@ -10,6 +10,7 @@ public enum FlutterSwiftError: Error, Codable, Equatable {
     case invalidAlignment
     case invalidEventError
     case messageSendFailure
+    case messengerNotAvailable
     case methodNotImplemented
     case stringNotDecodable(Data)
     case stringNotEncodable(String)
