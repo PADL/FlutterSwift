@@ -2,23 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CFlutterSwift_h
-#define CFlutterSwift_h
-
-#include <stdbool.h>
+#ifndef CxxFlutterSwift_h
+#define CxxFlutterSwift_h
 
 #ifndef __APPLE__
 
+#include <stdbool.h>
+
 #include <flutter_messenger.h>
+#include <flutter_elinux.h>
+
+//#include <cpp_client_wrapper/include/flutter/dart_project.h>
+//#include <cpp_client_wrapper/include/flutter/flutter_view_controller.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// FIXME: flutter_elinux.h can't be imported into C code because it uses ref params
-// https://github.com/sony/flutter-embedded-linux/issues/345
-struct FlutterDesktopEngine;
-typedef struct FlutterDesktopEngine* FlutterDesktopEngineRef;
 
 // Returns the messenger associated with the engine.
 FLUTTER_EXPORT FlutterDesktopMessengerRef _Nonnull
@@ -50,4 +49,4 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallbackBlock(
 
 #endif /* !__APPLE__ */
 
-#endif /* CFlutterSwift_h */
+#endif /* CxxFlutterSwift_h */

@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 #if os(Linux)
-import CFlutterSwift
+@_implementationOnly
+import CxxFlutterSwift
 import Foundation
 
 struct FlutterEngineHandlerInfo {
@@ -17,7 +18,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     private var currentMessengerConnection: FlutterBinaryMessengerConnection = 0
     private var messengerRef: FlutterDesktopMessengerRef
 
-    public init(engine: FlutterDesktopEngineRef) {
+    init(engine: FlutterDesktopEngineRef) {
         messengerRef = FlutterDesktopEngineGetMessenger(engine)
         FlutterDesktopMessengerAddRef(messengerRef)
     }

@@ -6,9 +6,13 @@
 
 #include <stdlib.h>
 
-#include <Block/Block.h>
+// FIXME: how can we include <Block/Block.h>
+extern "C" {
+    extern void *_Block_copy(const void *aBlock);
+    extern void _Block_release(const void *aBlock);
+};
 
-#include "CFlutterSwift.h"
+#include "CxxFlutterSwift.h"
 
 // +1 on block because it goes out of scope and is only called once
 

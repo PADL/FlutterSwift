@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.9
 
 import Foundation
 import PackageDescription
@@ -8,8 +8,7 @@ let FlutterRoot = "/opt/flutter"
 let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64-release"
 let FlutterIncludePath = ""
 let FlutterBackend = ""
-let FlutterUnsafeCCompilerFlags = [String]()
-let FlutterUnsafeCXXCompilerFlags = [String]()
+let FlutterUnsafeCxxCompilerFlags = [String]()
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
@@ -20,13 +19,10 @@ let FlutterRoot = "/opt/elinux"
 let FlutterLibPath = "\(FlutterRoot)/lib"
 let FlutterIncludePath = "\(FlutterRoot)/include"
 let FlutterBackend = "wayland"
-let FlutterUnsafeCCompilerFlags = [
-    "-I", FlutterIncludePath,
-]
-let FlutterUnsafeCXXCompilerFlags = [
+let FlutterUnsafeCxxCompilerFlags = [
     "-I", FlutterIncludePath,
     // FIXME: we should find this automatically
-    "-I", "/opt/swift/usr/lib/swift",
+//    "-I", "/opt/swift/usr/lib/swift",
 ]
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-L", "-Xlinker", FlutterLibPath,
@@ -35,6 +31,9 @@ let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-l", "-Xlinker", "flutter_elinux_\(FlutterBackend)",
 ]
 #endif
+
+// FIXME: separate settings
+let FlutterUnsafeCCompilerFlags = FlutterUnsafeCxxCompilerFlags
 
 let package = Package(
     name: "FlutterSwift",
@@ -50,10 +49,13 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "CFlutterSwift",
+            name: "CxxFlutterSwift",
             dependencies: [],
+            cSettings: [
+                .unsafeFlags(FlutterUnsafeCCompilerFlags),
+            ],
             cxxSettings: [
-                .unsafeFlags(FlutterUnsafeCXXCompilerFlags),
+                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
             ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
@@ -62,13 +64,17 @@ let package = Package(
         .target(
             name: "FlutterSwift",
             dependencies: [
-                .target(name: "CFlutterSwift", condition: .when(platforms: [.linux])),
+                .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
                 "AnyCodable",
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
             ],
             cSettings: [
                 .unsafeFlags(FlutterUnsafeCCompilerFlags),
             ],
+            cxxSettings: [
+                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
+            ],
+            swiftSettings: [.interoperabilityMode(.Cxx)],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
@@ -81,9 +87,19 @@ let package = Package(
             cSettings: [
                 .unsafeFlags(FlutterUnsafeCCompilerFlags),
             ],
+            cxxSettings: [
+                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
+            ],
+            swiftSettings: [
+                // FIXME: https://github.com/apple/swift-package-manager/issues/6661
+                .interoperabilityMode(.Cxx),
+                .unsafeFlags(["-cxx-interoperability-mode=default"]),
+            ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
         ),
-    ]
+    ],
+    cLanguageStandard: .c17
+    //cxxLanguageStandard: .cxx17
 )

@@ -5,6 +5,7 @@
 import Foundation
 
 public enum FlutterSwiftError: Error, Codable, Equatable {
+    case engineCreationFailed
     case eofTooEarly
     case integerOutOfRange
     case invalidAlignment
