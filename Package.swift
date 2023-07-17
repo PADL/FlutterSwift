@@ -87,6 +87,7 @@ target = [
             .define("RAPIDJSON_HAS_CXX11_NOEXCEPT"),
             .headerSearchPath("."),
             .headerSearchPath("flutter-embedded-linux/src"),
+            .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"),
             .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/common/public"),
             .headerSearchPath(
                 "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"
@@ -151,6 +152,8 @@ let package = Package(
             cSettings: [
             ],
             cxxSettings: [
+                .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src"),
+                .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"),
                 .headerSearchPath(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
                 ),

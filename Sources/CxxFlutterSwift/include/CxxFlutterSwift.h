@@ -12,8 +12,8 @@
 #include <flutter_messenger.h>
 #include <flutter_elinux.h>
 
-//#include <cpp_client_wrapper/include/flutter/dart_project.h>
-//#include <cpp_client_wrapper/include/flutter/flutter_view_controller.h>
+// FIXME: when C++17 support is working, import this to get native ++ reference counting
+// #include <flutter_elinux_state.h>
 
 #ifdef __cplusplus
 extern "C" {
