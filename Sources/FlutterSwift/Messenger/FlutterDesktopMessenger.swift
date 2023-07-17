@@ -126,12 +126,13 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         _ message: UnsafePointer<FlutterDesktopMessage>
     ) {
         let message = message.pointee
-        var messageData: Data?
+        var messageData: Data? = nil
         let channel = String(cString: message.channel!)
         if message.message_size > 0 {
-            withUnsafeBytes(of: message.message) {
-                messageData = Data(bytes: $0.baseAddress!, count: message.message_size)
-            }
+            let ptr = UnsafeRawPointer(message.message).bindMemory(
+                to: UInt8.self, capacity: message.message_size
+            )
+            messageData = Data(bytes: ptr, count: message.message_size)
         }
 
         let binaryResponseHandler: (Data?) -> () = { response in
