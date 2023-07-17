@@ -7,13 +7,15 @@
 import CxxFlutterSwift
 
 public final class FlutterEngine {
-    private var engine: FlutterDesktopEngineRef!
+    private var engine: FlutterDesktopEngineRef! // strong or weak ref
     public private(set) var messenger: FlutterDesktopMessenger?
     private var ownsEngine = true
     private var hasBeenRun = false
 
     public init?(project: DartProject) {
         var properties = FlutterDesktopEngineProperties()
+
+        debugPrint("Initializing Flutter engine with assets path '\(project.assetsPath)'")
 
         project.assetsPath.withWideChars { assetsPath in
             properties.assets_path = assetsPath
@@ -22,7 +24,7 @@ public final class FlutterEngine {
                 project.aotLibraryPath.withWideChars { aotLibraryPath in
                     properties.aot_library_path = aotLibraryPath
                     withArrayOfCStrings(project.dartEntryPointArguments) { cStrings in
-                        properties.dart_entrypoint_argc = Int32(cStrings.count)
+                        properties.dart_entrypoint_argc = Int32(project.dartEntryPointArguments.count)
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
@@ -59,10 +61,12 @@ public final class FlutterEngine {
     }
 
     public func processMessages() -> UInt64 {
-        FlutterDesktopEngineProcessMessages(engine)
+        precondition(engine != nil)
+        return FlutterDesktopEngineProcessMessages(engine)
     }
 
     public func reloadSystemFonts() {
+        precondition(engine != nil)
         FlutterDesktopEngineReloadSystemFonts(engine)
     }
 
@@ -73,7 +77,6 @@ public final class FlutterEngine {
 
     func relinquishEngine() -> FlutterDesktopEngineRef {
         ownsEngine = false
-        defer { engine = nil }
         return engine
     }
 }

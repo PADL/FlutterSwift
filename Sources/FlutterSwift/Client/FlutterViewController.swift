@@ -35,6 +35,32 @@ public final class FlutterViewController {
         let useWindowDecoration: Bool
         let forceScaleFactor: Bool
         let scaleFactor: Double
+
+        public init(
+            width: CInt,
+            height: CInt,
+            viewRotation: ViewRotation = .kRotation_0,
+            viewMode: ViewMode = .kNormal,
+            title: String? = nil,
+            appId: String? = nil,
+            useMouseCursor: Bool = true,
+            useOnscreenKeyboard: Bool = false,
+            useWindowDecoration: Bool = true,
+            forceScaleFactor: Bool = false,
+            scaleFactor: Double = 1.0
+        ) {
+            self.width = width
+            self.height = height
+            self.viewRotation = viewRotation
+            self.viewMode = viewMode
+            self.title = title
+            self.appId = appId
+            self.useMouseCursor = useMouseCursor
+            self.useOnscreenKeyboard = useOnscreenKeyboard
+            self.useWindowDecoration = useWindowDecoration
+            self.forceScaleFactor = forceScaleFactor
+            self.scaleFactor = scaleFactor
+        }
     }
 
     public init?(properties viewProperties: ViewProperties, project: DartProject) {
