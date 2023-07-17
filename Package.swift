@@ -34,22 +34,22 @@ target = [
     .systemLibrary(
         name: "CEGL",
         pkgConfig: "egl"
-        //providers: .apt(["libegl1-mesa-dev", "libgles2-mesa-dev"])
+        // providers: .apt(["libegl1-mesa-dev", "libgles2-mesa-dev"])
     ),
     .systemLibrary(
         name: "CWaylandCursor",
         pkgConfig: "wayland-cursor"
-        //providers: .apt(["libwayland-dev", "wayland-protocols"])
+        // providers: .apt(["libwayland-dev", "wayland-protocols"])
     ),
     .systemLibrary(
         name: "CWaylandEGL",
         pkgConfig: "wayland-egl"
-        //providers: .apt(["libwayland-dev", "wayland-protocols"])
+        // providers: .apt(["libwayland-dev", "wayland-protocols"])
     ),
     .systemLibrary(
         name: "CXKBCommon",
         pkgConfig: "xkbcommon"
-        //providers: .apt(["libxkbcommon-dev"])
+        // providers: .apt(["libxkbcommon-dev"])
     ),
     .target(
         name: "CxxFlutterSwift",
@@ -88,8 +88,12 @@ target = [
             .headerSearchPath("."),
             .headerSearchPath("flutter-embedded-linux/src"),
             .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/common/public"),
-            .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"),
-            .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"),
+            .headerSearchPath(
+                "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"
+            ),
+            .headerSearchPath(
+                "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
+            ),
             .headerSearchPath("flutter-embedded-linux/src/third_party/rapidjson/include"),
             // FIXME: .cxxLanguageStandard breaks Foundation compile
             .unsafeFlags(["-std=c++17"]),
@@ -105,7 +109,7 @@ target = [
         ],
         path: "Examples/counter/swift",
         exclude: [
-            "README.md"
+            "README.md",
         ],
         cSettings: [
         ],
@@ -147,8 +151,12 @@ let package = Package(
             cSettings: [
             ],
             cxxSettings: [
-                .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"),
-                .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"),
+                .headerSearchPath(
+                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
+                ),
+                .headerSearchPath(
+                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
+                ),
             ],
             swiftSettings: [.interoperabilityMode(.Cxx)],
             linkerSettings: [
@@ -179,7 +187,8 @@ let package = Package(
 )
 
 #if false
-let SonyFlutterEngineBuild = "https://github.com/sony/flutter-embedded-linux/releases/download/cdbeda788a"
+let SonyFlutterEngineBuild =
+    "https://github.com/sony/flutter-embedded-linux/releases/download/cdbeda788a"
 #if arch(x86_64)
 let SonyFlutterEngineArch = "x64"
 let SonyFlutterEngineChecksum = "8abd82b8710a32b5181db6f40e453474f7004c62735838567bbd2ee7328ca7fd"
@@ -188,5 +197,6 @@ let SonyFlutterEngineArch = "arm64"
 let SonyFlutterEngineChecksum = "0fcdb6de88e4a3848250d699ba46a0b691e9628d2243b6eeed7caf8267b7ba4a"
 #endif
 let SonyFlutterEngineConfig = "debug"
-let SonyFlutterEngineURL = "\(SonyFlutterEngineBuild)/elinux-\(SonyFlutterEngineArch)-\(SonyFlutterEngineConfig).zip"
+let SonyFlutterEngineURL =
+    "\(SonyFlutterEngineBuild)/elinux-\(SonyFlutterEngineArch)-\(SonyFlutterEngineConfig).zip"
 #endif
