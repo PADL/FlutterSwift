@@ -1,6 +1,6 @@
 import FlutterSwift
 
-fileprivate var NSEC_PER_SEC: UInt64 = 1_000_000_000
+private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
 class ChannelManager {
     typealias Arguments = FlutterNull
@@ -13,7 +13,7 @@ class ChannelManager {
     var isRunning = true
     var counter: Event = 0
 
-    let magicCookie = 0xcafebabe
+    let magicCookie = 0xCAFE_BABE
 
     var flutterEventStream = FlutterEventStream<Event>()
 
@@ -68,7 +68,7 @@ class ChannelManager {
             try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
 
             repeat {
-                debugPrint("starting task...");
+                debugPrint("starting task...")
                 await flutterEventStream.send(counter)
                 if isRunning {
                     counter += 1
@@ -82,7 +82,7 @@ class ChannelManager {
 }
 
 @main
-struct Counter {
+enum Counter {
     static func main() {
         guard CommandLine.arguments.count > 1 else {
             print("usage: Counter [flutter_path]")
@@ -93,7 +93,8 @@ struct Counter {
             width: 640,
             height: 480,
             title: "Counter",
-            appId: "com.padl.counter")
+            appId: "com.padl.counter"
+        )
         let window = FlutterWindow(properties: viewProperties, project: dartProject)
         guard let window else {
             debugPrint("failed to initialize window!")

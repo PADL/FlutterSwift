@@ -8,11 +8,9 @@ import CxxFlutterSwift
 
 // TODO: finish implementing Swift plugins
 
-public protocol FlutterTextureRegistry {
-}
+public protocol FlutterTextureRegistry {}
 
-public protocol FlutterPlatformViewFactory {
-}
+public protocol FlutterPlatformViewFactory {}
 
 public typealias FlutterPluginRegistrantCallback = (FlutterPluginRegistry) -> ()
 
@@ -20,7 +18,10 @@ public protocol FlutterPlugin {
     static func register(with registrar: FlutterPluginRegistrar)
     static func setPluginRegistrantCallback(_ callback: FlutterPluginRegistrantCallback)
 
-    func handleMethod<Arguments: Codable, Result: Codable>(call: FlutterMethodCall<Arguments>) async throws -> Result
+    func handleMethod<
+        Arguments: Codable,
+        Result: Codable
+    >(call: FlutterMethodCall<Arguments>) async throws -> Result
     func detachFromEngine(for registrar: FlutterPluginRegistrar)
 }
 
@@ -28,11 +29,15 @@ public protocol FlutterPluginRegistrar {
     var messenger: FlutterBinaryMessenger { get }
     var textures: FlutterTextureRegistry { get }
 
-    func register(viewFactory factory: FlutterPlatformViewFactory,
-                  with factoryId: String)
+    func register(
+        viewFactory factory: FlutterPlatformViewFactory,
+        with factoryId: String
+    )
     func publish(_ value: Any)
-    func addMethodCallDelegate(_ delegate: FlutterPlugin,
-                               on channel: FlutterMethodChannel)
+    func addMethodCallDelegate(
+        _ delegate: FlutterPlugin,
+        on channel: FlutterMethodChannel
+    )
     func addApplicationDelegate(_ delegate: FlutterPlugin)
     func lookupKey(for asset: String) -> String?
     func lookupKey(for asset: String, from package: String) -> String?

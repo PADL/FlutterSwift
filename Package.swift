@@ -100,8 +100,8 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
-         ),
-         .testTarget(
+        ),
+        .testTarget(
             name: "FlutterSwiftTests",
             dependencies: [
                 .target(name: "FlutterSwift"),

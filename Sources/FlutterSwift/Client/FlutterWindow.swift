@@ -16,8 +16,12 @@ public final class FlutterWindow {
 
     public init?(
         properties viewProperties: FlutterViewController.ViewProperties,
-        project: DartProject) {
-        guard let viewController = FlutterViewController(properties: viewProperties, project: project) else {
+        project: DartProject
+    ) {
+        guard let viewController = FlutterViewController(
+            properties: viewProperties,
+            project: project
+        ) else {
             return nil
         }
         self.viewController = viewController
@@ -30,7 +34,8 @@ public final class FlutterWindow {
             guard let self else { return }
 
             var waitDurationNS = viewController.engine.processMessages()
-            let frameDurationNS = UInt64(1000000.0 / Float(viewController.view.frameRate)) * NSEC_PER_MSEC
+            let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
+                NSEC_PER_MSEC
 
             if frameDurationNS < waitDurationNS {
                 waitDurationNS = frameDurationNS

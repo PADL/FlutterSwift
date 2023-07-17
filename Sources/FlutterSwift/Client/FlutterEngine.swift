@@ -24,7 +24,8 @@ public final class FlutterEngine {
                 project.aotLibraryPath.withWideChars { aotLibraryPath in
                     properties.aot_library_path = aotLibraryPath
                     withArrayOfCStrings(project.dartEntryPointArguments) { cStrings in
-                        properties.dart_entrypoint_argc = Int32(project.dartEntryPointArguments.count)
+                        properties
+                            .dart_entrypoint_argc = Int32(project.dartEntryPointArguments.count)
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
