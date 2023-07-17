@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if os(Linux)
 @_implementationOnly
 import CxxFlutterSwift
 
-public class FlutterViewController {
+public final class FlutterViewController {
     private let controller: FlutterDesktopViewControllerRef
     public let engine: FlutterEngine
     public let view: FlutterView
@@ -80,7 +81,10 @@ public class FlutterViewController {
                 }
             }
         }
-        guard let controller, let view else { return nil }
+        guard let controller, let view else {
+            debugPrint("Failed to create view controller.")
+            return nil
+        }
         self.controller = controller
         self.view = view
     }
@@ -89,3 +93,4 @@ public class FlutterViewController {
         FlutterDesktopViewControllerDestroy(controller)
     }
 }
+#endif

@@ -5,7 +5,6 @@
 #if os(Linux)
 @_implementationOnly
 import CxxFlutterSwift
-import CxxStdlib
 
 public final class FlutterEngine {
     private var engine: FlutterDesktopEngineRef!
@@ -41,12 +40,12 @@ public final class FlutterEngine {
 
     public func run(entryPoint: String? = nil) -> Bool {
         if hasBeenRun {
-            debugPrint("Cannot run an engine more than once")
+            debugPrint("Cannot run an engine more than once.")
             return false
         }
         let runSucceeded = FlutterDesktopEngineRun(engine, entryPoint)
         if !runSucceeded {
-            debugPrint("Failed to start engine")
+            debugPrint("Failed to start engine.")
         }
         hasBeenRun = true
         return runSucceeded

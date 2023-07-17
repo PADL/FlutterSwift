@@ -11,7 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #if os(Linux)
-
 /// Compute the prefix sum of `seq`.
 func scan<
     S: Sequence, U
@@ -61,5 +60,4 @@ extension String {
         return u32.withUnsafeBufferPointer { body($0.baseAddress!) }
     }
 }
-
 #endif
