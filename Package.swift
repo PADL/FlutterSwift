@@ -35,6 +35,47 @@ let FlutterUnsafeLinkerFlags = [
 // FIXME: separate settings
 let FlutterUnsafeCCompilerFlags = FlutterUnsafeCxxCompilerFlags
 
+var target: [Target] = []
+
+#if os(Linux)
+target = [
+    .target(
+        name: "CxxFlutterSwift",
+        dependencies: [],
+        cSettings: [
+            .unsafeFlags(FlutterUnsafeCCompilerFlags),
+        ],
+        cxxSettings: [
+            .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
+        ],
+        linkerSettings: [
+            .unsafeFlags(FlutterUnsafeLinkerFlags),
+        ]
+    ),
+    .executableTarget(
+        name: "Counter",
+        dependencies: [
+            .target(name: "FlutterSwift"),
+        ],
+        path: "Examples/counter/swift",
+        cSettings: [
+            .unsafeFlags(FlutterUnsafeCCompilerFlags),
+        ],
+        cxxSettings: [
+            .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
+        ],
+        swiftSettings: [
+            // FIXME: https://github.com/apple/swift-package-manager/issues/6661
+            .interoperabilityMode(.Cxx),
+            .unsafeFlags(["-cxx-interoperability-mode=default"]),
+        ],
+        linkerSettings: [
+            .unsafeFlags(FlutterUnsafeLinkerFlags),
+        ]
+    ),
+]
+#endif
+
 let package = Package(
     name: "FlutterSwift",
     platforms: [
@@ -50,19 +91,6 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "CxxFlutterSwift",
-            dependencies: [],
-            cSettings: [
-                .unsafeFlags(FlutterUnsafeCCompilerFlags),
-            ],
-            cxxSettings: [
-                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
-            ],
-            linkerSettings: [
-                .unsafeFlags(FlutterUnsafeLinkerFlags),
-            ]
-        ),
-        .target(
             name: "FlutterSwift",
             dependencies: [
                 .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
@@ -76,27 +104,6 @@ let package = Package(
                 .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
             ],
             swiftSettings: [.interoperabilityMode(.Cxx)],
-            linkerSettings: [
-                .unsafeFlags(FlutterUnsafeLinkerFlags),
-            ]
-        ),
-        .executableTarget(
-            name: "Counter",
-            dependencies: [
-                .target(name: "FlutterSwift"),
-            ],
-            path: "Examples/counter/swift",
-            cSettings: [
-                .unsafeFlags(FlutterUnsafeCCompilerFlags),
-            ],
-            cxxSettings: [
-                .unsafeFlags(FlutterUnsafeCxxCompilerFlags),
-            ],
-            swiftSettings: [
-                // FIXME: https://github.com/apple/swift-package-manager/issues/6661
-                .interoperabilityMode(.Cxx),
-                .unsafeFlags(["-cxx-interoperability-mode=default"]),
-            ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
@@ -121,7 +128,7 @@ let package = Package(
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
         ),
-    ],
+    ] + target,
     cLanguageStandard: .c17
     // cxxLanguageStandard: .cxx17
 )
