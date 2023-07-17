@@ -19,19 +19,23 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
 
     public init(engine: FlutterDesktopEngineRef) {
         messengerRef = FlutterDesktopEngineGetMessenger(engine)
+        FlutterDesktopMessengerAddRef(messengerRef)
+    }
+
+    deinit {
+        FlutterDesktopMessengerRelease(messengerRef)
     }
 
     private var isAvailable: Bool {
-        // FlutterDesktopMessengerIsAvailable(messengerRef)
-        true
+        FlutterDesktopMessengerIsAvailable(messengerRef)
     }
 
     private func withLockedMessenger<T>(_ block: () throws -> T) throws -> T {
         guard isAvailable else {
             throw FlutterSwiftError.messengerNotAvailable
         }
-        // FlutterDesktopMessengerLock(messengerRef)
-        // defer { FlutterDesktopMessengerUnlock(messengerRef) }
+        FlutterDesktopMessengerLock(messengerRef)
+        defer { FlutterDesktopMessengerUnlock(messengerRef) }
         return try block()
     }
 
