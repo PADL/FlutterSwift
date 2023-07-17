@@ -9,12 +9,12 @@ It's intended to be used on platforms where Swift is available but Objective-C a
 
 Some examples follow.
 
-Note that building a Swift package currently requires Swift 5.9 as some limited use is made of C++ interoperability. If this proves to be a blocking issue, it shouldn't be too difficult to fix.
-
-To build the embedded Linux eaxmples, you'll need a version of the Sony embedder at least at revision 5c86492. I'm yet to implement a proper embedder wrapper, this will require some CMake wizardy to integrate with the Swift Package Manager. In the interim see `Examples/counter/swift/README.md` for some testing notes.
+This repository will build the Sony embedded Linux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself (this is assumed to be in `/opt/elinux/lib`) or a runner. In lieu of a runner, In the interim see `Examples/counter/swift/README.md` for some testing notes.
 
 Initialization
 --------------
+
+macOS:
 
 ```swift
 import FlutterMacOS.FlutterBinaryMessenger
@@ -28,7 +28,35 @@ override func awakeFromNib() {
 }
 ```
 
-On Linux, you will use `FlutterDesktopMessenger`, however this code hasn't been built or tested yet.
+Linux:
+
+```swift
+@main
+enum SomeApp {
+    static func main() {
+        guard CommandLine.arguments.count > 1 else {
+            print("usage: SomeApp [flutter_path]")
+            exit(1)
+        }
+        let dartProject = DartProject(path: CommandLine.arguments[1])
+        let viewProperties = FlutterViewController.ViewProperties(
+            width: 640,
+            height: 480,
+            title: "SomeApp",
+            appId: "com.example.some-app"
+        )
+        let window = FlutterWindow(properties: viewProperties, project: dartProject)
+        guard let window else {
+            debugPrint("failed to initialize window!")
+            exit(2)
+        }
+        let messenger = viewController.engine.messenger!
+        ...
+        window.run()
+    }
+}
+
+```
 
 Message channel
 ---------------
