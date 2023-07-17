@@ -1,13 +1,17 @@
 FlutterSwift
 ============
 
-FlutterSwift is a Swift-native implementation of Flutter platform channels. It is a work in progress, which is to say, it is not debugged yet.
+FlutterSwift is a Swift-native implementation of Flutter platform channels.
 
 It's intended to be used on platforms where Swift is available but Objective-C and AppKit/UIKit are not, for example the [Sony Flutter embedder](https://github.com/sony/flutter-embedded-linux). It also provides an `async/await` API rather than using callbacks and dispatch queues.
 
  `FlutterDesktopMessenger` wraps the API in `flutter_messenger.h`. To allow development on Darwin platforms, `FlutterPlatformMessenger` is also provided which uses the existing platform binary messenger.
 
 Some examples follow.
+
+Note that building a Swift package currently requires Swift 5.9 as some limited use is made of C++ interoperability. If this proves to be a blocking issue, it shouldn't be too difficult to fix.
+
+To build the embedded Linux eaxmples, you'll need a version of the Sony embedder at least at revision 5c86492. I'm yet to implement a proper embedder wrapper, this will require some CMake wizardy to integrate with the Swift Package Manager. In the interim see `Examples/counter/swift/README.md` for some testing notes.
 
 Initialization
 --------------
