@@ -97,7 +97,8 @@ target = [
             ),
             .headerSearchPath("flutter-embedded-linux/src/third_party/rapidjson/include"),
             // FIXME: .cxxLanguageStandard breaks Foundation compile
-            .unsafeFlags(["-std=c++17"]),
+            // FIXME: include path for swift/bridging.h
+            .unsafeFlags(["-I", "/opt/swift/usr/include", "-std=c++17"]),
         ],
         linkerSettings: [
             .unsafeFlags(FlutterUnsafeLinkerFlags),
