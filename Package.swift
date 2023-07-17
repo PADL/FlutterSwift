@@ -19,7 +19,7 @@ let FlutterUnsafeLinkerFlags = [
 let FlutterRoot = "/opt/elinux"
 let FlutterLibPath = "\(FlutterRoot)/lib"
 let FlutterIncludePath = "\(FlutterRoot)/include"
-let FlutterBackend = "x11"
+let FlutterBackend = "wayland"
 let FlutterUnsafeCCompilerFlags = [
     "-I", FlutterIncludePath,
 ]
