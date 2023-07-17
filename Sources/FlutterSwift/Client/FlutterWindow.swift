@@ -52,9 +52,8 @@ public final class FlutterWindow {
     }
 
     public func run() {
-        let runLoop = RunLoop.main
         schedule(after: 0)
-        runLoop.run()
+        RunLoop.main.run()
     }
 }
 #endif
