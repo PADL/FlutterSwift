@@ -1,3 +1,3 @@
 [submodule "Sources/CxxFlutterSwift/flutter-embedded-linux"]
 	path = Sources/CxxFlutterSwift/flutter-embedded-linux
-	url = git@github.com:sony/flutter-embedded-linux
+	url = https://github.com/sony/flutter-embedded-linux
