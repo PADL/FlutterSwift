@@ -28,10 +28,11 @@ public final class FlutterWindow {
         // caller should register plugins before calling run()
     }
 
-    private func scheduleTimer(_ nextInterval: TimeInterval) {
-        let timer = Timer(timeInterval: nextInterval, repeats: false) { [weak self] timer in
-            timer.invalidate()
-            guard let self else { return }
+    private func schedule(after nextInterval: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + nextInterval) { [weak self] in
+            guard let self else {
+                return
+            }
 
             var waitDurationNS = viewController.engine.processMessages()
             let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
@@ -40,17 +41,19 @@ public final class FlutterWindow {
             if frameDurationNS < waitDurationNS {
                 waitDurationNS = frameDurationNS
             }
-            if viewController.view.dispatchEvent() {
-                self.scheduleTimer(TimeInterval(waitDurationNS / NSEC_PER_SEC))
-            }
-        }
 
-        RunLoop.main.add(timer, forMode: .common)
+            guard viewController.view.dispatchEvent() else {
+                return
+            }
+
+            // should be tail call optimised
+            self.schedule(after: TimeInterval(waitDurationNS / NSEC_PER_SEC))
+        }
     }
 
     public func run() {
         let runLoop = RunLoop.main
-        scheduleTimer(0)
+        schedule(after: 0)
         runLoop.run()
     }
 }
