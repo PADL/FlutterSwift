@@ -47,7 +47,7 @@ public final class FlutterEngine {
         let runSucceeded = FlutterDesktopEngineRun(engine, entryPoint)
         if !runSucceeded {
             debugPrint("Failed to start engine")
-        } 
+        }
         hasBeenRun = true
         return runSucceeded
     }

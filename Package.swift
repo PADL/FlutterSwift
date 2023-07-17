@@ -101,5 +101,5 @@ let package = Package(
         ),
     ],
     cLanguageStandard: .c17
-    //cxxLanguageStandard: .cxx17
+    // cxxLanguageStandard: .cxx17
 )

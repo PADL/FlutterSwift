@@ -71,7 +71,10 @@ public class FlutterViewController {
             cViewProperties.title = title
             viewProperties.appId?.withCString { appId in
                 cViewProperties.app_id = appId
-                controller = FlutterDesktopViewControllerCreate(&cViewProperties, engine.relinquishEngine())
+                controller = FlutterDesktopViewControllerCreate(
+                    &cViewProperties,
+                    engine.relinquishEngine()
+                )
                 if let controller {
                     view = FlutterView(FlutterDesktopViewControllerGetView(controller))
                 }
