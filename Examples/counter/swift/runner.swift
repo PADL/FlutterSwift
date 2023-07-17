@@ -99,7 +99,7 @@ struct Counter {
             debugPrint("failed to initialize window!")
             exit(2)
         }
-        let manager = ChannelManager(window.viewController)
+        let _ = ChannelManager(window.viewController)
         window.run()
     }
 }
