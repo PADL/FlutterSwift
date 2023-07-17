@@ -4,7 +4,13 @@
 
 #ifndef __APPLE__
 
+#include <assert.h>
 #include <stdlib.h>
+
+#include <map>
+#include <mutex>
+#include <string>
+#include <thread>
 
 // FIXME: how can we include <Block/Block.h>
 extern "C" {
@@ -38,12 +44,15 @@ bool FlutterDesktopMessengerSendWithReplyBlock(
                                                 replyBlock ? _Block_copy(replyBlock) : nullptr);
 }
 
-// +0 on block because it is called multiple times and we assume it is long-lived
+static std::map<std::string, const void *>
+flutterSwiftCallbacks{};
+static std::mutex
+flutterSwiftCallbacksMutex;
 
 static void FlutterDesktopMessageCallbackThunk(
     FlutterDesktopMessengerRef messenger,
     const FlutterDesktopMessage *message,
-    void *user_data) {
+    void* user_data) {
     auto block = (FlutterDesktopMessageCallbackBlock)user_data;
     block(messenger, message);
 }
@@ -52,10 +61,16 @@ void FlutterDesktopMessengerSetCallbackBlock(
     FlutterDesktopMessengerRef messenger,
     const char* _Nonnull channel,
     FlutterDesktopMessageCallbackBlock callbackBlock) {
-    return FlutterDesktopMessengerSetCallback(messenger,
-                                              channel,
-                                              callbackBlock ? FlutterDesktopMessageCallbackThunk : nullptr,
-                                              callbackBlock);
+    std::lock_guard<std::mutex> guard(flutterSwiftCallbacksMutex);
+    if (callbackBlock != nullptr) {
+        flutterSwiftCallbacks[channel] = _Block_copy(callbackBlock);
+        FlutterDesktopMessengerSetCallback(messenger, channel, FlutterDesktopMessageCallbackThunk, callbackBlock);
+    } else {
+        auto savedCallbackBlock = flutterSwiftCallbacks[channel];
+        flutterSwiftCallbacks.erase(channel);
+        _Block_release(savedCallbackBlock);
+        FlutterDesktopMessengerSetCallback(messenger, channel, nullptr, nullptr);
+    }
 }
 
 #endif /* !__APPLE__ */
