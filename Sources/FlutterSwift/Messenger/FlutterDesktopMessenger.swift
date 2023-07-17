@@ -26,13 +26,13 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         true
     }
 
-    private func withLockedMessenger<T>(_ block: () -> T) rethrows {
+    private func withLockedMessenger<T>(_ block: () throws -> T) throws -> T {
         guard isAvailable else {
             throw FlutterSwiftError.messengerNotAvailable
         }
         // FlutterDesktopMessengerLock(messengerRef)
-        // defer { FlutterDesktopMessengerUnlock(messengerRef)
-        return block()
+        // defer { FlutterDesktopMessengerUnlock(messengerRef) }
+        return try block()
     }
 
     private func withPriority<Value>(
@@ -59,7 +59,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         message: Data?,
         replyBlock: ((Data?) -> ())?
     ) throws {
-        withLockedMessenger {
+        try withLockedMessenger {
             let replyThunk: FlutterDesktopBinaryReplyBlock?
 
             if let replyBlock {
@@ -168,7 +168,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
     ) throws -> FlutterBinaryMessengerConnection {
-        withLockedMessenger {
+        try withLockedMessenger {
             guard let handler else {
                 removeMessengerHandler(for: channel)
                 return 0
@@ -187,7 +187,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
-        withLockedMessenger {
+        try withLockedMessenger {
             guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
             else {
                 return
