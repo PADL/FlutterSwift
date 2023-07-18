@@ -50,7 +50,7 @@ public protocol FlutterPluginRegistry {
 }
 
 public class FlutterDesktopPluginRegistrar {
-    private var registrar: FlutterDesktopPluginRegistrarRef!
+    var registrar: FlutterDesktopPluginRegistrarRef!
 
     public init(
         engine: FlutterEngine,
@@ -70,17 +70,22 @@ public class FlutterDesktopPluginRegistrar {
         let view = FlutterDesktopPluginRegistrarGetView(registrar)
         return FlutterView(view)
     }
+
+    public var textureRegistrar: FlutterDesktopTextureRegistrar {
+        FlutterDesktopTextureRegistrar(plugin: self)
+    }
 }
 
 public class FlutterDesktopTextureRegistrar {
     private let registrar: FlutterDesktopTextureRegistrarRef
 
-    public init(
-        engine: FlutterEngine
-    ) {
+    public init(engine: FlutterEngine) {
         self.registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
     }
 
+    init(plugin: FlutterDesktopPluginRegistrar) {
+        self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(plugin.registrar)
+    }
 }
 
 #endif
