@@ -1,3 +1,7 @@
+// Copyright 2023 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import FlutterSwift
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
