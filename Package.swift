@@ -141,6 +141,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "0.1.0"),
         .package(url: "https://github.com/Flight-School/AnyCodable", from: "0.0.0"),
+        .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
     ],
     targets: [
         .target(
@@ -149,6 +150,7 @@ let package = Package(
                 .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
                 "AnyCodable",
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+                "AsyncExtensions",
             ],
             cSettings: [
             ],

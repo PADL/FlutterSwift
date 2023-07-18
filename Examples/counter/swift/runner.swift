@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import AsyncAlgorithms
 import FlutterSwift
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
@@ -9,6 +10,7 @@ private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 class ChannelManager {
     typealias Arguments = FlutterNull
     typealias Event = Int32
+    typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
 
     var flutterBasicMessageChannel: FlutterBasicMessageChannel?
     var flutterEventChannel: FlutterEventChannel?
@@ -19,7 +21,7 @@ class ChannelManager {
 
     let magicCookie = 0xCAFE_BABE
 
-    var flutterEventStream = FlutterEventStream<Event>()
+    var flutterEventStream = Stream()
 
     private func messageHandler(_ arguments: String?) async -> Int? {
         debugPrint("Received message \(String(describing: arguments))")
@@ -28,7 +30,7 @@ class ChannelManager {
 
     @MainActor
     private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
-        flutterEventStream
+        flutterEventStream.eraseToAnyAsyncSequence()
     }
 
     @MainActor

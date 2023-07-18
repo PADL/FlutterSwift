@@ -3,12 +3,13 @@
 // found in the LICENSE file.
 
 import AsyncAlgorithms
+import AsyncExtensions
 import Foundation
 
 /**
  * An asynchronous event stream.
  */
-public typealias FlutterEventStream<Event: Codable> = AsyncThrowingChannel<Event?, FlutterError>
+public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 
 /**
  * A channel for communicating with the Flutter side using event streams.
