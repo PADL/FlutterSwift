@@ -6,8 +6,6 @@ import PackageDescription
 #if os(macOS)
 let FlutterRoot = "/opt/flutter"
 let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64-release"
-let FlutterIncludePath = ""
-let FlutterBackend = ""
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
@@ -15,14 +13,22 @@ let FlutterUnsafeLinkerFlags = [
 ]
 #elseif os(Linux)
 
-let FlutterRoot = "/opt/elinux"
-let FlutterLibPath = "\(FlutterRoot)/lib"
-let FlutterIncludePath = "\(FlutterRoot)/include"
-let FlutterBackend = "wayland"
-// FIXME: we should download this as a binary artifact or perhaps check it in directly
+// FIXME: this is clearly not right
+let FlutterRoot = ".build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle"
+#if arch(arm64)
+let FlutterArch = "arm64"
+#elseif arch(x86_64)
+let FlutterArch = "x64"
+#else
+#error("Unknown architecture")
+#endif
+let FlutterLibPath = "\(FlutterRoot)/elinux-\(FlutterArch)-debug"
+let FlutterAltLibPath = "/opt/flutter-elinux/lib"
 let FlutterUnsafeLinkerFlags: [String] = [
     "-Xlinker", "-L", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
+    "-Xlinker", "-L", "-Xlinker", FlutterAltLibPath,
+    "-Xlinker", "-rpath", "-Xlinker", FlutterAltLibPath,
     "-Xlinker", "-l", "-Xlinker", "flutter_engine",
 ]
 #endif
@@ -31,6 +37,10 @@ var target: [Target] = []
 
 #if os(Linux)
 target = [
+    .binaryTarget(
+        name: "CFlutterEngine",
+        path: "flutter-engine.artifactbundle.zip"
+    ),
     .systemLibrary(
         name: "CEGL",
         pkgConfig: "egl"
@@ -108,6 +118,7 @@ target = [
         name: "Counter",
         dependencies: [
             .target(name: "FlutterSwift"),
+            "CFlutterEngine",
         ],
         path: "Examples/counter/swift",
         exclude: [
@@ -191,18 +202,3 @@ let package = Package(
     cLanguageStandard: .c17
     // cxxLanguageStandard: .cxx17
 )
-
-#if false
-let SonyFlutterEngineBuild =
-    "https://github.com/sony/flutter-embedded-linux/releases/download/cdbeda788a"
-#if arch(x86_64)
-let SonyFlutterEngineArch = "x64"
-let SonyFlutterEngineChecksum = "8abd82b8710a32b5181db6f40e453474f7004c62735838567bbd2ee7328ca7fd"
-#elseif arch(arm64)
-let SonyFlutterEngineArch = "arm64"
-let SonyFlutterEngineChecksum = "0fcdb6de88e4a3848250d699ba46a0b691e9628d2243b6eeed7caf8267b7ba4a"
-#endif
-let SonyFlutterEngineConfig = "debug"
-let SonyFlutterEngineURL =
-    "\(SonyFlutterEngineBuild)/elinux-\(SonyFlutterEngineArch)-\(SonyFlutterEngineConfig).zip"
-#endif
