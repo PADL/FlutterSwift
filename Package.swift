@@ -167,7 +167,9 @@ let package = Package(
             ],
             cxxSettings: [
                 .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src"),
-                .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"),
+                .headerSearchPath(
+                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"
+                ),
                 .headerSearchPath(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
                 ),
