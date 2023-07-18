@@ -1,8 +1,8 @@
 .DS_Store
 /.build
 /Packages
-/*.xcodeproj
 xcuserdata/
+FlutterSwift.xcodeproj/project.xcworkspace
 DerivedData/
 .swiftpm/xcode/
 Package.resolved
