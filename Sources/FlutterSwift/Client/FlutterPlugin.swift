@@ -50,28 +50,30 @@ public protocol FlutterPluginRegistry {
 }
 
 public class FlutterDesktopPluginRegistrar {
-    var registrar: FlutterDesktopPluginRegistrarRef!
+    var registrar: FlutterDesktopPluginRegistrarRef?
 
     public init(
         engine: FlutterEngine,
         _ pluginName: String
     ) {
         self.registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
-        FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(self.registrar, { _ in
+        FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(self.registrar!, { _ in
             self.registrar = nil
         })
     }
 
-    public var messenger: FlutterDesktopMessenger {
-        FlutterDesktopMessenger(messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar))
+    public var messenger: FlutterDesktopMessenger? {
+        guard let registrar else { return nil }
+        return FlutterDesktopMessenger(messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar))
     }
 
-    public var view: FlutterView {
+    public var view: FlutterView? {
+        guard let registrar else { return nil }
         let view = FlutterDesktopPluginRegistrarGetView(registrar)
         return FlutterView(view)
     }
 
-    public var textureRegistrar: FlutterDesktopTextureRegistrar {
+    public var textureRegistrar: FlutterDesktopTextureRegistrar? {
         FlutterDesktopTextureRegistrar(plugin: self)
     }
 }
@@ -83,8 +85,9 @@ public class FlutterDesktopTextureRegistrar {
         self.registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
     }
 
-    init(plugin: FlutterDesktopPluginRegistrar) {
-        self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(plugin.registrar)
+    init?(plugin: FlutterDesktopPluginRegistrar) {
+        guard let registrar = plugin.registrar else { return nil }
+        self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
     }
 }
 
