@@ -8,7 +8,7 @@ import Foundation
 /**
  * An asynchronous event stream.
  */
-public typealias FlutterEventStream<Event: Codable> = AsyncThrowingChannel<Event?, Error>
+public typealias FlutterEventStream<Event: Codable> = AsyncThrowingChannel<Event?, FlutterError>
 
 /**
  * A channel for communicating with the Flutter side using event streams.
