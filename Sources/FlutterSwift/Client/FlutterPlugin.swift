@@ -62,12 +62,14 @@ public class FlutterDesktopPluginRegistrar {
         })
     }
 
-/*
+    public var messenger: FlutterDesktopMessenger {
+        FlutterDesktopMessenger(messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar))
+    }
+
     public var view: FlutterView {
         let view = FlutterDesktopPluginRegistrarGetView(registrar)
         return FlutterView(view)
     }
-*/
 }
 
 public class FlutterDesktopTextureRegistrar {

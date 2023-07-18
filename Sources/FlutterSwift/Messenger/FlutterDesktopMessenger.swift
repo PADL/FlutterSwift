@@ -16,27 +16,32 @@ struct FlutterEngineHandlerInfo {
 public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     private var messengerHandlers = [String: FlutterEngineHandlerInfo]()
     private var currentMessengerConnection: FlutterBinaryMessengerConnection = 0
-    private var messengerRef: FlutterDesktopMessengerRef
+    private var messenger: FlutterDesktopMessengerRef
+
+    init(messenger: FlutterDesktopMessengerRef) {
+        self.messenger = messenger
+        FlutterDesktopMessengerAddRef(messenger)
+    }
 
     init(engine: FlutterDesktopEngineRef) {
-        messengerRef = FlutterDesktopEngineGetMessenger(engine)
-        FlutterDesktopMessengerAddRef(messengerRef)
+        messenger = FlutterDesktopEngineGetMessenger(engine)
+        FlutterDesktopMessengerAddRef(messenger)
     }
 
     deinit {
-        FlutterDesktopMessengerRelease(messengerRef)
+        FlutterDesktopMessengerRelease(messenger)
     }
 
     private var isAvailable: Bool {
-        FlutterDesktopMessengerIsAvailable(messengerRef)
+        FlutterDesktopMessengerIsAvailable(messenger)
     }
 
     private func withLockedMessenger<T>(_ block: () throws -> T) throws -> T {
         guard isAvailable else {
             throw FlutterSwiftError.messengerNotAvailable
         }
-        FlutterDesktopMessengerLock(messengerRef)
-        defer { FlutterDesktopMessengerUnlock(messengerRef) }
+        FlutterDesktopMessengerLock(messenger)
+        defer { FlutterDesktopMessengerUnlock(messenger) }
         return try block()
     }
 
@@ -68,7 +73,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
 
             guard withUnsafeBytes(of: message, { bytes in
                 FlutterDesktopMessengerSendWithReplyBlock(
-                    messengerRef,
+                    messenger,
                     channel,
                     bytes.count > 0 ? bytes.baseAddress : nil,
                     bytes.count,
@@ -103,7 +108,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     private func onDesktopMessage(
-        _ messengerRef: FlutterDesktopMessengerRef,
+        _ messenger: FlutterDesktopMessengerRef,
         _ message: UnsafePointer<FlutterDesktopMessage>
     ) {
         let message = message.pointee
@@ -120,7 +125,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             if message.response_handle != nil {
                 withUnsafeBytes(of: response) {
                     FlutterDesktopMessengerSendResponse(
-                        self.messengerRef,
+                        self.messenger,
                         message.response_handle,
                         $0.baseAddress,
                         response?.count ?? 0
@@ -147,7 +152,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
 
     private func removeMessengerHandler(for channel: String) {
         messengerHandlers.removeValue(forKey: channel)
-        FlutterDesktopMessengerSetCallbackBlock(messengerRef, channel, nil)
+        FlutterDesktopMessengerSetCallbackBlock(messenger, channel, nil)
     }
 
     public func setMessageHandler(
@@ -168,7 +173,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
                 priority: priority
             )
             messengerHandlers[channel] = handlerInfo
-            FlutterDesktopMessengerSetCallbackBlock(messengerRef, channel, onDesktopMessage)
+            FlutterDesktopMessengerSetCallbackBlock(messenger, channel, onDesktopMessage)
             return currentMessengerConnection
         }
     }
