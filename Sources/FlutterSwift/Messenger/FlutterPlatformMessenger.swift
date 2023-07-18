@@ -51,16 +51,13 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         message: Data?,
         priority: TaskPriority?
     ) async throws -> Data? {
-        let asyncChannel = AsyncChannel<Data?>()
-
-        platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
-            Task(priority: priority) {
-                await asyncChannel.send(reply)
-                asyncChannel.finish()
+        try await withPriority(priority) {
+            try await withCheckedThrowingContinuation {
+                platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
+                    reply
+                }
             }
         }
-        var iterator = asyncChannel.makeAsyncIterator()
-        return await iterator.next()!
     }
 
     public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {

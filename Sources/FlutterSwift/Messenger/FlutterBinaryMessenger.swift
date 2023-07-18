@@ -37,3 +37,24 @@ public protocol FlutterBinaryMessenger {
     func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
     func cleanUp(connection: FlutterBinaryMessengerConnection) throws
 }
+
+extension FlutterBinaryMessenger {
+    func withPriority<Value>(
+        _ priority: TaskPriority?,
+        _ block: @escaping () async throws -> Value
+    ) async throws -> Value {
+        if let priority {
+            let task = Task<Value, Error>(priority: priority) { @MainActor in
+                try await block()
+            }
+            switch await task.result {
+            case let .success(value):
+                return value
+            case let .failure(error):
+                throw error
+            }
+        } else {
+            return try await block()
+        }
+    }
+}
