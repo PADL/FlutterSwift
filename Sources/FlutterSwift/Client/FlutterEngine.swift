@@ -7,7 +7,7 @@
 import CxxFlutterSwift
 
 public final class FlutterEngine {
-    private var engine: FlutterDesktopEngineRef! // strong or weak ref
+    var engine: FlutterDesktopEngineRef! // strong or weak ref
     private var messenger_: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false

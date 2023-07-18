@@ -49,4 +49,36 @@ public protocol FlutterPluginRegistry {
     func valuePublishedByPlugin(_ pluginKey: String) -> Any?
 }
 
+public class FlutterDesktopPluginRegistrar {
+    private var registrar: FlutterDesktopPluginRegistrarRef!
+
+    public init(
+        engine: FlutterEngine,
+        _ pluginName: String
+    ) {
+        self.registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
+        FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(self.registrar, { _ in
+            self.registrar = nil
+        })
+    }
+
+/*
+    public var view: FlutterView {
+        let view = FlutterDesktopPluginRegistrarGetView(registrar)
+        return FlutterView(view)
+    }
+*/
+}
+
+public class FlutterDesktopTextureRegistrar {
+    private let registrar: FlutterDesktopTextureRegistrarRef
+
+    public init(
+        engine: FlutterEngine
+    ) {
+        self.registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
+    }
+
+}
+
 #endif

@@ -11,6 +11,7 @@
 
 #include <flutter_messenger.h>
 #include <flutter_elinux.h>
+#include <flutter_plugin_registrar.h>
 
 // FIXME: when C++17 support is working, import this to get native ++ reference counting
 // #include <flutter_elinux_state.h>
@@ -19,9 +20,9 @@
 extern "C" {
 #endif
 
-// Returns the messenger associated with the engine.
-FLUTTER_EXPORT FlutterDesktopMessengerRef _Nonnull
-FlutterDesktopEngineGetMessenger(_Nonnull FlutterDesktopEngineRef engine);
+// FIXME: why is there no header for this?
+FLUTTER_EXPORT FlutterDesktopViewRef _Nonnull
+FlutterDesktopPluginRegistrarGetView(_Nonnull FlutterDesktopPluginRegistrarRef registrar);
 
 typedef void (^FlutterDesktopBinaryReplyBlock)(
     const uint8_t* _Nullable data,
@@ -42,6 +43,17 @@ FLUTTER_EXPORT void FlutterDesktopMessengerSetCallbackBlock(
     _Nonnull FlutterDesktopMessengerRef messenger,
     const char* _Nonnull channel,
     _Nullable FlutterDesktopMessageCallbackBlock callbackBlock);
+
+typedef void (^FlutterDesktopMessageCallbackBlock)(
+    _Nonnull FlutterDesktopMessengerRef,
+    const FlutterDesktopMessage *_Nonnull);
+
+typedef void (^FlutterDesktopOnPluginRegistrarDestroyedBlock)(
+    _Nonnull FlutterDesktopPluginRegistrarRef);
+
+FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(
+    _Nonnull FlutterDesktopPluginRegistrarRef registrar,
+    _Nonnull FlutterDesktopOnPluginRegistrarDestroyedBlock callbackBlock);
 
 #ifdef __cplusplus
 }
