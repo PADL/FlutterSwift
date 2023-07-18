@@ -52,7 +52,7 @@ class ChannelManager {
     }
 
     init(_ viewController: FlutterViewController) {
-        let messenger = viewController.engine.messenger!
+        let messenger = viewController.engine.messenger
 
         flutterBasicMessageChannel = FlutterBasicMessageChannel(
             name: "com.padl.example",

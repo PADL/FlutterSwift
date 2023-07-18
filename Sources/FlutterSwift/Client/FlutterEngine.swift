@@ -8,14 +8,14 @@ import CxxFlutterSwift
 
 public final class FlutterEngine {
     private var engine: FlutterDesktopEngineRef! // strong or weak ref
-    public private(set) var messenger: FlutterDesktopMessenger?
+    private var messenger_: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false
 
     public init?(project: DartProject) {
         var properties = FlutterDesktopEngineProperties()
 
-        debugPrint("Initializing Flutter engine with assets path '\(project.assetsPath)'")
+        debugPrint("Initializing Flutter engine with path '\(project)'")
 
         project.assetsPath.withWideChars { assetsPath in
             properties.assets_path = assetsPath
@@ -29,7 +29,7 @@ public final class FlutterEngine {
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
-                            self.messenger = FlutterDesktopMessenger(engine: self.engine)
+                            self.messenger_ = FlutterDesktopMessenger(engine: self.engine)
                         }
                     }
                 }
@@ -39,6 +39,13 @@ public final class FlutterEngine {
 
     deinit {
         shutDown()
+    }
+
+    // note we can't use public private(set) because we need the type to be FlutterDesktopMessenger!
+    // in order for callbacks to work (otherwise self must be first initialized). But we want to
+    // present a non-optional type to callers.
+    public var messenger: FlutterDesktopMessenger {
+        messenger_
     }
 
     public func run(entryPoint: String? = nil) -> Bool {
