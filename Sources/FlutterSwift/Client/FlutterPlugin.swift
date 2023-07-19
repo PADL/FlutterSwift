@@ -22,9 +22,12 @@ public protocol FlutterPlugin {
 public extension FlutterPlugin {
     static func register(with registrar: FlutterPluginRegistrar) async throws {
         let plugin = Self()
-        let channel = FlutterMethodChannel(name: registrar.pluginKey, binaryMessenger: registrar.binaryMessenger!)
+        let channel = FlutterMethodChannel(
+            name: registrar.pluginKey,
+            binaryMessenger: registrar.binaryMessenger!
+        )
         try await registrar.addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: channel)
-     }
+    }
 }
 
 public extension FlutterPlugin {
