@@ -122,6 +122,7 @@ public final class FlutterViewController {
     }
 
     deinit {
+        self.engine.viewController = nil
         FlutterDesktopViewControllerDestroy(controller)
     }
 }

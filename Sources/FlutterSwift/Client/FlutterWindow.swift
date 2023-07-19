@@ -7,9 +7,8 @@
 import CxxFlutterSwift
 import Foundation
 
-// FIXME: these don't appear to be available on non-Darwin platforms
-fileprivate var NSEC_PER_MSEC: UInt64 = 1_000_000
-fileprivate var NSEC_PER_SEC: UInt64 = 1_000_000_000
+fileprivate var NanosecondsPerMillisecond: UInt64 = 1_000_000
+fileprivate var NanosecondsPerSecond: UInt64 = 1_000_000_000
 
 public struct FlutterWindow {
     public let viewController: FlutterViewController
@@ -32,7 +31,7 @@ public struct FlutterWindow {
         DispatchQueue.main.asyncAfter(deadline: .now() + nextInterval) {
             var waitDurationNS = viewController.engine.processMessages()
             let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
-                NSEC_PER_MSEC
+                NanosecondsPerMillisecond
 
             if frameDurationNS < waitDurationNS {
                 waitDurationNS = frameDurationNS
@@ -43,7 +42,7 @@ public struct FlutterWindow {
             }
 
             // should be tail call optimised
-            self.schedule(after: TimeInterval(waitDurationNS / NSEC_PER_SEC))
+            self.schedule(after: TimeInterval(waitDurationNS / NanosecondsPerSecond))
         }
     }
 

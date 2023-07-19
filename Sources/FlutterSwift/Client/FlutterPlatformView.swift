@@ -23,8 +23,6 @@ public protocol FlutterPlatformViewFactory {
         -> FlutterPlatformView?
 }
 
-let kChannelName = "flutter/platform_views"
-
 enum FlutterPlatformViewMethod: String {
     case create
     case dispose
@@ -46,34 +44,29 @@ enum FlutterPlatformViewKey: String, CaseIterable {
     case params
 }
 
-public class FlutterPlatformViewsPlugin {
-    let channel: FlutterMethodChannel
+public class FlutterPlatformViewsPlugin: FlutterPlugin {
     var viewFactories = [String: FlutterPlatformViewFactory]()
     var platformViews = [Int: FlutterPlatformView]()
     var currentViewId: Int = -1
 
-    public init(binaryMessenger: FlutterBinaryMessenger) {
-        channel = FlutterMethodChannel(name: kChannelName, binaryMessenger: binaryMessenger)
-        Task {
-            // FIXME: what if this fails?
-            try? await self.channel.setMethodCallHandler(handleMethodCall)
-        }
-    }
+    public required init() {}
 
-    func handleMethodCall(call: FlutterMethodCall<AnyCodable>) async throws -> AnyCodable? {
+    public func handleMethod(call: FlutterMethodCall<AnyCodable>) throws -> AnyCodable? {
         guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
             throw FlutterSwiftError.methodNotImplemented
         }
 
         switch methodName {
         case .create:
-            return try await create(call.arguments)
+            return try create(call.arguments)
         case .dispose:
-            return try await dispose(call.arguments)
+            return try dispose(call.arguments)
         default:
             throw FlutterSwiftError.methodNotImplemented
         }
     }
+
+    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {}
 
     public func register(viewType: String, factory: FlutterPlatformViewFactory) {
         guard !viewFactories.keys.contains(viewType) else {
@@ -83,7 +76,7 @@ public class FlutterPlatformViewsPlugin {
         viewFactories[viewType] = factory
     }
 
-    func create(_ arguments: AnyCodable?) async throws -> AnyCodable? {
+    func create(_ arguments: AnyCodable?) throws -> AnyCodable? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
@@ -126,7 +119,7 @@ public class FlutterPlatformViewsPlugin {
         return nil
     }
 
-    func dispose(_ arguments: AnyCodable?) async throws -> AnyCodable? {
+    func dispose(_ arguments: AnyCodable?) throws -> AnyCodable? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }

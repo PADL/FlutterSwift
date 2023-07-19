@@ -7,37 +7,48 @@
 import CxxFlutterSwift
 import Foundation
 
-public typealias FlutterPluginRegistrantCallback = (FlutterPluginRegistry) -> ()
-
 public protocol FlutterPlugin {
     associatedtype Arguments: Codable
     associatedtype Result: Codable
 
     init()
 
-    func handleMethod(call: FlutterMethodCall<Arguments>) async throws -> Result
+    func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result
     func detachFromEngine(for registrar: FlutterPluginRegistrar)
 }
 
 public extension FlutterPlugin {
-    static func register(with registrar: FlutterPluginRegistrar) async throws {
+    static func register(
+        with registrar: FlutterPluginRegistrar,
+        on channel: FlutterMethodChannel? = nil
+    ) throws -> Self {
         let plugin = Self()
-        let channel = FlutterMethodChannel(
-            name: registrar.pluginKey,
-            binaryMessenger: registrar.binaryMessenger!
-        )
-        try await registrar.addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: channel)
+        let _channel: FlutterMethodChannel
+
+        if let channel {
+            _channel = channel
+        } else {
+            _channel = FlutterMethodChannel(
+                name: registrar.pluginKey,
+                binaryMessenger: registrar.binaryMessenger!
+            )
+        }
+
+        try (registrar as! FlutterDesktopPluginRegistrar)
+            .addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: _channel)
+
+        return plugin
     }
 }
 
-public extension FlutterPlugin {
+extension FlutterPlugin {
     func eraseToAnyFlutterPlugin() -> AnyFlutterPlugin<Arguments, Result> {
         AnyFlutterPlugin(self)
     }
 }
 
-public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlugin {
-    let _handleMethod: (FlutterMethodCall<Arguments>) async throws -> Result
+struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlugin {
+    let _handleMethod: (FlutterMethodCall<Arguments>) throws -> Result
     let _detachFromEngine: (FlutterPluginRegistrar) -> ()
 
     public init() {
@@ -46,16 +57,12 @@ public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlug
     }
 
     init<T: FlutterPlugin>(_ plugin: T) where T.Arguments == Arguments, T.Result == Result {
-        _handleMethod = { try await plugin.handleMethod(call: $0) }
+        _handleMethod = { try plugin.handleMethod(call: $0) }
         _detachFromEngine = { plugin.detachFromEngine(for: $0) }
     }
 
-    public static func register(with registrar: FlutterPluginRegistrar) {}
-
-    public static func setPluginRegistrantCallback(_ callback: FlutterPluginRegistrantCallback) {}
-
-    public func handleMethod(call: FlutterMethodCall<Arguments>) async throws -> Result {
-        try await _handleMethod(call)
+    public func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result {
+        try _handleMethod(call)
     }
 
     public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
@@ -73,10 +80,6 @@ public protocol FlutterPluginRegistrar {
         with factoryId: String
     ) throws
     func publish(_ value: Any)
-    func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
-        _ delegate: AnyFlutterPlugin<Arguments, Result>,
-        on channel: FlutterMethodChannel
-    ) async throws
     func lookupKey(for asset: String) -> String?
     func lookupKey(for asset: String, from package: String) -> String?
 }
@@ -132,13 +135,15 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         engine.pluginPublications[pluginKey] = value
     }
 
-    public func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
+    func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
         _ delegate: AnyFlutterPlugin<Arguments, Result>,
         on channel: FlutterMethodChannel
-    ) async throws {
+    ) throws {
         detachFromEngine = delegate._detachFromEngine
-        try await channel.setMethodCallHandler { call in
-            try await delegate.handleMethod(call: call)
+        Task { @MainActor in
+            try await channel.setMethodCallHandler { call in
+                try delegate.handleMethod(call: call)
+            }
         }
     }
 

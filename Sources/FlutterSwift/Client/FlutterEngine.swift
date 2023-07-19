@@ -18,7 +18,7 @@ public final class FlutterEngine: FlutterPluginRegistry {
     public init?(project: DartProject) {
         var properties = FlutterDesktopEngineProperties()
 
-        debugPrint("Initializing Flutter engine with path '\(project)'")
+        debugPrint("Initializing Flutter engine with \(project)")
 
         self.project = project
 
@@ -46,11 +46,6 @@ public final class FlutterEngine: FlutterPluginRegistry {
     }
 
     deinit {
-        for key in pluginPublications.keys {
-            if let registrar = registrar(for: key) as? FlutterDesktopPluginRegistrar {
-                registrar.detachFromEngine?(registrar)
-            }
-        }
         shutDown()
     }
 
@@ -75,6 +70,12 @@ public final class FlutterEngine: FlutterPluginRegistry {
     }
 
     public func shutDown() {
+        for key in pluginPublications.keys {
+            if let registrar = registrar(for: key) as? FlutterDesktopPluginRegistrar {
+                registrar.detachFromEngine?(registrar)
+            }
+        }
+        pluginPublications.removeAll()
         if let engine, ownsEngine {
             FlutterDesktopEngineDestroy(engine)
         }

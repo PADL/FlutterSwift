@@ -6,26 +6,21 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-// FIXME: what should this be?
-let kPlatformViewsPlugin = "dev.flutter.elinux.platformViewsPlugin"
+let kChannelName = "flutter/platform_views"
 
 public struct FlutterView {
     let view: FlutterDesktopViewRef
-    var internalPluginRegistrar: FlutterPluginRegistrar?
+    var platformViewsPluginRegistrar: FlutterPluginRegistrar?
     var platformViewsHandler: FlutterPlatformViewsPlugin?
     var viewController: FlutterViewController? {
         didSet {
             if let viewController {
-                internalPluginRegistrar = viewController.engine.registrar(for: kPlatformViewsPlugin)
-                platformViewsHandler = FlutterPlatformViewsPlugin(
-                    binaryMessenger: viewController
-                        .binaryMessenger
-                )
+                platformViewsPluginRegistrar = viewController.engine.registrar(for: kChannelName)
+                platformViewsHandler = try? FlutterPlatformViewsPlugin.register(with: platformViewsPluginRegistrar!)
                 viewController.view = self
             } else {
-                internalPluginRegistrar = nil
+                platformViewsPluginRegistrar = nil
                 platformViewsHandler = nil
-                // FIXME: what to do with old view controller?
             }
         }
     }
