@@ -107,7 +107,7 @@ public final class FlutterViewController {
             return nil
         }
         self.controller = controller
-        self.view = FlutterView(FlutterDesktopViewControllerGetView(self.controller))
+        view = FlutterView(FlutterDesktopViewControllerGetView(self.controller))
         self.engine.viewController = self // weak reference
     }
 
