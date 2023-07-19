@@ -13,11 +13,18 @@ public protocol FlutterPlugin {
     associatedtype Arguments: Codable
     associatedtype Result: Codable
 
-    static func register(with registrar: FlutterPluginRegistrar)
-    static func setPluginRegistrantCallback(_ callback: FlutterPluginRegistrantCallback)
+    init()
 
     func handleMethod(call: FlutterMethodCall<Arguments>) async throws -> Result
     func detachFromEngine(for registrar: FlutterPluginRegistrar)
+}
+
+public extension FlutterPlugin {
+    static func register(with registrar: FlutterPluginRegistrar) async throws {
+        let plugin = Self()
+        let channel = FlutterMethodChannel(name: registrar.pluginKey, binaryMessenger: registrar.binaryMessenger!)
+        try await registrar.addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: channel)
+     }
 }
 
 public extension FlutterPlugin {
@@ -29,6 +36,11 @@ public extension FlutterPlugin {
 public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlugin {
     let _handleMethod: (FlutterMethodCall<Arguments>) async throws -> Result
     let _detachFromEngine: (FlutterPluginRegistrar) -> ()
+
+    public init() {
+        _handleMethod = { _ in fatalError() }
+        _detachFromEngine = { _ in }
+    }
 
     init<T: FlutterPlugin>(_ plugin: T) where T.Arguments == Arguments, T.Result == Result {
         _handleMethod = { try await plugin.handleMethod(call: $0) }
@@ -49,6 +61,7 @@ public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlug
 }
 
 public protocol FlutterPluginRegistrar {
+    var pluginKey: String { get }
     var binaryMessenger: FlutterBinaryMessenger? { get }
     var view: FlutterView? { get }
 
@@ -73,8 +86,8 @@ public protocol FlutterPluginRegistry {
 
 public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     private var engine: FlutterEngine
-    private var pluginKey: String
     var registrar: FlutterDesktopPluginRegistrarRef?
+    public let pluginKey: String
 
     public init(
         engine: FlutterEngine,
