@@ -46,6 +46,11 @@ public final class FlutterEngine: FlutterPluginRegistry {
     }
 
     deinit {
+        for key in pluginPublications.keys {
+            if let registrar = registrar(for: key) as? FlutterDesktopPluginRegistrar {
+                registrar.detachFromEngine?(registrar)
+            }
+        }
         shutDown()
     }
 
