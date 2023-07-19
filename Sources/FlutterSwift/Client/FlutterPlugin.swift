@@ -7,32 +7,6 @@
 import CxxFlutterSwift
 import Foundation
 
-public protocol FlutterPlatformView {
-    var registrar: FlutterPluginRegistrar { get }
-    var viewId: CInt { get }
-    var textureId: CInt { get set }
-    var isFocused: Bool { get set }
-}
-
-public protocol FlutterPlatformViewFactory {
-    var registrar: FlutterPluginRegistrar { get }
-
-    func create(viewId: CInt, width: Double, height: Double, params: [UInt8])
-        -> FlutterPlatformView?
-}
-
-public struct FlutterDesktopPlatformView: FlutterPlatformView {
-    public let registrar: FlutterPluginRegistrar
-    public let viewId: CInt
-    public var textureId: CInt = -1
-    public var isFocused: Bool = false
-
-    public init(registrar: FlutterPluginRegistrar, viewId: CInt) {
-        self.registrar = registrar
-        self.viewId = viewId
-    }
-}
-
 public typealias FlutterPluginRegistrantCallback = (FlutterPluginRegistry) -> ()
 
 public protocol FlutterPlugin {
