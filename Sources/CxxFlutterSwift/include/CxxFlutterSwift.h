@@ -56,6 +56,10 @@ FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(
     _Nonnull FlutterDesktopPluginRegistrarRef registrar,
     _Nonnull FlutterDesktopOnPluginRegistrarDestroyedBlock callbackBlock);
 
+FLUTTER_EXPORT void FlutterDesktopEngineSetView(
+    _Nonnull FlutterDesktopEngineRef engineRef,
+    _Nonnull FlutterDesktopViewRef viewRef);
+ 
 #ifdef __cplusplus
 }
 #endif

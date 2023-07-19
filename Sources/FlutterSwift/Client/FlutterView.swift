@@ -6,8 +6,26 @@
 @_implementationOnly
 import CxxFlutterSwift
 
+// FIXME: what should this be?
+let kPlatformViewsPlugin = "dev.flutter.elinux.platformViewsPlugin"
+
 public final class FlutterView {
     let view: FlutterDesktopViewRef
+    var internalPluginRegistrar: FlutterPluginRegistrar?
+    var platformViewsHandler: FlutterPlatformViewsPlugin?
+    var viewController: FlutterViewController? {
+        didSet {
+            if let viewController {
+                internalPluginRegistrar = viewController.engine.registrar(for: kPlatformViewsPlugin)
+                platformViewsHandler = FlutterPlatformViewsPlugin(binaryMessenger: viewController.binaryMessenger)
+                viewController.view = self
+            } else {
+                internalPluginRegistrar = nil
+                platformViewsHandler = nil
+                // FIXME: what to do with old view controller?
+            }
+        }
+    }
 
     init(_ view: FlutterDesktopViewRef) {
         self.view = view

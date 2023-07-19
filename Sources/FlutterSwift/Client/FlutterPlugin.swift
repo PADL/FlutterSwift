@@ -49,7 +49,7 @@ public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlug
 }
 
 public protocol FlutterPluginRegistrar {
-    var messenger: FlutterBinaryMessenger? { get }
+    var binaryMessenger: FlutterBinaryMessenger? { get }
     var view: FlutterView? { get }
 
     func register(
@@ -66,9 +66,9 @@ public protocol FlutterPluginRegistrar {
 }
 
 public protocol FlutterPluginRegistry {
-    func registrarForPlugin(_ pluginKey: String) -> FlutterPluginRegistrar?
-    func hasPlugin(_ pluginKey: String) -> Bool
-    func valuePublishedByPlugin(_ pluginKey: String) -> Any?
+    func registrar(for pluginKey: String) -> FlutterPluginRegistrar?
+    func has(plugin pluginKey: String) -> Bool
+    func valuePublished(by pluginKey: String) -> Any?
 }
 
 public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
@@ -88,7 +88,7 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         }
     }
 
-    public var messenger: FlutterBinaryMessenger? {
+    public var binaryMessenger: FlutterBinaryMessenger? {
         guard let registrar else { return nil }
         return FlutterDesktopMessenger(
             messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar)

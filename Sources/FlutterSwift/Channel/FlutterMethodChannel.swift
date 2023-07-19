@@ -15,7 +15,7 @@ import Foundation
  *     successful results.  This can be invoked from any thread.
  */
 public typealias FlutterMethodCallHandler<Arguments: Codable, Result: Codable> =
-    (FlutterMethodCall<Arguments>) async throws -> Result
+    (FlutterMethodCall<Arguments>) async throws -> Result?
 
 /**
  * Creates a method call for invoking the specified named method with the
@@ -104,7 +104,7 @@ public actor FlutterMethodChannel: FlutterChannel {
     public func setMethodCallHandler<
         Arguments: Codable,
         Result: Codable
-    >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
+    >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) throws {
         try setMessageHandler(handler) { [self] unwrappedHandler in
             { message in
                 guard let message else {

@@ -10,7 +10,7 @@ public final class FlutterEngine: FlutterPluginRegistry {
     var engine: FlutterDesktopEngineRef! // strong or weak ref
     var pluginPublications = [String: Any]()
     let project: DartProject
-    private var _messenger: FlutterDesktopMessenger!
+    private var _binaryMessenger: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false
 
@@ -36,7 +36,7 @@ public final class FlutterEngine: FlutterPluginRegistry {
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
-                            self._messenger = FlutterDesktopMessenger(engine: self.engine)
+                            self._binaryMessenger = FlutterDesktopMessenger(engine: self.engine)
                         }
                     }
                 }
@@ -51,8 +51,8 @@ public final class FlutterEngine: FlutterPluginRegistry {
     // note we can't use public private(set) because we need the type to be FlutterDesktopMessenger!
     // in order for callbacks to work (otherwise self must be first initialized). But we want to
     // present a non-optional type to callers.
-    public var messenger: FlutterDesktopMessenger {
-        _messenger
+    public var binaryMessenger: FlutterBinaryMessenger {
+        _binaryMessenger
     }
 
     public func run(entryPoint: String? = nil) -> Bool {
@@ -90,16 +90,16 @@ public final class FlutterEngine: FlutterPluginRegistry {
         return engine
     }
 
-    public func registrarForPlugin(_ pluginKey: String) -> FlutterPluginRegistrar? {
+    public func registrar(for pluginKey: String) -> FlutterPluginRegistrar? {
         pluginPublications[pluginKey] = FlutterNull()
         return FlutterDesktopPluginRegistrar(engine: self, pluginKey)
     }
 
-    public func hasPlugin(_ pluginKey: String) -> Bool {
-        valuePublishedByPlugin(pluginKey) != nil
+    public func has(plugin pluginKey: String) -> Bool {
+        valuePublished(by: pluginKey) != nil
     }
 
-    public func valuePublishedByPlugin(_ pluginKey: String) -> Any? {
+    public func valuePublished(by pluginKey: String) -> Any? {
         pluginPublications[pluginKey]
     }
 }

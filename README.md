@@ -50,7 +50,7 @@ enum SomeApp {
             debugPrint("failed to initialize window!")
             exit(2)
         }
-        let messenger = viewController.engine.messenger
+        let binaryMessenger = viewController.engine.binaryMessenger
         ...
         window.run()
     }

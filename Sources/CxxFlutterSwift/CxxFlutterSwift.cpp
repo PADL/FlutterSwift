@@ -4,7 +4,6 @@
 
 #ifndef __APPLE__
 
-#include <assert.h>
 #include <stdlib.h>
 
 #include <map>
@@ -19,6 +18,9 @@ extern "C" {
 };
 
 #include "CxxFlutterSwift.h"
+
+#include <flutter_elinux_engine.h>
+#include <flutter_elinux_view.h>
 
 // +1 on block because it goes out of scope and is only called once
 
@@ -102,4 +104,12 @@ void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(
     FlutterDesktopPluginRegistrarSetDestructionHandler(registrar, FlutterDesktopOnPluginRegistrarDestroyedBlockThunk);
 }
 
+void FlutterDesktopEngineSetView(
+    FlutterDesktopEngineRef engineRef,
+    FlutterDesktopViewRef viewRef
+) {
+    auto engine = reinterpret_cast<flutter::FlutterELinuxEngine *>(engineRef);
+    engine->SetView(reinterpret_cast<flutter::FlutterELinuxView *>(viewRef));
+}
+ 
 #endif /* !__APPLE__ */

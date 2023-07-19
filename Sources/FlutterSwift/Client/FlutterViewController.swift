@@ -9,7 +9,6 @@ import CxxFlutterSwift
 public final class FlutterViewController {
     private let controller: FlutterDesktopViewControllerRef
     public let engine: FlutterEngine
-    public let view: FlutterView
 
     public enum ViewMode: Int {
         case kNormal = 0
@@ -66,7 +65,6 @@ public final class FlutterViewController {
     public init?(properties viewProperties: ViewProperties, project: DartProject) {
         var cViewProperties = FlutterDesktopViewProperties()
         var controller: FlutterDesktopViewControllerRef?
-        var view: FlutterView?
 
         guard let engine = FlutterEngine(project: project) else { return nil }
         self.engine = engine
@@ -102,17 +100,26 @@ public final class FlutterViewController {
                     &cViewProperties,
                     engine.relinquishEngine()
                 )
-                if let controller {
-                    view = FlutterView(FlutterDesktopViewControllerGetView(controller))
-                }
             }
         }
-        guard let controller, let view else {
+        guard let controller else {
             debugPrint("Failed to create view controller.")
             return nil
         }
         self.controller = controller
-        self.view = view
+    }
+
+    public var view: FlutterView {
+        get {
+            FlutterView(FlutterDesktopViewControllerGetView(self.controller))
+        }
+        set {
+            FlutterDesktopEngineSetView(self.engine.engine, newValue.view)
+        }
+    }
+
+    var binaryMessenger: FlutterBinaryMessenger {
+        engine.binaryMessenger
     }
 
     deinit {

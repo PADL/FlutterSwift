@@ -52,20 +52,20 @@ class ChannelManager {
     }
 
     init(_ viewController: FlutterViewController) {
-        let messenger = viewController.engine.messenger
+        let binaryMessenger = viewController.engine.binaryMessenger
 
         flutterBasicMessageChannel = FlutterBasicMessageChannel(
             name: "com.padl.example",
-            binaryMessenger: messenger,
+            binaryMessenger: binaryMessenger,
             codec: FlutterJSONMessageCodec.shared
         )
         flutterEventChannel = FlutterEventChannel(
             name: "com.padl.counter",
-            binaryMessenger: messenger
+            binaryMessenger: binaryMessenger
         )
         flutterMethodChannel = FlutterMethodChannel(
             name: "com.padl.toggleCounter",
-            binaryMessenger: messenger
+            binaryMessenger: binaryMessenger
         )
 
         task = Task { @MainActor in
