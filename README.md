@@ -1,13 +1,13 @@
 FlutterSwift
 ============
 
-FlutterSwift is a Swift-native implementation of Flutter platform channels.
+FlutterSwift is a native Swift Flutter client wrapper and platform channel implementation.
 
-It's intended to be used on platforms where Swift is available but Objective-C and AppKit/UIKit are not, for example the [Sony Flutter embedder](https://github.com/sony/flutter-embedded-linux). It also provides an `async/await` API rather than using callbacks and dispatch queues.
+It is intended to be used on platforms where Swift is available but Objective-C and AppKit/UIKit are not, specifically the [Sony eLinux embedder](https://github.com/sony/flutter-embedded-linux). It also provides a more idiomatic asynchronous API which would not be possible in Objective-C.
 
- `FlutterDesktopMessenger` wraps the API in `flutter_messenger.h`. To allow development on Darwin platforms, `FlutterPlatformMessenger` is also provided which uses the existing platform binary messenger.
+The `FlutterDesktopMessenger` class wraps the API in `flutter_messenger.h`. However, to allow development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger
 
-This repository will build the Sony embedded Linux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself (this is assumed to be in `/opt/flutter-elinux/lib` or a downloaded build artifact) or a runner. In lieu of a runner, see [README.md](Examples/counter/swift/README.md) for some testing notes.
+This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself (this is assumed to be in `/opt/flutter-elinux/lib` or a downloaded build artifact) or a runner. Currently there is no facility for automatically generating runners; in the interim, see [README.md](Examples/counter/swift/README.md) for some testing notes.
 
 Some examples follow.
 
@@ -21,14 +21,14 @@ import FlutterMacOS.FlutterBinaryMessenger
 import FlutterSwift
 
 override func awakeFromNib() {
-    let flutterViewController = FlutterViewController()
+    let flutterViewController = FlutterViewController() // from ObjC implementation
     let platformBinaryMessenger = FlutterSwift
-        FlutterPlatformMessenger(wrapping: flutterViewController.engine.binaryMessenger)
+        .FlutterPlatformMessenger(wrapping: flutterViewController.engine.binaryMessenger)
     ...
 }
 ```
 
-Linux:
+Linux, using the native Swift [client wrapper](Sources/FlutterSwift/Client/):
 
 ```swift
 @main
@@ -61,6 +61,7 @@ enum SomeApp {
 Message channel
 ---------------
 
+This shows a basic message channel handler using the JSON message codec. Note that because the message channels are actors, `setMessageHandler()` needs to be called in an asynchronous context. On eLinux, instead of registering the channels in `awakeFromNib()`, call this from the `main()` function (perhaps indirected by a manager class).
 
 ```swift
 private func messageHandler(_ arguments: String?) async -> Int? {
@@ -87,7 +88,6 @@ Method channel
 --------------
 
 ```swift
-
 var isRunning = true
 
 @MainActor
@@ -114,8 +114,6 @@ override func awakeFromNib() {
 ```
 Event channel
 -------------
-
-Event channels are initialized with the binary messenger created in the previous example.
 
 ```swift
 import AsyncAlgorithms
