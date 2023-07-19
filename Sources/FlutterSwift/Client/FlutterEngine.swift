@@ -78,11 +78,6 @@ public final class FlutterEngine {
         FlutterDesktopEngineReloadSystemFonts(engine)
     }
 
-    func getRegistrarForPlugin(_ pluginName: String) -> FlutterDesktopPluginRegistrarRef? {
-        guard let engine else { return nil }
-        return FlutterDesktopEngineGetPluginRegistrar(engine, pluginName)
-    }
-
     func relinquishEngine() -> FlutterDesktopEngineRef {
         ownsEngine = false
         return engine
