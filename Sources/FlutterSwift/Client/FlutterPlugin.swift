@@ -34,8 +34,10 @@ public extension FlutterPlugin {
             )
         }
 
-        try (registrar as! FlutterDesktopPluginRegistrar)
-            .addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: _channel)
+        Task {
+            try await (registrar as! FlutterDesktopPluginRegistrar)
+                .addMethodCallDelegate(plugin.eraseToAnyFlutterPlugin(), on: _channel)
+        }
 
         return plugin
     }
@@ -138,12 +140,10 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
         _ delegate: AnyFlutterPlugin<Arguments, Result>,
         on channel: FlutterMethodChannel
-    ) throws {
+    ) async throws {
         detachFromEngine = delegate._detachFromEngine
-        Task { @MainActor in
-            try await channel.setMethodCallHandler { call in
-                try delegate.handleMethod(call: call)
-            }
+        try await channel.setMethodCallHandler { call in
+            try delegate.handleMethod(call: call)
         }
     }
 
