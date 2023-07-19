@@ -6,31 +6,34 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public final class FlutterEngine: FlutterPluginRegistry, FlutterTextureRegistry {
+public final class FlutterEngine: FlutterPluginRegistry {
     var engine: FlutterDesktopEngineRef! // strong or weak ref
-    private var messenger_: FlutterDesktopMessenger!
+    var pluginPublications = [String: Any]()
+    let project: DartProject
+    private var _messenger: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false
-    private var pluginPublications = [String: Any]()
 
     public init?(project: DartProject) {
         var properties = FlutterDesktopEngineProperties()
 
         debugPrint("Initializing Flutter engine with path '\(project)'")
 
-        project.assetsPath.withWideChars { assetsPath in
+        self.project = project
+
+        self.project.assetsPath.withWideChars { assetsPath in
             properties.assets_path = assetsPath
-            project.icuDataPath.withWideChars { icuDataPath in
+            self.project.icuDataPath.withWideChars { icuDataPath in
                 properties.icu_data_path = icuDataPath
-                project.aotLibraryPath.withWideChars { aotLibraryPath in
+                self.project.aotLibraryPath.withWideChars { aotLibraryPath in
                     properties.aot_library_path = aotLibraryPath
-                    withArrayOfCStrings(project.dartEntryPointArguments) { cStrings in
+                    withArrayOfCStrings(self.project.dartEntryPointArguments) { cStrings in
                         properties
-                            .dart_entrypoint_argc = Int32(project.dartEntryPointArguments.count)
+                            .dart_entrypoint_argc = Int32(self.project.dartEntryPointArguments.count)
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
-                            self.messenger_ = FlutterDesktopMessenger(engine: self.engine)
+                            self._messenger = FlutterDesktopMessenger(engine: self.engine)
                         }
                     }
                 }
@@ -46,7 +49,7 @@ public final class FlutterEngine: FlutterPluginRegistry, FlutterTextureRegistry 
     // in order for callbacks to work (otherwise self must be first initialized). But we want to
     // present a non-optional type to callers.
     public var messenger: FlutterDesktopMessenger {
-        messenger_
+        _messenger
     }
 
     public func run(entryPoint: String? = nil) -> Bool {

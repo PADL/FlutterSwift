@@ -15,6 +15,7 @@
 
 // FIXME: when C++17 support is working, import this to get native ++ reference counting
 // #include <flutter_elinux_state.h>
+// #include <flutter_platform_views.h>
 
 // FIXME: why is there no header for this? (note it has C++ linkage because no C header)
 FLUTTER_EXPORT FlutterDesktopViewRef _Nonnull
