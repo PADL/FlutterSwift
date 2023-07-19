@@ -11,7 +11,7 @@ import Foundation
 fileprivate var NSEC_PER_MSEC: UInt64 = 1_000_000
 fileprivate var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
-public final class FlutterWindow {
+public struct FlutterWindow {
     public let viewController: FlutterViewController
 
     public init?(
@@ -29,11 +29,7 @@ public final class FlutterWindow {
     }
 
     private func schedule(after nextInterval: TimeInterval) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + nextInterval) { [weak self] in
-            guard let self else {
-                return
-            }
-
+        DispatchQueue.main.asyncAfter(deadline: .now() + nextInterval) {
             var waitDurationNS = viewController.engine.processMessages()
             let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
                 NSEC_PER_MSEC

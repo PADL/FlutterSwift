@@ -9,7 +9,7 @@ import CxxFlutterSwift
 // FIXME: what should this be?
 let kPlatformViewsPlugin = "dev.flutter.elinux.platformViewsPlugin"
 
-public final class FlutterView {
+public struct FlutterView {
     let view: FlutterDesktopViewRef
     var internalPluginRegistrar: FlutterPluginRegistrar?
     var platformViewsHandler: FlutterPlatformViewsPlugin?

@@ -154,7 +154,7 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     }
 }
 
-public class FlutterDesktopTextureRegistrar {
+public struct FlutterDesktopTextureRegistrar {
     private let registrar: FlutterDesktopTextureRegistrarRef
 
     public init(engine: FlutterEngine) {
