@@ -12,6 +12,12 @@
 		D3E858E82A67332D00AF2147 /* AsyncExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = D3E858E72A67332D00AF2147 /* AsyncExtensions */; };
 		D3E858EB2A67336F00AF2147 /* AnyCodable in Frameworks */ = {isa = PBXBuildFile; productRef = D3E858EA2A67336F00AF2147 /* AnyCodable */; };
 		D3E858EE2A67338200AF2147 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = D3E858ED2A67338200AF2147 /* AsyncAlgorithms */; };
+		D3E858F72A67D83800AF2147 /* DartProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F12A67D83800AF2147 /* DartProject.swift */; };
+		D3E858F82A67D83800AF2147 /* FlutterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F22A67D83800AF2147 /* FlutterView.swift */; };
+		D3E858F92A67D83800AF2147 /* FlutterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F32A67D83800AF2147 /* FlutterViewController.swift */; };
+		D3E858FA2A67D83800AF2147 /* FlutterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F42A67D83800AF2147 /* FlutterEngine.swift */; };
+		D3E858FB2A67D83800AF2147 /* FlutterPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F52A67D83800AF2147 /* FlutterPlugin.swift */; };
+		D3E858FC2A67D83800AF2147 /* FlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E858F62A67D83800AF2147 /* FlutterWindow.swift */; };
 		OBJ_336 /* FlutterSwiftError.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* FlutterSwiftError.swift */; };
 		OBJ_337 /* FlutterEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* FlutterEnvelope.swift */; };
 		OBJ_338 /* FlutterError.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* FlutterError.swift */; };
@@ -51,6 +57,12 @@
 /* Begin PBXFileReference section */
 		D3E858DC2A6732B300AF2147 /* StringHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringHelpers.swift; sourceTree = "<group>"; };
 		D3E858DE2A6732C300AF2147 /* FlutterNull.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterNull.swift; sourceTree = "<group>"; };
+		D3E858F12A67D83800AF2147 /* DartProject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DartProject.swift; sourceTree = "<group>"; };
+		D3E858F22A67D83800AF2147 /* FlutterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterView.swift; sourceTree = "<group>"; };
+		D3E858F32A67D83800AF2147 /* FlutterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterViewController.swift; sourceTree = "<group>"; };
+		D3E858F42A67D83800AF2147 /* FlutterEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterEngine.swift; sourceTree = "<group>"; };
+		D3E858F52A67D83800AF2147 /* FlutterPlugin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterPlugin.swift; sourceTree = "<group>"; };
+		D3E858F62A67D83800AF2147 /* FlutterWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlutterWindow.swift; sourceTree = "<group>"; };
 		OBJ_10 /* FlutterSwiftError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlutterSwiftError.swift; sourceTree = "<group>"; };
 		OBJ_100 /* AsyncDebounceSequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncDebounceSequence.swift; sourceTree = "<group>"; };
 		OBJ_101 /* DebounceStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebounceStateMachine.swift; sourceTree = "<group>"; };
@@ -230,6 +242,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D3E858F02A67D83800AF2147 /* Client */ = {
+			isa = PBXGroup;
+			children = (
+				D3E858F12A67D83800AF2147 /* DartProject.swift */,
+				D3E858F22A67D83800AF2147 /* FlutterView.swift */,
+				D3E858F32A67D83800AF2147 /* FlutterViewController.swift */,
+				D3E858F42A67D83800AF2147 /* FlutterEngine.swift */,
+				D3E858F52A67D83800AF2147 /* FlutterPlugin.swift */,
+				D3E858F62A67D83800AF2147 /* FlutterWindow.swift */,
+			);
+			name = Client;
+			path = Sources/FlutterSwift/Client;
+			sourceTree = SOURCE_ROOT;
+		};
 		OBJ_105 /* Merge */ = {
 			isa = PBXGroup;
 			children = (
@@ -643,6 +669,7 @@
 			children = (
 				OBJ_9 /* Base */,
 				OBJ_13 /* Channel */,
+				D3E858F02A67D83800AF2147 /* Client */,
 				OBJ_18 /* Codecs */,
 				OBJ_49 /* Messenger */,
 			);
@@ -782,6 +809,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_336 /* FlutterSwiftError.swift in Sources */,
+				D3E858F92A67D83800AF2147 /* FlutterViewController.swift in Sources */,
 				OBJ_337 /* FlutterEnvelope.swift in Sources */,
 				OBJ_338 /* FlutterError.swift in Sources */,
 				OBJ_339 /* FlutterBasicMessageChannel.swift in Sources */,
@@ -790,7 +818,9 @@
 				OBJ_342 /* FlutterMethodChannel.swift in Sources */,
 				OBJ_343 /* FlutterBinaryCodec.swift in Sources */,
 				OBJ_344 /* FlutterJSONMessageCodec.swift in Sources */,
+				D3E858FC2A67D83800AF2147 /* FlutterWindow.swift in Sources */,
 				OBJ_345 /* FlutterMessageCodec.swift in Sources */,
+				D3E858F82A67D83800AF2147 /* FlutterView.swift in Sources */,
 				OBJ_346 /* FlutterStandardMessageCodec.swift in Sources */,
 				OBJ_347 /* FlutterStringCodec.swift in Sources */,
 				OBJ_348 /* FlutterJSONMethodCodec.swift in Sources */,
@@ -799,6 +829,7 @@
 				OBJ_351 /* KeyedFlutterStandardDecodingContainer.swift in Sources */,
 				OBJ_352 /* SingleValueFlutterStandardDecodingContainer.swift in Sources */,
 				D3E858DF2A6732C300AF2147 /* FlutterNull.swift in Sources */,
+				D3E858F72A67D83800AF2147 /* DartProject.swift in Sources */,
 				OBJ_353 /* UnkeyedFlutterStandardDecodingContainer.swift in Sources */,
 				OBJ_354 /* FlutterStandardDecoder.swift in Sources */,
 				OBJ_355 /* FlutterStandardDecoderImpl.swift in Sources */,
@@ -813,7 +844,9 @@
 				OBJ_364 /* FlutterMapRepresentable.swift in Sources */,
 				OBJ_365 /* FlutterStandardField.swift in Sources */,
 				D3E858DD2A6732B300AF2147 /* StringHelpers.swift in Sources */,
+				D3E858FB2A67D83800AF2147 /* FlutterPlugin.swift in Sources */,
 				OBJ_366 /* FlutterBinaryMessenger.swift in Sources */,
+				D3E858FA2A67D83800AF2147 /* FlutterEngine.swift in Sources */,
 				OBJ_367 /* FlutterDesktopMessenger.swift in Sources */,
 				OBJ_368 /* FlutterPlatformMessenger.swift in Sources */,
 			);
