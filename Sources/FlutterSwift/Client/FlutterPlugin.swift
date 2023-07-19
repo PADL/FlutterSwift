@@ -11,13 +11,14 @@ public protocol FlutterPlatformView {
     var registrar: FlutterPluginRegistrar { get }
     var viewId: CInt { get }
     var textureId: CInt { get set }
-    var isFocused: Bool { get set } 
+    var isFocused: Bool { get set }
 }
 
 public protocol FlutterPlatformViewFactory {
     var registrar: FlutterPluginRegistrar { get }
 
-    func create(viewId: CInt, width: Double, height: Double, params: [UInt8]) -> FlutterPlatformView?
+    func create(viewId: CInt, width: Double, height: Double, params: [UInt8])
+        -> FlutterPlatformView?
 }
 
 public struct FlutterDesktopPlatformView: FlutterPlatformView {
@@ -56,15 +57,13 @@ public struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlug
     let _detachFromEngine: (FlutterPluginRegistrar) -> ()
 
     init<T: FlutterPlugin>(_ plugin: T) where T.Arguments == Arguments, T.Result == Result {
-        self._handleMethod = { try await plugin.handleMethod(call: $0) }
-        self._detachFromEngine = { plugin.detachFromEngine(for: $0) }
+        _handleMethod = { try await plugin.handleMethod(call: $0) }
+        _detachFromEngine = { plugin.detachFromEngine(for: $0) }
     }
 
-    public static func register(with registrar: FlutterPluginRegistrar) {
-    }
+    public static func register(with registrar: FlutterPluginRegistrar) {}
 
-    public static func setPluginRegistrantCallback(_ callback: FlutterPluginRegistrantCallback) {
-    }
+    public static func setPluginRegistrantCallback(_ callback: FlutterPluginRegistrantCallback) {}
 
     public func handleMethod(call: FlutterMethodCall<Arguments>) async throws -> Result {
         try await _handleMethod(call)
@@ -108,16 +107,18 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         _ pluginName: String
     ) {
         self.engine = engine
-        self.pluginKey = pluginName
-        self.registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
-        FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(self.registrar!, { _ in
+        pluginKey = pluginName
+        registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
+        FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { _ in
             self.registrar = nil
-        })
+        }
     }
 
     public var messenger: FlutterBinaryMessenger? {
         guard let registrar else { return nil }
-        return FlutterDesktopMessenger(messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar))
+        return FlutterDesktopMessenger(
+            messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar)
+        )
     }
 
     public var view: FlutterView? {
@@ -162,7 +163,7 @@ public class FlutterDesktopTextureRegistrar {
     private let registrar: FlutterDesktopTextureRegistrarRef
 
     public init(engine: FlutterEngine) {
-        self.registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
+        registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
     }
 
     init?(plugin: FlutterDesktopPluginRegistrar) {

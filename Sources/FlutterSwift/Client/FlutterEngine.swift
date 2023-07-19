@@ -29,7 +29,10 @@ public final class FlutterEngine: FlutterPluginRegistry {
                     properties.aot_library_path = aotLibraryPath
                     withArrayOfCStrings(self.project.dartEntryPointArguments) { cStrings in
                         properties
-                            .dart_entrypoint_argc = Int32(self.project.dartEntryPointArguments.count)
+                            .dart_entrypoint_argc = Int32(
+                                self.project.dartEntryPointArguments
+                                    .count
+                            )
                         cStrings.withUnsafeMutableBufferPointer { pointer in
                             properties.dart_entrypoint_argv = pointer.baseAddress
                             self.engine = FlutterDesktopEngineCreate(&properties)
