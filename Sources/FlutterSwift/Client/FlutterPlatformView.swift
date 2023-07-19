@@ -23,21 +23,6 @@ public protocol FlutterPlatformViewFactory {
         -> FlutterPlatformView?
 }
 
-// FIXME: do we need a class, or just leave as a protocol
-open class FlutterDesktopPlatformView: FlutterPlatformView {
-    public let registrar: FlutterPluginRegistrar
-    public let viewId: Int
-    public var textureId: Int = -1
-    public var isFocused: Bool = false
-
-    public init(registrar: FlutterPluginRegistrar, viewId: Int) {
-        self.registrar = registrar
-        self.viewId = viewId
-    }
-
-    public func dispose() {}
-}
-
 let kChannelName = "flutter/platform_views"
 
 enum FlutterPlatformViewMethod: String {
