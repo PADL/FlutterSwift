@@ -16,13 +16,13 @@ class ChannelManager {
     var flutterEventChannel: FlutterEventChannel?
     var flutterMethodChannel: FlutterMethodChannel?
     var task: Task<(), Error>?
-    var isRunning = true
     var counter: Event = 0
 
     let magicCookie = 0xCAFE_BABE
 
     var flutterEventStream = Stream()
 
+    @MainActor
     private func messageHandler(_ arguments: String?) async -> Int? {
         debugPrint("Received message \(String(describing: arguments))")
         return magicCookie
@@ -35,7 +35,7 @@ class ChannelManager {
 
     @MainActor
     private func onCancel(_ arguments: Arguments?) throws {
-        task?.cancel()
+        cancelTask()
     }
 
     @MainActor
@@ -47,8 +47,34 @@ class ChannelManager {
         guard call.arguments == magicCookie else {
             throw FlutterError(code: "bad cookie")
         }
-        isRunning.toggle()
-        return isRunning
+        if task == nil {
+            startTask()
+        } else {
+            cancelTask()
+        }
+
+        return task != nil
+    }
+
+    func startTask() {
+        task = Task {
+            debugPrint("starting task...")
+            repeat {
+                counter += 1
+                await flutterEventStream.send(counter)
+                debugPrint("counter is now \(counter)")
+                try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+            } while !Task.isCancelled
+            debugPrint("task was cancelled")
+        }
+    }
+
+    func cancelTask() {
+        if let task {
+            debugPrint("cancelling task...")
+            task.cancel()
+            self.task = nil
+        }
     }
 
     init(_ viewController: FlutterViewController) {
@@ -68,21 +94,11 @@ class ChannelManager {
             binaryMessenger: binaryMessenger
         )
 
-        task = Task { @MainActor in
+        Task { @MainActor in
             try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
             try! await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
             try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
-
-            repeat {
-                debugPrint("starting task...")
-                await flutterEventStream.send(counter)
-                if isRunning {
-                    counter += 1
-                    debugPrint("counter is now \(counter)")
-                }
-                try await Task.sleep(nanoseconds: NSEC_PER_SEC)
-            } while !Task.isCancelled
-            debugPrint("ending task")
+            startTask()
         }
     }
 }
