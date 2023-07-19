@@ -16,7 +16,8 @@ public struct FlutterView {
         didSet {
             if let viewController {
                 platformViewsPluginRegistrar = viewController.engine.registrar(for: kChannelName)
-                platformViewsHandler = try? FlutterPlatformViewsPlugin.register(with: platformViewsPluginRegistrar!)
+                platformViewsHandler = try? FlutterPlatformViewsPlugin
+                    .register(with: platformViewsPluginRegistrar!)
                 viewController.view = self
             } else {
                 platformViewsPluginRegistrar = nil
