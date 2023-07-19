@@ -136,7 +136,7 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         _ delegate: AnyFlutterPlugin<Arguments, Result>,
         on channel: FlutterMethodChannel
     ) async throws {
-        self.detachFromEngine = delegate._detachFromEngine
+        detachFromEngine = delegate._detachFromEngine
         try await channel.setMethodCallHandler { call in
             try await delegate.handleMethod(call: call)
         }
