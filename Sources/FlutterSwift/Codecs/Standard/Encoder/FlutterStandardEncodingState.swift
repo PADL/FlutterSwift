@@ -159,9 +159,9 @@ class FlutterStandardEncodingState {
     }
 
     func encode(_ value: Int) throws {
-        if Int.bitWidth == 64 {
+        if MemoryLayout<Int>.size == 8 {
             try encode(Int64(value))
-        } else if Int.bitWidth == 32 {
+        } else if MemoryLayout<Int>.size == 4 {
             try encode(Int32(value))
         } else {
             fatalError("unsupporterd Int.bitWidth")

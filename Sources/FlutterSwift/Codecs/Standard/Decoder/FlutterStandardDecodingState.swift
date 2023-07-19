@@ -239,9 +239,9 @@ class FlutterStandardDecodingState {
     }
 
     func decode(_ type: Int.Type) throws -> Int {
-        if Int.bitWidth == 64 {
+        if MemoryLayout<Int>.size == 8 {
             return Int(try decode(Int64.self))
-        } else if Int.bitWidth == 32 {
+        } else if MemoryLayout<Int>.size == 4 {
             return Int(try decode(Int32.self))
         } else {
             fatalError("unsupporterd UInt.bitWidth")
