@@ -23,8 +23,8 @@ public final class FlutterViewController {
     }
 
     public struct ViewProperties {
-        let width: CInt
-        let height: CInt
+        let width: Int
+        let height: Int
         let viewRotation: ViewRotation
         let viewMode: ViewMode
         let title: String?
@@ -36,8 +36,8 @@ public final class FlutterViewController {
         let scaleFactor: Double
 
         public init(
-            width: CInt,
-            height: CInt,
+            width: Int,
+            height: Int,
             viewRotation: ViewRotation = .kRotation_0,
             viewMode: ViewMode = .kNormal,
             title: String? = nil,
@@ -69,8 +69,8 @@ public final class FlutterViewController {
         guard let engine = FlutterEngine(project: project) else { return nil }
         self.engine = engine
 
-        cViewProperties.width = viewProperties.width
-        cViewProperties.height = viewProperties.height
+        cViewProperties.width = CInt(viewProperties.width)
+        cViewProperties.height = CInt(viewProperties.height)
         switch viewProperties.viewRotation {
         case .kRotation_0:
             cViewProperties.view_rotation = kRotation_0
