@@ -55,7 +55,7 @@ public protocol FlutterPluginRegistrar {
     func register(
         viewFactory factory: FlutterPlatformViewFactory,
         with factoryId: String
-    )
+    ) throws
     func publish(_ value: Any)
     func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
         _ delegate: AnyFlutterPlugin<Arguments, Result>,
@@ -104,8 +104,11 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     public func register(
         viewFactory factory: FlutterPlatformViewFactory,
         with factoryId: String
-    ) {
-        fatalError("platform views not supported")
+    ) throws {
+        guard let view, let platformViewsHandler = view.platformViewsHandler else {
+            throw FlutterSwiftError.viewNotFound
+        }
+        platformViewsHandler.register(viewType: factoryId, factory: factory)
     }
 
     public func publish(_ value: Any) {

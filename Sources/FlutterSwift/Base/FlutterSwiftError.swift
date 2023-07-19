@@ -19,4 +19,5 @@ public enum FlutterSwiftError: Error, Codable, Equatable {
     case unknownDiscriminant
     case unknownStandardFieldType(UInt8)
     case variableSizedTypeTooBig
+    case viewNotFound
 }

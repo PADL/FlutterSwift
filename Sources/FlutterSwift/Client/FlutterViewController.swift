@@ -107,14 +107,13 @@ public final class FlutterViewController {
             return nil
         }
         self.controller = controller
+        self.view = FlutterView(FlutterDesktopViewControllerGetView(self.controller))
+        self.engine.viewController = self // weak reference
     }
 
     public var view: FlutterView {
-        get {
-            FlutterView(FlutterDesktopViewControllerGetView(controller))
-        }
-        set {
-            FlutterDesktopEngineSetView(engine.engine, newValue.view)
+        didSet {
+            FlutterDesktopEngineSetView(engine.engine, view.view)
         }
     }
 

@@ -10,6 +10,7 @@ public final class FlutterEngine: FlutterPluginRegistry {
     var engine: FlutterDesktopEngineRef! // strong or weak ref
     var pluginPublications = [String: Any]()
     let project: DartProject
+    weak var viewController: FlutterViewController?
     private var _binaryMessenger: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false
