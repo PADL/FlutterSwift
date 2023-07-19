@@ -35,8 +35,7 @@ open class FlutterDesktopPlatformView: FlutterPlatformView {
         self.viewId = viewId
     }
 
-    public func dispose() {
-    }
+    public func dispose() {}
 }
 
 let kChannelName = "flutter/platform_views"
@@ -64,12 +63,12 @@ enum FlutterPlatformViewKey: String, CaseIterable {
 
 public class FlutterPlatformViewsPlugin {
     let channel: FlutterMethodChannel
-    var viewFactories = [String:FlutterPlatformViewFactory]()
-    var platformViews = [Int:FlutterPlatformView]()
+    var viewFactories = [String: FlutterPlatformViewFactory]()
+    var platformViews = [Int: FlutterPlatformView]()
     var currentViewId: Int = -1
 
     public init(binaryMessenger: FlutterBinaryMessenger) {
-        self.channel = FlutterMethodChannel(name: kChannelName, binaryMessenger: binaryMessenger)
+        channel = FlutterMethodChannel(name: kChannelName, binaryMessenger: binaryMessenger)
         Task {
             // FIXME: what if this fails?
             try? await self.channel.setMethodCallHandler(handleMethodCall)
@@ -81,7 +80,7 @@ public class FlutterPlatformViewsPlugin {
             throw FlutterSwiftError.methodNotImplemented
         }
 
-        switch methodName{
+        switch methodName {
         case .create:
             return try await create(call.arguments)
         case .dispose:
@@ -100,7 +99,7 @@ public class FlutterPlatformViewsPlugin {
     }
 
     func create(_ arguments: AnyCodable?) async throws -> AnyCodable? {
-        guard let arguments = arguments?.value as? [String:Any] else {
+        guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
 
@@ -111,21 +110,26 @@ public class FlutterPlatformViewsPlugin {
         guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
             throw FlutterError(code: "Couldn't find the view id in the arguments")
         }
-        
+
         guard let width = arguments[FlutterPlatformViewKey.width.rawValue] as? Double else {
             throw FlutterError(code: "Couldn't find the width in the arguments")
         }
-        
+
         guard let height = arguments[FlutterPlatformViewKey.height.rawValue] as? Double else {
             throw FlutterError(code: "Couldn't find the height in the arguments")
         }
-        
+
         guard let factory = viewFactories[viewType] else {
             throw FlutterError(code: "Couldn't find the view type")
         }
- 
+
         let params = arguments[FlutterPlatformViewKey.params.rawValue] as? [UInt8]
-        guard let view = factory.create(viewId: viewId, width: width, height: height, params: params ?? []) else {
+        guard let view = factory.create(
+            viewId: viewId,
+            width: width,
+            height: height,
+            params: params ?? []
+        ) else {
             throw FlutterError(code: "Failed to create a platform view")
         }
 
@@ -138,7 +142,7 @@ public class FlutterPlatformViewsPlugin {
     }
 
     func dispose(_ arguments: AnyCodable?) async throws -> AnyCodable? {
-        guard let arguments = arguments?.value as? [String:Any] else {
+        guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
 

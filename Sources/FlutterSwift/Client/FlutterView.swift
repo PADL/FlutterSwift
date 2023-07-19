@@ -17,7 +17,10 @@ public final class FlutterView {
         didSet {
             if let viewController {
                 internalPluginRegistrar = viewController.engine.registrar(for: kPlatformViewsPlugin)
-                platformViewsHandler = FlutterPlatformViewsPlugin(binaryMessenger: viewController.binaryMessenger)
+                platformViewsHandler = FlutterPlatformViewsPlugin(
+                    binaryMessenger: viewController
+                        .binaryMessenger
+                )
                 viewController.view = self
             } else {
                 internalPluginRegistrar = nil

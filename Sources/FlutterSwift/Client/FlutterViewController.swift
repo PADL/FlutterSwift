@@ -111,10 +111,10 @@ public final class FlutterViewController {
 
     public var view: FlutterView {
         get {
-            FlutterView(FlutterDesktopViewControllerGetView(self.controller))
+            FlutterView(FlutterDesktopViewControllerGetView(controller))
         }
         set {
-            FlutterDesktopEngineSetView(self.engine.engine, newValue.view)
+            FlutterDesktopEngineSetView(engine.engine, newValue.view)
         }
     }
 
