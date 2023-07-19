@@ -55,10 +55,10 @@ extension FlutterMethodCall: Hashable where Arguments: Codable & Hashable {
  * asynchronous methods.
  */
 public actor FlutterMethodChannel: FlutterChannel {
-    let name: String
-    let binaryMessenger: FlutterBinaryMessenger
-    let codec: FlutterMessageCodec
-    let priority: TaskPriority?
+    nonisolated let name: String
+    nonisolated let binaryMessenger: FlutterBinaryMessenger
+    nonisolated let codec: FlutterMessageCodec
+    nonisolated let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
 
     public init(
