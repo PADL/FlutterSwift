@@ -26,9 +26,11 @@ public protocol FlutterPlugin {
 }
 
 public protocol FlutterPluginRegistrar {
-    var messenger: FlutterBinaryMessenger { get }
-    var textures: FlutterTextureRegistry { get }
+    var messenger: FlutterBinaryMessenger? { get }
+    var textures: FlutterTextureRegistry? { get }
+    var view: FlutterView? { get }
 
+/*
     func register(
         viewFactory factory: FlutterPlatformViewFactory,
         with factoryId: String
@@ -41,28 +43,33 @@ public protocol FlutterPluginRegistrar {
     func addApplicationDelegate(_ delegate: FlutterPlugin)
     func lookupKey(for asset: String) -> String?
     func lookupKey(for asset: String, from package: String) -> String?
+*/
 }
 
 public protocol FlutterPluginRegistry {
     func registrarForPlugin(_ pluginKey: String) -> FlutterPluginRegistrar?
-    func pluginKey(_ pluginKey: String) -> Bool
+    func hasPlugin(_ pluginKey: String) -> Bool
     func valuePublishedByPlugin(_ pluginKey: String) -> Any?
 }
 
-public class FlutterDesktopPluginRegistrar {
+public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
+    private var engine: FlutterEngine
+    private var pluginName: String
     var registrar: FlutterDesktopPluginRegistrarRef?
 
     public init(
         engine: FlutterEngine,
         _ pluginName: String
     ) {
+        self.engine = engine
+        self.pluginName = pluginName
         self.registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
         FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(self.registrar!, { _ in
             self.registrar = nil
         })
     }
 
-    public var messenger: FlutterDesktopMessenger? {
+    public var messenger: FlutterBinaryMessenger? {
         guard let registrar else { return nil }
         return FlutterDesktopMessenger(messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar))
     }
@@ -73,8 +80,8 @@ public class FlutterDesktopPluginRegistrar {
         return FlutterView(view)
     }
 
-    public var textureRegistrar: FlutterDesktopTextureRegistrar? {
-        FlutterDesktopTextureRegistrar(plugin: self)
+    public var textures: FlutterTextureRegistry? {
+        engine
     }
 }
 

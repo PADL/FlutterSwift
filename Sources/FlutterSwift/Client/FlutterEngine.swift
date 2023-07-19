@@ -6,11 +6,12 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public final class FlutterEngine {
+public final class FlutterEngine: FlutterPluginRegistry, FlutterTextureRegistry {
     var engine: FlutterDesktopEngineRef! // strong or weak ref
     private var messenger_: FlutterDesktopMessenger!
     private var ownsEngine = true
     private var hasBeenRun = false
+    private var pluginPublications = [String: Any]()
 
     public init?(project: DartProject) {
         var properties = FlutterDesktopEngineProperties()
@@ -81,6 +82,19 @@ public final class FlutterEngine {
     func relinquishEngine() -> FlutterDesktopEngineRef {
         ownsEngine = false
         return engine
+    }
+
+    public func registrarForPlugin(_ pluginKey: String) -> FlutterPluginRegistrar? {
+        pluginPublications[pluginKey] = FlutterNull()
+        return FlutterDesktopPluginRegistrar(engine: self, pluginKey)
+    }
+
+    public func hasPlugin(_ pluginKey: String) -> Bool {
+        valuePublishedByPlugin(pluginKey) != nil
+    }
+
+    public func valuePublishedByPlugin(_ pluginKey: String) -> Any? {
+        pluginPublications[pluginKey]
     }
 }
 #endif
