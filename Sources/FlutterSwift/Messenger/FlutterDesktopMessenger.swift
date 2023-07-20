@@ -40,7 +40,10 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         FlutterDesktopMessengerIsAvailable(messenger)
     }
 
-    private func withLockedMessenger<T>(_ block: (_: FlutterDesktopMessengerRef) throws -> T) throws -> T {
+    private func withLockedMessenger<T>(
+        _ block: (_: FlutterDesktopMessengerRef) throws
+            -> T
+    ) throws -> T {
         FlutterDesktopMessengerLock(messenger)
         defer { FlutterDesktopMessengerUnlock(messenger) }
         guard isAvailable else {

@@ -30,7 +30,6 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
 
     // MARK: - FlutterDesktopMessenger wrappers
 
-    @MainActor
     private func _setMessageHandler(
         on channel: String,
         _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
@@ -41,12 +40,10 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
         )
     }
 
-    @MainActor
     private func _cleanup(connection: FlutterBinaryMessengerConnection) {
         platformBinaryMessenger.cleanUpConnection(connection)
     }
 
-    @MainActor
     public func _send(
         on channel: String,
         message: Data?,
@@ -58,7 +55,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     // MARK: - public API
 
     public func send(on channel: String, message: Data?) async throws {
-        await _send(on: channel, message: message, nil)
+        _send(on: channel, message: message, nil)
     }
 
     public func send(
@@ -68,10 +65,8 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     ) async throws -> Data? {
         try await withPriority(priority) {
             await withCheckedContinuation { continuation in
-                Task {
-                    await self._send(on: channel, message: message) { binaryReply in
-                        continuation.resume(returning: binaryReply)
-                    }
+                self._send(on: channel, message: message) { binaryReply in
+                    continuation.resume(returning: binaryReply)
                 }
             }
         }
@@ -83,9 +78,9 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
         priority: TaskPriority?
     ) async throws -> FlutterBinaryMessengerConnection {
         guard let handler else {
-            return await _setMessageHandler(on: channel, nil)
+            return _setMessageHandler(on: channel, nil)
         }
-        return await _setMessageHandler(on: channel) { message, callback in
+        return _setMessageHandler(on: channel) { message, callback in
             Task {
                 let response = try await handler(message)
                 DispatchQueue.main.async {
@@ -96,7 +91,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     }
 
     public func cleanUp(connection: FlutterBinaryMessengerConnection) async throws {
-        await _cleanup(connection: connection)
+        _cleanup(connection: connection)
     }
 }
 #endif
