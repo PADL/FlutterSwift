@@ -74,6 +74,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
                     replyThunk = nil
                 }
 
+                precondition(isAvailable) // should always be available from main thread
+
                 guard withUnsafeBytes(of: message, { bytes in
                     FlutterDesktopMessengerSendWithReplyBlock(
                         messenger,
@@ -146,6 +148,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         if let handlerInfo = messengerHandlers[channel] {
             let capturedMessageData = messageData
             Task(priority: handlerInfo.priority) { @MainActor in
+                precondition(isAvailable) // should always be available from main thread
                 let reply = try await handlerInfo.handler(capturedMessageData)
                 binaryResponseHandler(reply)
             }
@@ -177,6 +180,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
                 priority: priority
             )
             messengerHandlers[channel] = handlerInfo
+            precondition(isAvailable) // should always be available with locked messenger
             FlutterDesktopMessengerSetCallbackBlock(messenger, channel, onDesktopMessage)
             return currentMessengerConnection
         }
