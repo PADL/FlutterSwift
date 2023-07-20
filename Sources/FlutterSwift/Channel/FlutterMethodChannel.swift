@@ -54,11 +54,11 @@ extension FlutterMethodCall: Hashable where Arguments: Codable & Hashable {
  * A channel for communicating with the Flutter side using invocation of
  * asynchronous methods.
  */
-public actor FlutterMethodChannel: FlutterChannel {
-    nonisolated let name: String
-    nonisolated let binaryMessenger: FlutterBinaryMessenger
-    nonisolated let codec: FlutterMessageCodec
-    nonisolated let priority: TaskPriority?
+public class FlutterMethodChannel: FlutterChannel {
+    let name: String
+    let binaryMessenger: FlutterBinaryMessenger
+    let codec: FlutterMessageCodec
+    let priority: TaskPriority?
     var connection: FlutterBinaryMessengerConnection = 0
 
     public init(
@@ -73,9 +73,9 @@ public actor FlutterMethodChannel: FlutterChannel {
         self.priority = priority
     }
 
-    public func invoke<Arguments: Codable>(method: String, arguments: Arguments?) throws {
+    public func invoke<Arguments: Codable>(method: String, arguments: Arguments?) async throws {
         let methodCall = FlutterMethodCall<Arguments>(method: method, arguments: arguments)
-        try binaryMessenger.send(on: name, message: codec.encode(methodCall))
+        try await binaryMessenger.send(on: name, message: codec.encode(methodCall))
     }
 
     public func invoke<Arguments: Codable, Result: Codable>(

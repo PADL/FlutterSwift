@@ -48,45 +48,58 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     private func send(
         on channel: String,
         message: Data?,
-        replyBlock: ((Data?) -> ())?
-    ) throws {
-        try withLockedMessenger {
-            let replyThunk: FlutterDesktopBinaryReplyBlock?
+        priority: TaskPriority?,
+        expectingReply: Bool
+    ) async throws -> Data? {
+        let result = await Task(priority: priority) { @MainActor in
+           try await withCheckedThrowingContinuation { continuation in
+                let replyThunk: FlutterDesktopBinaryReplyBlock?
 
-            if let replyBlock {
-                replyThunk = { bytes, count in
-                    let data: Data?
-                    if let bytes, count > 0 {
-                        data = Data(
-                            bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
-                            count: count,
-                            deallocator: .none
-                        )
-                    } else {
-                        data = nil
+                if expectingReply {
+                    replyThunk = { bytes, count in
+                        let data: Data?
+
+                        if let bytes, count > 0 {
+                            data = Data(
+                                bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
+                                count: count,
+                                deallocator: .none
+                            )
+                        } else {
+                            data = nil
+                        }
+                        continuation.resume(returning: data)
                     }
-                    replyBlock(data)
+                } else {
+                    replyThunk = nil
                 }
-            } else {
-                replyThunk = nil
-            }
 
-            guard withUnsafeBytes(of: message, { bytes in
-                FlutterDesktopMessengerSendWithReplyBlock(
-                    messenger,
-                    channel,
-                    bytes.count > 0 ? bytes.baseAddress : nil,
-                    bytes.count,
-                    replyThunk
-                )
-            }) == true else {
-                throw FlutterSwiftError.messageSendFailure
+                guard withUnsafeBytes(of: message, { bytes in
+                    FlutterDesktopMessengerSendWithReplyBlock(
+                        messenger,
+                        channel,
+                        bytes.count > 0 ? bytes.baseAddress : nil,
+                        bytes.count,
+                        replyThunk)
+                }) == true else {
+                    continuation.resume(throwing: FlutterSwiftError.messageSendFailure)
+                    return
+                }
+                if !expectingReply {
+                    continuation.resume(returning: nil)
+                }
             }
+        }.result
+        switch result {
+        case .success(let reply):
+            return reply
+        case .failure(let error):
+            throw error
         }
     }
 
-    public func send(on channel: String, message: Data?) throws {
-        try send(on: channel, message: message, replyBlock: nil)
+    public func send(on channel: String, message: Data?) async throws {
+        let _ = try await send(on: channel, message: message, priority: nil, expectingReply: false)
     }
 
     public func send(
@@ -94,17 +107,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         message: Data?,
         priority: TaskPriority?
     ) async throws -> Data? {
-        try await withPriority(priority) {
-            try await withCheckedThrowingContinuation { continuation in
-                do {
-                    try self.send(on: channel, message: message) { reply in
-                        continuation.resume(returning: reply)
-                    }
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        try await send(on: channel, message: message, priority: priority, expectingReply: true)
     }
 
     private func onDesktopMessage(
@@ -178,8 +181,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         }
     }
 
-    public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
-        try withLockedMessenger {
+    public func cleanUp(connection: FlutterBinaryMessengerConnection) {
+        Task { @MainActor in
             guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
             else {
                 return

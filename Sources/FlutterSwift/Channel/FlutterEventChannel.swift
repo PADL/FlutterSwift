@@ -14,11 +14,11 @@ public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-public actor FlutterEventChannel: FlutterChannel {
-    nonisolated let name: String
-    nonisolated let binaryMessenger: FlutterBinaryMessenger
-    nonisolated let codec: FlutterMessageCodec
-    nonisolated let priority: TaskPriority?
+public class FlutterEventChannel: FlutterChannel {
+    let name: String
+    let binaryMessenger: FlutterBinaryMessenger
+    let codec: FlutterMessageCodec
+    let priority: TaskPriority?
     var task: Task<(), Error>?
     var connection: FlutterBinaryMessengerConnection = 0
 
@@ -72,13 +72,13 @@ public actor FlutterEventChannel: FlutterChannel {
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
-                        try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                        try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
                         try Task.checkCancellation()
                     }
-                    try binaryMessenger.send(on: name, message: nil)
+                    try await binaryMessenger.send(on: name, message: nil)
                 } catch let error as FlutterError {
                     let envelope = FlutterEnvelope<Event>.failure(error)
-                    try binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                    try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
                 } catch is CancellationError {
                     // FIXME: should we ignore this or send the finish message?
                 } catch {

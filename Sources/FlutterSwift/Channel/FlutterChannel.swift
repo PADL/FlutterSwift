@@ -4,11 +4,11 @@
 
 import Foundation
 
-protocol FlutterChannel: Actor {
-    nonisolated var name: String { get }
-    nonisolated var binaryMessenger: FlutterBinaryMessenger { get }
-    nonisolated var codec: FlutterMessageCodec { get }
-    nonisolated var priority: TaskPriority? { get }
+protocol FlutterChannel: AnyObject {
+    var name: String { get }
+    var binaryMessenger: FlutterBinaryMessenger { get }
+    var codec: FlutterMessageCodec { get }
+    var priority: TaskPriority? { get }
     var connection: FlutterBinaryMessengerConnection { get set }
 }
 

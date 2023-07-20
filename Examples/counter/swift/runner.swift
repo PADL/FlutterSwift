@@ -22,23 +22,19 @@ class ChannelManager {
 
     var flutterEventStream = Stream()
 
-    @MainActor
     private func messageHandler(_ arguments: String?) async -> Int? {
         debugPrint("Received message \(String(describing: arguments))")
         return magicCookie
     }
 
-    @MainActor
     private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
         flutterEventStream.eraseToAnyAsyncSequence()
     }
 
-    @MainActor
     private func onCancel(_ arguments: Arguments?) throws {
         cancelTask()
     }
 
-    @MainActor
     private func methodCallHandler(
         call: FlutterSwift
             .FlutterMethodCall<Int>
@@ -94,10 +90,11 @@ class ChannelManager {
             binaryMessenger: binaryMessenger
         )
 
-        Task { @MainActor in
-            try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
-            try! await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
-            try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+        try! flutterBasicMessageChannel!.setMessageHandler(messageHandler)
+        try! flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
+        try! flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+
+        Task {
             startTask()
         }
     }
