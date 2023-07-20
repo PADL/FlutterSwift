@@ -68,7 +68,7 @@ public class FlutterEventChannel: FlutterChannel {
                 self.task = nil
             }
             let stream = try onListen(call.arguments)
-            task = Task<(), Error>(priority: priority) { @MainActor in
+            task = Task<(), Error>(priority: priority) {
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
