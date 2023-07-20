@@ -5,7 +5,7 @@ import PackageDescription
 
 #if os(macOS)
 let FlutterRoot = "/opt/flutter"
-let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64-release"
+let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64"
 let FlutterUnsafeLinkerFlags = [
     "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
     "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
