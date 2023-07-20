@@ -4,6 +4,17 @@
 
 import Foundation
 
+/**
+ * A facility for communicating with the Flutter side using asynchronous message
+ * passing with binary messages.
+ *
+ * Implemented by:
+ * - `FlutterBasicMessageChannel`, which supports communication using structured
+ * messages.
+ * - `FlutterMethodChannel`, which supports communication using asynchronous
+ * method calls.
+ * - `FlutterEventChannel`, which supports commuication using event streams.
+ */
 protocol FlutterChannel: AnyObject {
     var name: String { get }
     var binaryMessenger: FlutterBinaryMessenger { get }

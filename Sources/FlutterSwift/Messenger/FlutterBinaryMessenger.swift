@@ -15,17 +15,6 @@ public typealias FlutterBinaryMessageHandler = (Data?) async throws -> Data?
 
 public typealias FlutterBinaryMessengerConnection = Int64
 
-/**
- * A facility for communicating with the Flutter side using asynchronous message
- * passing with binary messages.
- *
- * Implementated by:
- * - `FlutterBasicMessageChannel`, which supports communication using structured
- * messages.
- * - `FlutterMethodChannel`, which supports communication using asynchronous
- * method calls.
- * - `FlutterEventChannel`, which supports commuication using event streams.
- */
 public protocol FlutterBinaryMessenger: Actor {
     func send(on channel: String, message: Data?) async throws
     func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
