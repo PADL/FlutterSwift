@@ -36,7 +36,8 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
 
     // MARK: - FlutterDesktopMessenger wrappers
 
-    private nonisolated var isAvailable: Bool {
+    @MainActor
+    private var isAvailable: Bool {
         FlutterDesktopMessengerIsAvailable(messenger)
     }
 
@@ -49,6 +50,8 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         message: Data?,
         _ block: FlutterDesktopBinaryReplyBlock?
     ) throws {
+        precondition(isAvailable)
+
         guard withUnsafeBytes(of: message, { bytes in
             // run on main actor, so don't need to take lock
             FlutterDesktopMessengerSendWithReplyBlock(
@@ -68,6 +71,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         on channel: String,
         _ block: FlutterDesktopMessageCallbackBlock?
     ) {
+        precondition(isAvailable)
         FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
     }
 
@@ -77,6 +81,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         handle: OpaquePointer?,
         response: Data?
     ) {
+        precondition(isAvailable)
         guard let handle else {
             debugPrint(
                 "Error: Message responses can be sent only once. Ignoring duplicate response " +
@@ -122,8 +127,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
                     continuation.resume(returning: data)
                 }
 
-                precondition(self.isAvailable) // should always be available from main thread
-
                 Task {
                     // FIXME: errors are ignored
                     try? await self.send(on: channel, message: message, replyThunk)
@@ -133,7 +136,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     public func send(on channel: String, message: Data?) async throws {
-        precondition(isAvailable) // should always be available from main thread
         try await send(on: channel, message: message, nil)
     }
 
@@ -156,7 +158,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             let handlerInfo = messengerHandlers[channel]
             Task(priority: handlerInfo?.priority) {
                 if let handlerInfo {
-                    precondition(isAvailable) // should always be available from main actor
                     let response = try await handlerInfo.handler(capturedMessageData)
                     await sendResponse(
                         on: channel,
@@ -171,7 +172,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     private func removeMessengerHandler(for channel: String) async {
-        precondition(isAvailable) // should always be available with locked messenger
         messengerHandlers.removeValue(forKey: channel)
         await setCallbackBlock(on: channel, nil)
     }
@@ -193,7 +193,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             priority: priority
         )
         messengerHandlers[channel] = handlerInfo
-        precondition(isAvailable) // should always be available with locked messenger
         await setCallbackBlock(on: channel, onDesktopMessage)
         return currentMessengerConnection
     }
