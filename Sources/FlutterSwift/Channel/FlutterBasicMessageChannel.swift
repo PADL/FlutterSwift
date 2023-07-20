@@ -58,8 +58,8 @@ public class FlutterBasicMessageChannel: FlutterChannel {
     public func setMessageHandler<
         Message: Decodable,
         Reply: Encodable
-    >(_ handler: FlutterMessageHandler<Message, Reply>?) throws {
-        try setMessageHandler(handler) { [self] unwrappedHandler in
+    >(_ handler: FlutterMessageHandler<Message, Reply>?) async throws {
+        try await setMessageHandler(handler) { [self] unwrappedHandler in
             { message in
                 let decoded: Message?
 

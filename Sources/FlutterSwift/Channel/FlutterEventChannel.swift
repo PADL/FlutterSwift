@@ -120,8 +120,8 @@ public class FlutterEventChannel: FlutterChannel {
     public func setStreamHandler<Event: Codable, Arguments: Codable>(
         onListen: ((Arguments?) throws -> FlutterEventStream<Event>)?,
         onCancel: ((Arguments?) throws -> ())?
-    ) throws {
-        try setMessageHandler(onListen) { [self] unwrappedHandler in
+    ) async throws {
+        try await setMessageHandler(onListen) { [self] unwrappedHandler in
             { [self] message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented

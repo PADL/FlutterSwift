@@ -11,7 +11,7 @@ import Flutter
 import FlutterMacOS
 #endif
 
-public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
+public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     #if canImport(Flutter)
     public typealias PlatformFlutterBinaryMessenger = Flutter.FlutterBinaryMessenger
     #elseif canImport(FlutterMacOS)
