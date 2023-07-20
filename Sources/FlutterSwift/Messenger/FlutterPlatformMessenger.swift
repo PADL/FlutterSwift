@@ -83,9 +83,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
         return _setMessageHandler(on: channel) { message, callback in
             Task {
                 let response = try await handler(message)
-                DispatchQueue.main.async {
-                    callback(response)
-                }
+                callback(response)
             }
         }
     }
