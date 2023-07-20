@@ -182,8 +182,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         }
     }
 
-    public func cleanUp(connection: FlutterBinaryMessengerConnection) {
-        Task { @MainActor in
+    public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
+        try withLockedMessenger {
             guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
             else {
                 return

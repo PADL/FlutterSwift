@@ -60,7 +60,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         }
     }
 
-    public func cleanUp(connection: FlutterBinaryMessengerConnection) {
+    public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
         platformBinaryMessenger.cleanUpConnection(connection)
     }
 }

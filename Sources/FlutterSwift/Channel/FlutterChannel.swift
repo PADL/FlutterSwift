@@ -19,7 +19,7 @@ extension FlutterChannel {
     ) throws {
         guard let unwrappedHandler = optionalHandler else {
             if connection > 0 {
-                binaryMessenger.cleanUp(connection: connection)
+                try binaryMessenger.cleanUp(connection: connection)
                 connection = 0
             } else {
                 _ = try binaryMessenger.setMessageHandler(

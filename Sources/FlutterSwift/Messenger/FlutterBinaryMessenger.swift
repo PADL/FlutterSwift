@@ -27,15 +27,15 @@ public typealias FlutterBinaryMessengerConnection = Int64
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
 public protocol FlutterBinaryMessenger {
+    func send(on channel: String, message: Data?) async throws
+    func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
+
     func setMessageHandler(
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
     ) throws -> FlutterBinaryMessengerConnection
-
-    func send(on channel: String, message: Data?) async throws
-    func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
-    func cleanUp(connection: FlutterBinaryMessengerConnection)
+    func cleanUp(connection: FlutterBinaryMessengerConnection) throws
 }
 
 extension FlutterBinaryMessenger {
