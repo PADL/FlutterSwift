@@ -66,7 +66,8 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     @MainActor
     private func setCallbackBlock(
         on channel: String,
-        _ block: FlutterDesktopMessageCallbackBlock?) {
+        _ block: FlutterDesktopMessageCallbackBlock?
+    ) {
         FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
     }
 
@@ -157,7 +158,11 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
                 if let handlerInfo {
                     precondition(isAvailable) // should always be available from main actor
                     let response = try await handlerInfo.handler(capturedMessageData)
-                    await sendResponse(on: channel, handle: message.response_handle, response: response)
+                    await sendResponse(
+                        on: channel,
+                        handle: message.response_handle,
+                        response: response
+                    )
                 } else {
                     await sendResponse(on: channel, handle: message.response_handle, response: nil)
                 }
