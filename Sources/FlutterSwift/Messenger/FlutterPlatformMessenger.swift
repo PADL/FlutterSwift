@@ -24,6 +24,28 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         self.platformBinaryMessenger = platformBinaryMessenger
     }
 
+    public func send(on channel: String, message: Data?) async throws {
+        Task { @MainActor in
+            platformBinaryMessenger.send(onChannel: channel, message: message)
+        }
+    }
+
+    public func send(
+        on channel: String,
+        message: Data?,
+        priority: TaskPriority?
+    ) async throws -> Data? {
+        try await withPriority(priority) {
+            try await Task { @MainActor in
+                try await withCheckedThrowingContinuation {
+                    platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
+                        reply
+                    }
+                }
+            }
+        }
+    }
+
     public func setMessageHandler(
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
@@ -38,24 +60,6 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         return platformBinaryMessenger.setMessageHandlerOnChannel(channel) { message, callback in
             Task(priority: priority) { @MainActor in
                 callback(try await handler(message!))
-            }
-        }
-    }
-
-    public func send(on channel: String, message: Data?) async throws {
-        platformBinaryMessenger.send(onChannel: channel, message: message)
-    }
-
-    public func send(
-        on channel: String,
-        message: Data?,
-        priority: TaskPriority?
-    ) async throws -> Data? {
-        try await withPriority(priority) {
-            try await withCheckedThrowingContinuation {
-                platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
-                    reply
-                }
             }
         }
     }
