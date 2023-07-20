@@ -52,7 +52,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         expectingReply: Bool
     ) async throws -> Data? {
         let result = await Task(priority: priority) { @MainActor in
-           try await withCheckedThrowingContinuation { continuation in
+            try await withCheckedThrowingContinuation { continuation in
                 let replyThunk: FlutterDesktopBinaryReplyBlock?
 
                 if expectingReply {
@@ -80,7 +80,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
                         channel,
                         bytes.count > 0 ? bytes.baseAddress : nil,
                         bytes.count,
-                        replyThunk)
+                        replyThunk
+                    )
                 }) == true else {
                     continuation.resume(throwing: FlutterSwiftError.messageSendFailure)
                     return
@@ -91,9 +92,9 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             }
         }.result
         switch result {
-        case .success(let reply):
+        case let .success(reply):
             return reply
-        case .failure(let error):
+        case let .failure(error):
             throw error
         }
     }

@@ -28,7 +28,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         on channel: String,
         handler: FlutterBinaryMessageHandler?,
         priority: TaskPriority?
-    ) throws -> FlutterBinaryMessengerConnection {
+    ) async throws -> FlutterBinaryMessengerConnection {
         guard let handler else {
             return platformBinaryMessenger.setMessageHandlerOnChannel(
                 channel,
@@ -42,7 +42,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         }
     }
 
-    public func send(on channel: String, message: Data?) throws {
+    public func send(on channel: String, message: Data?) async throws {
         platformBinaryMessenger.send(onChannel: channel, message: message)
     }
 
@@ -60,7 +60,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         }
     }
 
-    public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
+    public func cleanUp(connection: FlutterBinaryMessengerConnection) {
         platformBinaryMessenger.cleanUpConnection(connection)
     }
 }

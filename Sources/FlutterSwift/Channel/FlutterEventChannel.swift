@@ -72,7 +72,10 @@ public class FlutterEventChannel: FlutterChannel {
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
-                        try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                        try await binaryMessenger.send(
+                            on: name,
+                            message: try codec.encode(envelope)
+                        )
                         try Task.checkCancellation()
                     }
                     try await binaryMessenger.send(on: name, message: nil)
