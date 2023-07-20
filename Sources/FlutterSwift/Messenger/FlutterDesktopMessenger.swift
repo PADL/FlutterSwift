@@ -48,7 +48,8 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     private func send(
         on channel: String,
         message: Data?,
-        _ replyBlock: FlutterDesktopBinaryReplyBlock?) throws {
+        _ replyBlock: FlutterDesktopBinaryReplyBlock?
+    ) throws {
         guard withUnsafeBytes(of: message, { bytes in
             // run on main actor, so don't need to take lock
             FlutterDesktopMessengerSendWithReplyBlock(

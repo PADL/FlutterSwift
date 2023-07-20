@@ -24,23 +24,21 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
         self.platformBinaryMessenger = platformBinaryMessenger
     }
 
+    @MainActor
     public func send(on channel: String, message: Data?) async throws {
-        Task { @MainActor in
-            platformBinaryMessenger.send(onChannel: channel, message: message)
-        }
+        platformBinaryMessenger.send(onChannel: channel, message: message)
     }
 
+    @MainActor
     public func send(
         on channel: String,
         message: Data?,
         priority: TaskPriority?
     ) async throws -> Data? {
         try await withPriority(priority) {
-            try await Task { @MainActor in
-                try await withCheckedThrowingContinuation {
-                    platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
-                        reply
-                    }
+            try await withCheckedThrowingContinuation {
+                platformBinaryMessenger.send(onChannel: channel, message: message) { reply in
+                    reply
                 }
             }
         }
