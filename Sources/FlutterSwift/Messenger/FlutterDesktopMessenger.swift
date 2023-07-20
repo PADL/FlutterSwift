@@ -48,69 +48,61 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     private func send(
         on channel: String,
         message: Data?,
-        priority: TaskPriority?,
-        expectingReply: Bool
-    ) async throws -> Data? {
-        let result = await Task(priority: priority) { @MainActor in
-            try await withCheckedThrowingContinuation { continuation in
-                let replyThunk: FlutterDesktopBinaryReplyBlock?
-
-                if expectingReply {
-                    replyThunk = { bytes, count in
-                        let data: Data?
-
-                        if let bytes, count > 0 {
-                            data = Data(
-                                bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
-                                count: count,
-                                deallocator: .none
-                            )
-                        } else {
-                            data = nil
-                        }
-                        continuation.resume(returning: data)
-                    }
-                } else {
-                    replyThunk = nil
-                }
-
-                precondition(isAvailable) // should always be available from main thread
-
-                guard withUnsafeBytes(of: message, { bytes in
-                    FlutterDesktopMessengerSendWithReplyBlock(
-                        messenger,
-                        channel,
-                        bytes.count > 0 ? bytes.baseAddress : nil,
-                        bytes.count,
-                        replyThunk
-                    )
-                }) == true else {
-                    continuation.resume(throwing: FlutterSwiftError.messageSendFailure)
-                    return
-                }
-                if !expectingReply {
-                    continuation.resume(returning: nil)
-                }
-            }
-        }.result
-        switch result {
-        case let .success(reply):
-            return reply
-        case let .failure(error):
-            throw error
+        _ replyBlock: FlutterDesktopBinaryReplyBlock?) throws {
+        guard withUnsafeBytes(of: message, { bytes in
+            // run on main actor, so don't need to take lock
+            FlutterDesktopMessengerSendWithReplyBlock(
+                messenger,
+                channel,
+                bytes.count > 0 ? bytes.baseAddress : nil,
+                bytes.count,
+                replyBlock
+            )
+        }) == true else {
+            throw FlutterSwiftError.messageSendFailure
         }
     }
 
-    public func send(on channel: String, message: Data?) async throws {
-        let _ = try await send(on: channel, message: message, priority: nil, expectingReply: false)
-    }
-
+    @MainActor
     public func send(
         on channel: String,
         message: Data?,
         priority: TaskPriority?
     ) async throws -> Data? {
-        try await send(on: channel, message: message, priority: priority, expectingReply: true)
+        try await withPriority(priority) {
+            try await withCheckedThrowingContinuation { continuation in
+                let replyThunk: FlutterDesktopBinaryReplyBlock?
+
+                replyThunk = { bytes, count in
+                    let data: Data?
+
+                    if let bytes, count > 0 {
+                        data = Data(
+                            bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
+                            count: count,
+                            deallocator: .none
+                        )
+                    } else {
+                        data = nil
+                    }
+                    continuation.resume(returning: data)
+                }
+
+                precondition(self.isAvailable) // should always be available from main thread
+
+                do {
+                    try self.send(on: channel, message: message, replyThunk)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    public func send(on channel: String, message: Data?) async throws {
+        precondition(isAvailable) // should always be available from main thread
+        try send(on: channel, message: message, nil)
     }
 
     private func onDesktopMessage(
@@ -130,6 +122,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         let binaryResponseHandler: (Data?) -> () = { response in
             if message.response_handle != nil {
                 withUnsafeBytes(of: response) {
+                    // run on main actor, so don't need to take lock
                     FlutterDesktopMessengerSendResponse(
                         self.messenger,
                         message.response_handle,
@@ -158,6 +151,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     private func removeMessengerHandler(for channel: String) {
+        precondition(isAvailable) // should always be available with locked messenger
         messengerHandlers.removeValue(forKey: channel)
         FlutterDesktopMessengerSetCallbackBlock(messenger, channel, nil)
     }
