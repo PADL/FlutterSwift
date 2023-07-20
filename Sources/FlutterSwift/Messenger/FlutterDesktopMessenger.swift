@@ -36,14 +36,23 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
 
     // MARK: - FlutterDesktopMessenger wrappers
 
-    @MainActor
-    private var isAvailable: Bool {
+    private nonisolated var isAvailable: Bool {
         FlutterDesktopMessengerIsAvailable(messenger)
     }
 
-    // any calls to FlutterDesktopMessenger...() must be performed by the main actor,
-    // otherwise we would need to take a lock (and it is not recommended anyway)
-    // The channel handlers, however, are free to run on the local actor
+    private func withLockedMessenger<T>(_ block: (_: FlutterDesktopMessengerRef) throws -> T) throws -> T {
+        FlutterDesktopMessengerLock(messenger)
+        defer { FlutterDesktopMessengerUnlock(messenger) }
+        guard isAvailable else {
+            throw FlutterSwiftError.messengerNotAvailable
+        }
+        return try block(messenger)
+    }
+
+    // looking at the Darwin implementation, as long as message handlers are
+    // serialized (here with an actor, in Darwin with a dispatch queue) then
+    // it is safe to run handlers in any thread. However currently we must
+    // *send* messages from the main thread.
     @MainActor
     private func send(
         on channel: String,
@@ -66,22 +75,20 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         }
     }
 
-    @MainActor
     private func setCallbackBlock(
         on channel: String,
         _ block: FlutterDesktopMessageCallbackBlock?
-    ) {
-        precondition(isAvailable)
-        FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
+    ) throws {
+        try withLockedMessenger { messenger in
+            FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
+        }
     }
 
-    @MainActor
     private func sendResponse(
         on channel: String,
         handle: OpaquePointer?,
         response: Data?
-    ) {
-        precondition(isAvailable)
+    ) throws {
         guard let handle else {
             debugPrint(
                 "Error: Message responses can be sent only once. Ignoring duplicate response " +
@@ -90,14 +97,16 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             return
         }
 
-        withUnsafeBytes(of: response) {
-            // run on main actor, so don't need to take lock
-            FlutterDesktopMessengerSendResponse(
-                self.messenger,
-                handle,
-                $0.baseAddress,
-                response?.count ?? 0
-            )
+        try withLockedMessenger { messenger in
+            withUnsafeBytes(of: response) {
+                // run on main actor, so don't need to take lock
+                FlutterDesktopMessengerSendResponse(
+                    messenger,
+                    handle,
+                    $0.baseAddress,
+                    response?.count ?? 0
+                )
+            }
         }
     }
 
@@ -128,7 +137,6 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
                 }
 
                 Task {
-                    // FIXME: errors are ignored
                     try? await self.send(on: channel, message: message, replyThunk)
                 }
             }
@@ -159,21 +167,21 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             Task(priority: handlerInfo?.priority) {
                 if let handlerInfo {
                     let response = try await handlerInfo.handler(capturedMessageData)
-                    await sendResponse(
+                    try? sendResponse(
                         on: channel,
                         handle: message.response_handle,
                         response: response
                     )
                 } else {
-                    await sendResponse(on: channel, handle: message.response_handle, response: nil)
+                    try? sendResponse(on: channel, handle: message.response_handle, response: nil)
                 }
             }
         }
     }
 
-    private func removeMessengerHandler(for channel: String) async {
+    private func removeMessengerHandler(for channel: String) async throws {
         messengerHandlers.removeValue(forKey: channel)
-        await setCallbackBlock(on: channel, nil)
+        try setCallbackBlock(on: channel, nil)
     }
 
     public func setMessageHandler(
@@ -182,7 +190,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         priority: TaskPriority?
     ) async throws -> FlutterBinaryMessengerConnection {
         guard let handler else {
-            await removeMessengerHandler(for: channel)
+            try await removeMessengerHandler(for: channel)
             return 0
         }
 
@@ -193,7 +201,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             priority: priority
         )
         messengerHandlers[channel] = handlerInfo
-        await setCallbackBlock(on: channel, onDesktopMessage)
+        try setCallbackBlock(on: channel, onDesktopMessage)
         return currentMessengerConnection
     }
 
@@ -202,7 +210,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         else {
             return
         }
-        await removeMessengerHandler(for: foundChannel.key)
+        try await removeMessengerHandler(for: foundChannel.key)
     }
 }
 #endif
