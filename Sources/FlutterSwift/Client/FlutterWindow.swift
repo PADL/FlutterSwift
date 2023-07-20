@@ -27,27 +27,25 @@ public struct FlutterWindow {
         // caller should register plugins before calling run()
     }
 
-    private func schedule(after nextInterval: TimeInterval) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + nextInterval) {
-            var waitDurationNS = viewController.engine.processMessages()
-            let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
-                NanosecondsPerMillisecond
-
-            if frameDurationNS < waitDurationNS {
-                waitDurationNS = frameDurationNS
-            }
-
-            guard viewController.view.dispatchEvent() else {
-                return
-            }
-
-            // should be tail call optimised
-            self.schedule(after: TimeInterval(waitDurationNS / NanosecondsPerSecond))
-        }
-    }
-
     public func run() {
-        schedule(after: 0)
+        Task { @MainActor in
+            repeat {
+                var waitDurationNS = viewController.engine.processMessages()
+                let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
+                    NanosecondsPerMillisecond
+
+                if frameDurationNS < waitDurationNS {
+                    waitDurationNS = frameDurationNS
+                }
+
+                guard viewController.view.dispatchEvent() else {
+                    return
+                }
+
+                try await Task.sleep(nanoseconds: waitDurationNS)
+            } while !Task.isCancelled
+        }
+
         RunLoop.main.run()
     }
 }
