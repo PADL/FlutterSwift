@@ -225,7 +225,7 @@
 		OBJ_96 /* AsyncCombineLatest3Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncCombineLatest3Sequence.swift; sourceTree = "<group>"; };
 		OBJ_97 /* CombineLatestStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineLatestStateMachine.swift; sourceTree = "<group>"; };
 		OBJ_98 /* CombineLatestStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineLatestStorage.swift; sourceTree = "<group>"; };
-		"flutterswift::FlutterSwift::Product" /* FlutterSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FlutterSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"flutterswift::FlutterSwift::Product" /* FlutterSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FlutterSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -900,6 +900,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+					"/opt/flutter/bin/cache/artifacts/engine/darwin-x64",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = FlutterSwift.xcodeproj/FlutterSwift_Info.plist;
@@ -941,6 +942,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+					"/opt/flutter/bin/cache/artifacts/engine/darwin-x64",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = FlutterSwift.xcodeproj/FlutterSwift_Info.plist;
