@@ -39,7 +39,7 @@ public struct FlutterWindow {
                 }
 
                 guard viewController.view.dispatchEvent() else {
-                    return
+                    break
                 }
 
                 try await Task.sleep(nanoseconds: waitDurationNS)
