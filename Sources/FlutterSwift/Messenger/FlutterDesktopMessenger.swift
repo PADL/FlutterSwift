@@ -100,16 +100,14 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
             return
         }
 
-        // FIXME: are we unnecessarily taking a lock here?
-        try withLockedMessenger { messenger in
-            withUnsafeBytes(of: response) {
-                FlutterDesktopMessengerSendResponse(
-                    messenger,
-                    handle,
-                    $0.baseAddress,
-                    response?.count ?? 0
-                )
-            }
+        // FIXME: do we need to take a lock here? doesn't look like other platforms do
+        withUnsafeBytes(of: response) {
+            FlutterDesktopMessengerSendResponse(
+                messenger,
+                handle,
+                $0.baseAddress,
+                response?.count ?? 0
+            )
         }
     }
 
