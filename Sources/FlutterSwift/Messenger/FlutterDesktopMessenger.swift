@@ -139,15 +139,17 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
             }
         }
 
-        if let handlerInfo = messengerHandlers[channel] {
-            let capturedMessageData = messageData
-            Task(priority: handlerInfo.priority) { @MainActor in
-                precondition(isAvailable) // should always be available from main thread
+        let capturedMessageData = messageData
+        let handlerInfo = messengerHandlers[channel]
+
+        Task(priority: handlerInfo?.priority) { @MainActor in
+            if let handlerInfo {
+                precondition(isAvailable) // should always be available from main actor
                 let reply = try await handlerInfo.handler(capturedMessageData)
                 binaryResponseHandler(reply)
+            } else {
+                binaryResponseHandler(nil)
             }
-        } else {
-            binaryResponseHandler(nil)
         }
     }
 
