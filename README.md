@@ -5,7 +5,7 @@ FlutterSwift is a native Swift Flutter client wrapper and platform channel imple
 
 It is intended to be used on platforms where Swift is available but Objective-C and AppKit/UIKit are not, specifically the [Sony eLinux embedder](https://github.com/sony/flutter-embedded-linux). It also provides a more idiomatic asynchronous API which would not be possible in Objective-C.
 
-The `FlutterDesktopMessenger` class wraps the API in `flutter_messenger.h`. However, to allow development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger
+The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. To permit development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger. Thus, you can develop on macOS and deploy on embedded Linux from a single codebase.
 
 This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself (this is assumed to be in `/opt/flutter-elinux/lib` or a downloaded build artifact) or a runner. Currently there is no facility for automatically generating runners; in the interim, see [README.md](Examples/counter/swift/README.md) for some testing notes.
 
@@ -22,7 +22,7 @@ import FlutterSwift
 
 override func awakeFromNib() {
     let flutterViewController = FlutterViewController() // from ObjC implementation
-    let platformBinaryMessenger = FlutterSwift
+    let binaryMessenger = FlutterSwift
         .FlutterPlatformMessenger(wrapping: flutterViewController.engine.binaryMessenger)
     ...
 }
@@ -73,11 +73,11 @@ override func awakeFromNib() {
 ...
     flutterBasicMessageChannel = FlutterBasicMessageChannel(
         name: "com.padl.example",
-        binaryMessenger: platformBinaryMessenger,
+        binaryMessenger: binaryMessenger,
         codec: FlutterJSONMessageCodec.shared
     )
 
-    task = Task { @MainActor in
+    task = Task {
         try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
         ...
     }
@@ -90,7 +90,6 @@ Method channel
 ```swift
 var isRunning = true
 
-@MainActor
 private func methodCallHandler(
     call: FlutterSwift
         .FlutterMethodCall<Bool>
@@ -104,9 +103,9 @@ override func awakeFromNib() {
 
     let flutterMethodChannel = FlutterMethodChannel(
         name: "com.padl.toggleCounter",
-        binaryMessenger: platformBinaryMessenger
+        binaryMessenger: binaryMessenger
     )
-    task = Task { @MainActor in
+    task = Task {
         try await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
     }
 }
@@ -117,39 +116,42 @@ Event channel
 
 ```swift
 import AsyncAlgorithms
+import AsyncExtensions
+import FlutterSwift
 ...
 
 /// this should go inside MainFlutterWindow
 typealias Arguments = FlutterNull
 typealias Event = Int32
+typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
 
-var flutterEventStream = FlutterEventStream<Event>()
+var flutterEventStream = Stream()
 var task: Task<(), Error>?
 var counter: Event = 0
 
-@MainActor
 private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
-    flutterEventStream
+    // a FlutterEventStream is an AsyncSequence
+    flutterEventStream.eraseToAnyAsyncSequence()
 }
 
-@MainActor
 private func onCancel(_ arguments: Arguments?) throws {
     task?.cancel()
+    task = nil
 }
 
 override func awakeFromNib() {
 ...
     let flutterEventChannel = FlutterEventChannel(
         name: "com.padl.counter",
-        binaryMessenger: platformBinaryMessenger
+        binaryMessenger: binaryMessenger
     )
-    task = Task { @MainActor in
+    task = Task {
         try await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
         repeat {
             await flutterEventStream.send(counter)
+            count += 1
             try await Task.sleep(nanoseconds: NSEC_PER_SEC)
         } while !Task.isCancelled
     }
 }
 ```
-
