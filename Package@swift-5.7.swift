@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.7
 
 import Foundation
 import PackageDescription
@@ -130,9 +130,7 @@ target = [
         cxxSettings: [
         ],
         swiftSettings: [
-            .interoperabilityMode(.Cxx),
             // FIXME: https://github.com/apple/swift-package-manager/issues/6661
-            .unsafeFlags(["-cxx-interoperability-mode=default"]),
         ],
         linkerSettings: [
             .unsafeFlags(FlutterUnsafeLinkerFlags),
@@ -194,7 +192,6 @@ let package = Package(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
                 ),
             ],
-            swiftSettings: [.interoperabilityMode(.Cxx)],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
@@ -210,8 +207,6 @@ let package = Package(
             ],
             swiftSettings: [
                 // FIXME: https://github.com/apple/swift-package-manager/issues/6661
-                .interoperabilityMode(.Cxx),
-                .unsafeFlags(["-cxx-interoperability-mode=default"]),
             ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),

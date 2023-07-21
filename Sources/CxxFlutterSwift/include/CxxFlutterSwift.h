@@ -5,8 +5,6 @@
 #ifndef CxxFlutterSwift_h
 #define CxxFlutterSwift_h
 
-#ifndef __APPLE__
-
 #include <stdbool.h>
 
 #include <flutter_messenger.h>
@@ -63,7 +61,5 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetView(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !__APPLE__ */
 
 #endif /* CxxFlutterSwift_h */

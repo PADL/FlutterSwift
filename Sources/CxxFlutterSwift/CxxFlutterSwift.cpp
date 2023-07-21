@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef __APPLE__
-
 #include <stdlib.h>
 
 #include <map>
@@ -111,5 +109,3 @@ void FlutterDesktopEngineSetView(
     auto engine = reinterpret_cast<flutter::FlutterELinuxEngine *>(engineRef);
     engine->SetView(reinterpret_cast<flutter::FlutterELinuxView *>(viewRef));
 }
- 
-#endif /* !__APPLE__ */
