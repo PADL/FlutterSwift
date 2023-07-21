@@ -37,7 +37,7 @@ var targets: [Target] = []
 var products: [Product] = []
 
 #if os(Linux)
-target = [
+targets = [
     .binaryTarget(
         name: "CFlutterEngine",
         path: "flutter-engine.artifactbundle.zip"
