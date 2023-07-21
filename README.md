@@ -7,7 +7,7 @@ It is intended to be used on platforms where Swift is available but Objective-C 
 
 The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. To permit development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger. Thus, you can develop on macOS and deploy on embedded Linux from a single codebase.
 
-This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself (this is assumed to be in `/opt/flutter-elinux/lib` or a downloaded build artifact) or a runner. Currently there is no facility for automatically generating runners; in the interim, see [README.md](Examples/counter/swift/README.md) for some testing notes.
+This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself: this is assumed to be in `/opt/flutter-elinux/lib` or a build artifact downloaded by [download-engine.sh](download-engine.sh). Further, there is no facility at present for automatically generating runners, you need to build for another platform and manually link (or load, if not AOT compiling).
 
 Some examples follow.
 
