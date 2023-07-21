@@ -56,37 +56,37 @@ public class FlutterEventChannel: FlutterChannel {
 
     private func onMethod<Event: Codable, Arguments: Codable>(
         call: FlutterMethodCall<Arguments>,
-        onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
-        onCancel: ((Arguments?) async throws -> ())?
+        onListen: @escaping ((Arguments?) throws -> FlutterEventStream<Event>),
+        onCancel: ((Arguments?) throws -> ())?
     ) async throws -> FlutterEnvelope<Arguments>? {
         let envelope: FlutterEnvelope<Arguments>?
 
-        // message handler should always be called on main actor, so should be safe
-        // to mutate state
         switch call.method {
         case "listen":
             if let task {
                 task.cancel()
                 self.task = nil
             }
-            let stream = try await onListen(call.arguments)
-            do {
-                for try await event in stream {
-                    let envelope = FlutterEnvelope.success(event)
-                    try await binaryMessenger.send(
-                        on: name,
-                        message: try codec.encode(envelope)
-                    )
-                    try Task.checkCancellation()
+            let stream = try onListen(call.arguments)
+            task = Task<(), Error>(priority: priority) {
+                do {
+                    for try await event in stream {
+                        let envelope = FlutterEnvelope.success(event)
+                        try await binaryMessenger.send(
+                            on: name,
+                            message: try codec.encode(envelope)
+                        )
+                        try Task.checkCancellation()
+                    }
+                    try await binaryMessenger.send(on: name, message: nil)
+                } catch let error as FlutterError {
+                    let envelope = FlutterEnvelope<Event>.failure(error)
+                    try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                } catch is CancellationError {
+                    // FIXME: should we ignore this or send the finish message?
+                } catch {
+                    throw FlutterSwiftError.invalidEventError
                 }
-                try await binaryMessenger.send(on: name, message: nil)
-            } catch let error as FlutterError {
-                let envelope = FlutterEnvelope<Event>.failure(error)
-                try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
-            } catch is CancellationError {
-                // FIXME: should we ignore this or send the finish message?
-            } catch {
-                throw FlutterSwiftError.invalidEventError
             }
             envelope = FlutterEnvelope.success(nil)
         case "cancel":
@@ -96,7 +96,7 @@ public class FlutterEventChannel: FlutterChannel {
             }
             do {
                 if let onCancel {
-                    try await onCancel(call.arguments)
+                    try onCancel(call.arguments)
                 }
                 envelope = FlutterEnvelope.success(nil)
             } catch let error as FlutterError {
