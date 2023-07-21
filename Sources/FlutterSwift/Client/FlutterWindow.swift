@@ -28,7 +28,7 @@ public struct FlutterWindow {
     }
 
     public func run() {
-        Task { @MainActor in
+        Task(priority: .userInitiated) { @MainActor in
             repeat {
                 var waitDurationNS = viewController.engine.processMessages()
                 let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
