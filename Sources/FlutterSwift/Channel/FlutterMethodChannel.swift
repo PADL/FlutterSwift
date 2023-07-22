@@ -122,15 +122,3 @@ public class FlutterMethodChannel: FlutterChannel {
         }
     }
 }
-
-extension FlutterMethodChannel: Equatable {
-    public static func == (lhs: FlutterMethodChannel, rhs: FlutterMethodChannel) -> Bool {
-        lhs.name == rhs.name
-    }
-}
-
-extension FlutterMethodChannel: Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(name)
-    }
-}

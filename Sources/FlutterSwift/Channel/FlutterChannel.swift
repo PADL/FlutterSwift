@@ -15,7 +15,7 @@ import Foundation
  * method calls.
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
-protocol FlutterChannel: AnyObject {
+protocol FlutterChannel: AnyObject, Hashable, Equatable {
     var name: String { get }
     var binaryMessenger: FlutterBinaryMessenger { get }
     var codec: FlutterMessageCodec { get }
@@ -24,6 +24,14 @@ protocol FlutterChannel: AnyObject {
 }
 
 extension FlutterChannel {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.name == rhs.name
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+    }
+
     func removeMessageHandler() async throws {
         if connection > 0 {
             try await binaryMessenger.cleanUp(connection: connection)
