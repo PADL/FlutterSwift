@@ -61,7 +61,7 @@ enum SomeApp {
 Message channel
 ---------------
 
-This shows a basic message channel handler using the JSON message codec. Note that because the message channels are actors, `setMessageHandler()` needs to be called in an asynchronous context. On eLinux, instead of registering the channels in `awakeFromNib()`, call this from the `main()` function (perhaps indirected by a manager class).
+This shows a basic message channel handler using the JSON message codec. Note that because the binary messenger is an actors, `setMessageHandler()` needs to be called in an asynchronous context. On eLinux, instead of registering the channels in `awakeFromNib()`, call this from the `main()` function (perhaps indirected by a manager class).
 
 ```swift
 private func messageHandler(_ arguments: String?) async -> Int? {
@@ -106,7 +106,7 @@ override func awakeFromNib() {
         binaryMessenger: binaryMessenger
     )
     task = Task {
-        try await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+        try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
     }
 }
 
@@ -146,7 +146,7 @@ override func awakeFromNib() {
         binaryMessenger: binaryMessenger
     )
     task = Task {
-        try await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
+        try! await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
         repeat {
             await flutterEventStream.send(counter)
             count += 1
