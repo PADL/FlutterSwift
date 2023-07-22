@@ -124,8 +124,8 @@ public class FlutterMethodChannel: FlutterChannel {
 }
 
 extension FlutterMethodChannel: Equatable {
-    public static func ==(lhs: FlutterMethodChannel, rhs: FlutterMethodChannel) -> Bool {
-        return lhs.name == rhs.name
+    public static func == (lhs: FlutterMethodChannel, rhs: FlutterMethodChannel) -> Bool {
+        lhs.name == rhs.name
     }
 }
 
