@@ -70,11 +70,6 @@ public final class FlutterEngine: FlutterPluginRegistry {
     }
 
     public func shutDown() {
-        for key in pluginPublications.keys {
-            if let registrar = registrar(for: key) as? FlutterDesktopPluginRegistrar {
-                registrar.detachFromEngine?(registrar)
-            }
-        }
         pluginPublications.removeAll()
         if let engine, ownsEngine {
             FlutterDesktopEngineDestroy(engine)

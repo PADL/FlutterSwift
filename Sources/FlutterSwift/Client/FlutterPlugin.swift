@@ -92,9 +92,9 @@ public protocol FlutterPluginRegistry {
 
 public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     public let pluginKey: String
+    public var engine: FlutterEngine
     var registrar: FlutterDesktopPluginRegistrarRef?
-    var detachFromEngine: ((FlutterPluginRegistrar) -> ())?
-    private var engine: FlutterEngine
+    var detachFromEngineCallbacks = [FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]()
 
     public init(
         engine: FlutterEngine,
@@ -139,10 +139,19 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         _ delegate: AnyFlutterPlugin<Arguments, Result>,
         on channel: FlutterMethodChannel
     ) throws {
-        detachFromEngine = delegate._detachFromEngine
         Task {
             try await channel.setMethodCallHandler { call in
                 try delegate.handleMethod(call: call)
+            }
+            detachFromEngineCallbacks[channel] = delegate._detachFromEngine
+        }
+    }
+
+    deinit {
+        for (channel, detachFromEngine) in detachFromEngineCallbacks {
+            Task {
+                try await channel.removeMessageHandler()
+                detachFromEngine(self)
             }
         }
     }

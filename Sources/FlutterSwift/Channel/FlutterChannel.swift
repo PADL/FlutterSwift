@@ -24,21 +24,25 @@ protocol FlutterChannel: AnyObject {
 }
 
 extension FlutterChannel {
+    func removeMessageHandler() async throws {
+        if connection > 0 {
+            try await binaryMessenger.cleanUp(connection: connection)
+            connection = 0
+        } else {
+            _ = try await binaryMessenger.setMessageHandler(
+                on: name,
+                handler: nil,
+                priority: priority
+            )
+        }
+    }
+
     func setMessageHandler<Handler>(
         _ optionalHandler: Handler?,
         _ block: (Handler) -> FlutterBinaryMessageHandler
     ) async throws {
         guard let unwrappedHandler = optionalHandler else {
-            if connection > 0 {
-                try await binaryMessenger.cleanUp(connection: connection)
-                connection = 0
-            } else {
-                _ = try await binaryMessenger.setMessageHandler(
-                    on: name,
-                    handler: nil,
-                    priority: priority
-                )
-            }
+            try await removeMessageHandler()
             return
         }
         connection = try await binaryMessenger.setMessageHandler(
