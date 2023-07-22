@@ -33,18 +33,8 @@ extension FlutterBinaryMessenger {
         _ priority: TaskPriority?,
         _ block: @escaping () async throws -> Value
     ) async throws -> Value {
-        if let priority {
-            let task = Task<Value, Error>(priority: priority) {
-                try await block()
-            }
-            switch await task.result {
-            case let .success(value):
-                return value
-            case let .failure(error):
-                throw error
-            }
-        } else {
-            return try await block()
-        }
+        try await Task<Value, Error>(priority: priority) {
+            try await block()
+        }.value
     }
 }
