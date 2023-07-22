@@ -141,7 +141,7 @@ targets = [
 ]
 
 products = [
-    .executable(name: "Counter", targets: ["Counter"])
+    .executable(name: "Counter", targets: ["Counter"]),
 ]
 
 #else
@@ -153,7 +153,7 @@ targets = [
             ".",
             "wayland",
         ]
-    )
+    ),
 ]
 
 #endif
