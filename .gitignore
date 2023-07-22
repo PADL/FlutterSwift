@@ -6,3 +6,4 @@ FlutterSwift.xcodeproj/project.xcworkspace
 DerivedData/
 .swiftpm/xcode/
 Package.resolved
+flutter-engine.artifactbundle.zip
