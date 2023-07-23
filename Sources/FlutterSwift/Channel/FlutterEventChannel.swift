@@ -118,8 +118,8 @@ public class FlutterEventChannel: FlutterChannel {
      * @param handler The stream handler.
      */
     public func setStreamHandler<Event: Codable, Arguments: Codable>(
-        onListen: ((Arguments?) throws -> FlutterEventStream<Event>)?,
-        onCancel: ((Arguments?) throws -> ())?
+        onListen: ((Arguments?) async throws -> FlutterEventStream<Event>)?,
+        onCancel: ((Arguments?) async throws -> ())?
     ) async throws {
         try await setMessageHandler(onListen) { [self] unwrappedHandler in
             { [self] message in
