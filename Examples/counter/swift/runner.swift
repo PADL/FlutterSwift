@@ -91,9 +91,9 @@ class ChannelManager {
         )
 
         Task {
-            try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
-            try! await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
-            try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+            try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
+            try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
+            try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
 
             startTask()
         }

@@ -78,7 +78,7 @@ override func awakeFromNib() {
     )
 
     task = Task {
-        try! await flutterBasicMessageChannel!.setMessageHandler(messageHandler)
+        try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
         ...
     }
 }
@@ -106,7 +106,7 @@ override func awakeFromNib() {
         binaryMessenger: binaryMessenger
     )
     task = Task {
-        try! await flutterMethodChannel!.setMethodCallHandler(methodCallHandler)
+        try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
     }
 }
 
@@ -146,7 +146,7 @@ override func awakeFromNib() {
         binaryMessenger: binaryMessenger
     )
     task = Task {
-        try! await flutterEventChannel!.setStreamHandler(onListen: onListen, onCancel: onCancel)
+        try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
         repeat {
             await flutterEventStream.send(counter)
             count += 1
