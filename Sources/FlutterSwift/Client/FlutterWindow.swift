@@ -7,8 +7,8 @@
 import CxxFlutterSwift
 import Foundation
 
-fileprivate var NanosecondsPerMillisecond: UInt64 = 1_000_000
-fileprivate var NanosecondsPerSecond: UInt64 = 1_000_000_000
+fileprivate let NanosecondsPerMillisecond: UInt64 = 1_000_000
+fileprivate let NanosecondsPerSecond: UInt64 = 1_000_000_000
 
 public struct FlutterWindow {
     public let viewController: FlutterViewController
