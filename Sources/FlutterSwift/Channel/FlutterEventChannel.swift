@@ -56,8 +56,8 @@ public class FlutterEventChannel: FlutterChannel {
 
     private func onMethod<Event: Codable, Arguments: Codable>(
         call: FlutterMethodCall<Arguments>,
-        onListen: @escaping ((Arguments?) throws -> FlutterEventStream<Event>),
-        onCancel: ((Arguments?) throws -> ())?
+        onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
+        onCancel: ((Arguments?) async throws -> ())?
     ) async throws -> FlutterEnvelope<Arguments>? {
         let envelope: FlutterEnvelope<Arguments>?
 
@@ -67,7 +67,7 @@ public class FlutterEventChannel: FlutterChannel {
                 task.cancel()
                 self.task = nil
             }
-            let stream = try onListen(call.arguments)
+            let stream = try await onListen(call.arguments)
             task = Task<(), Error>(priority: priority) {
                 do {
                     for try await event in stream {
@@ -96,7 +96,7 @@ public class FlutterEventChannel: FlutterChannel {
             }
             do {
                 if let onCancel {
-                    try onCancel(call.arguments)
+                    try await onCancel(call.arguments)
                 }
                 envelope = FlutterEnvelope.success(nil)
             } catch let error as FlutterError {
