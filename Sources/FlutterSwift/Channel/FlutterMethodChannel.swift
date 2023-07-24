@@ -73,6 +73,12 @@ public class FlutterMethodChannel: FlutterChannel {
         self.priority = priority
     }
 
+    deinit {
+        Task {
+            try? await removeMessageHandler()
+        }
+    }
+
     public func invoke<Arguments: Codable>(method: String, arguments: Arguments?) async throws {
         let methodCall = FlutterMethodCall<Arguments>(method: method, arguments: arguments)
         try await binaryMessenger.send(on: name, message: codec.encode(methodCall))

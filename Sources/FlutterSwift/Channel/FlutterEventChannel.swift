@@ -52,6 +52,9 @@ public class FlutterEventChannel: FlutterChannel {
 
     deinit {
         task?.cancel()
+        Task {
+            try? await removeMessageHandler()
+        }
     }
 
     private func onMethod<Event: Codable, Arguments: Codable>(

@@ -38,6 +38,12 @@ public class FlutterBasicMessageChannel: FlutterChannel {
         self.priority = priority
     }
 
+    deinit {
+        Task {
+            try? await removeMessageHandler()
+        }
+    }
+
     public func send<Message: Encodable>(message: Message) async throws {
         try await binaryMessenger.send(on: name, message: codec.encode(message))
     }
