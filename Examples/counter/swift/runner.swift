@@ -12,9 +12,9 @@ class ChannelManager {
     typealias Event = Int32
     typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
 
-    var flutterBasicMessageChannel: FlutterBasicMessageChannel?
-    var flutterEventChannel: FlutterEventChannel?
-    var flutterMethodChannel: FlutterMethodChannel?
+    var flutterBasicMessageChannel: FlutterBasicMessageChannel!
+    var flutterEventChannel: FlutterEventChannel!
+    var flutterMethodChannel: FlutterMethodChannel!
     var task: Task<(), Error>?
     var counter: Event = 0
 
