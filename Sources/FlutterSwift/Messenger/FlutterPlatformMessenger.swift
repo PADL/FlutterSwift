@@ -40,7 +40,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
         )
     }
 
-    private func _cleanup(connection: FlutterBinaryMessengerConnection) {
+    private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
         platformBinaryMessenger.cleanUpConnection(connection)
     }
 
@@ -89,7 +89,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     }
 
     public func cleanUp(connection: FlutterBinaryMessengerConnection) async throws {
-        _cleanup(connection: connection)
+        _cleanUp(connection: connection)
     }
 }
 #endif
