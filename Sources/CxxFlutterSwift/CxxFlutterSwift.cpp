@@ -25,9 +25,9 @@ extern void _Block_release(const void *aBlock);
 static void FlutterDesktopMessengerBinaryReplyThunk(const uint8_t *data,
                                                     size_t data_size,
                                                     void *user_data) {
-  auto replyBlock = (FlutterDesktopBinaryReplyBlock)user_data;
-  replyBlock(data, data_size);
-  _Block_release(replyBlock);
+    auto replyBlock = (FlutterDesktopBinaryReplyBlock)user_data;
+    replyBlock(data, data_size);
+    _Block_release(replyBlock);
 }
 
 bool FlutterDesktopMessengerSendWithReplyBlock(
@@ -36,10 +36,10 @@ bool FlutterDesktopMessengerSendWithReplyBlock(
     const uint8_t *message,
     const size_t message_size,
     FlutterDesktopBinaryReplyBlock replyBlock) {
-  return FlutterDesktopMessengerSendWithReply(
-      messenger, channel, message, message_size,
-      replyBlock ? FlutterDesktopMessengerBinaryReplyThunk : nullptr,
-      replyBlock ? _Block_copy(replyBlock) : nullptr);
+    return FlutterDesktopMessengerSendWithReply(
+        messenger, channel, message, message_size,
+        replyBlock ? FlutterDesktopMessengerBinaryReplyThunk : nullptr,
+        replyBlock ? _Block_copy(replyBlock) : nullptr);
 }
 
 static std::map<std::string, const void *> flutterSwiftCallbacks{};
@@ -49,25 +49,27 @@ static void
 FlutterDesktopMessageCallbackThunk(FlutterDesktopMessengerRef messenger,
                                    const FlutterDesktopMessage *message,
                                    void *user_data) {
-  auto callbackBlock = (FlutterDesktopMessageCallbackBlock)user_data;
-  callbackBlock(messenger, message);
+    auto callbackBlock = (FlutterDesktopMessageCallbackBlock)user_data;
+    callbackBlock(messenger, message);
 }
 
 void FlutterDesktopMessengerSetCallbackBlock(
     FlutterDesktopMessengerRef messenger,
     const char *_Nonnull channel,
     FlutterDesktopMessageCallbackBlock callbackBlock) {
-  std::lock_guard<std::mutex> guard(flutterSwiftCallbacksMutex);
-  if (callbackBlock != nullptr) {
-    flutterSwiftCallbacks[channel] = _Block_copy(callbackBlock);
-    FlutterDesktopMessengerSetCallback(
-        messenger, channel, FlutterDesktopMessageCallbackThunk, callbackBlock);
-  } else {
-    auto savedCallbackBlock = flutterSwiftCallbacks[channel];
-    flutterSwiftCallbacks.erase(channel);
-    _Block_release(savedCallbackBlock);
-    FlutterDesktopMessengerSetCallback(messenger, channel, nullptr, nullptr);
-  }
+    std::lock_guard<std::mutex> guard(flutterSwiftCallbacksMutex);
+    if (callbackBlock != nullptr) {
+        flutterSwiftCallbacks[channel] = _Block_copy(callbackBlock);
+        FlutterDesktopMessengerSetCallback(messenger, channel,
+                                           FlutterDesktopMessageCallbackThunk,
+                                           callbackBlock);
+    } else {
+        auto savedCallbackBlock = flutterSwiftCallbacks[channel];
+        flutterSwiftCallbacks.erase(channel);
+        _Block_release(savedCallbackBlock);
+        FlutterDesktopMessengerSetCallback(messenger, channel, nullptr,
+                                           nullptr);
+    }
 }
 
 static std::map<FlutterDesktopPluginRegistrarRef, const void *>
@@ -76,25 +78,25 @@ static std::mutex flutterSwiftRegistrarCallbacksMutex;
 
 static void FlutterDesktopOnPluginRegistrarDestroyedBlockThunk(
     FlutterDesktopPluginRegistrarRef registrar) {
-  std::lock_guard<std::mutex> guard(flutterSwiftRegistrarCallbacksMutex);
-  auto callbackBlock = (FlutterDesktopOnPluginRegistrarDestroyedBlock)
-      flutterSwiftRegistrarCallbacks[registrar];
-  flutterSwiftRegistrarCallbacks.erase(registrar);
-  callbackBlock(registrar);
-  _Block_release(callbackBlock);
+    std::lock_guard<std::mutex> guard(flutterSwiftRegistrarCallbacksMutex);
+    auto callbackBlock = (FlutterDesktopOnPluginRegistrarDestroyedBlock)
+        flutterSwiftRegistrarCallbacks[registrar];
+    flutterSwiftRegistrarCallbacks.erase(registrar);
+    callbackBlock(registrar);
+    _Block_release(callbackBlock);
 }
 
 void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopOnPluginRegistrarDestroyedBlock callbackBlock) {
-  std::lock_guard<std::mutex> guard(flutterSwiftRegistrarCallbacksMutex);
-  flutterSwiftRegistrarCallbacks[registrar] = _Block_copy(callbackBlock);
-  FlutterDesktopPluginRegistrarSetDestructionHandler(
-      registrar, FlutterDesktopOnPluginRegistrarDestroyedBlockThunk);
+    std::lock_guard<std::mutex> guard(flutterSwiftRegistrarCallbacksMutex);
+    flutterSwiftRegistrarCallbacks[registrar] = _Block_copy(callbackBlock);
+    FlutterDesktopPluginRegistrarSetDestructionHandler(
+        registrar, FlutterDesktopOnPluginRegistrarDestroyedBlockThunk);
 }
 
 void FlutterDesktopEngineSetView(FlutterDesktopEngineRef engineRef,
                                  FlutterDesktopViewRef viewRef) {
-  auto engine = reinterpret_cast<flutter::FlutterELinuxEngine *>(engineRef);
-  engine->SetView(reinterpret_cast<flutter::FlutterELinuxView *>(viewRef));
+    auto engine = reinterpret_cast<flutter::FlutterELinuxEngine *>(engineRef);
+    engine->SetView(reinterpret_cast<flutter::FlutterELinuxView *>(viewRef));
 }
