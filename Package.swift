@@ -101,7 +101,7 @@ targets = [
             .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"),
             .headerSearchPath("flutter-embedded-linux/src/flutter/shell/platform/common/public"),
             .headerSearchPath(
-                "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"
+                "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
             ),
             .headerSearchPath(
                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
@@ -194,7 +194,7 @@ let package = Package(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
                 ),
                 .headerSearchPath(
-                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"
+                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
                 ),
             ],
             swiftSettings: [.interoperabilityMode(.Cxx)],
