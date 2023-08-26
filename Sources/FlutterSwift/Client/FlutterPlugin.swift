@@ -117,7 +117,7 @@ public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
 
     public var view: FlutterView? {
         guard let registrar else { return nil }
-        let view = FlutterDesktopPluginRegistrarGetView(registrar)
+        let view = FlutterDesktopPluginRegistrarGetView(registrar)!
         return FlutterView(view)
     }
 
