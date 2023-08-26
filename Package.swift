@@ -193,6 +193,9 @@ let package = Package(
                 .headerSearchPath(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
                 ),
+                .headerSearchPath(
+                    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include/flutter"
+                ),
             ],
             swiftSettings: [.interoperabilityMode(.Cxx)],
             linkerSettings: [
@@ -218,6 +221,6 @@ let package = Package(
             ]
         ),
     ] + targets,
-    cLanguageStandard: .c17
-    // cxxLanguageStandard: .cxx17
+    cLanguageStandard: .c17,
+    cxxLanguageStandard: .cxx17
 )
