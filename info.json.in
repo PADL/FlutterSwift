@@ -3,7 +3,7 @@
     "artifacts": {
         "flutter-engine": {
             "type": "executable",
-            "version": "0.0.0",
+            "version": "3.13.1",
             "variants": [
                {
                     "path": "elinux-arm64-debug/libflutter_engine.so",
