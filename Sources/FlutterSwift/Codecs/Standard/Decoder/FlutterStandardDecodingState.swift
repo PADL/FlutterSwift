@@ -120,7 +120,7 @@ class FlutterStandardDecodingState {
         try assertAlignment(MemoryLayout<Value>.stride)
         var values = [Value]()
         for _ in 0..<count {
-            values.append(try block())
+            try values.append(block())
         }
         return values
     }
@@ -166,7 +166,7 @@ class FlutterStandardDecodingState {
         var values = [Value]()
         values.reserveCapacity(count)
         for _ in 0..<count {
-            values.append(try decode(type, codingPath: codingPath))
+            try values.append(decode(type, codingPath: codingPath))
         }
         return values
     }
@@ -231,32 +231,32 @@ class FlutterStandardDecodingState {
     func decode(_ type: Double.Type) throws -> Double {
         try assertStandardField(.float64)
         try assertAlignment(MemoryLayout<Double>.alignment)
-        return Double(bitPattern: try decodeInteger(UInt64.self))
+        return try Double(bitPattern: decodeInteger(UInt64.self))
     }
 
     func decode(_ type: Float.Type) throws -> Float {
-        Float(try decode(Double.self))
+        try Float(decode(Double.self))
     }
 
     func decode(_ type: Int.Type) throws -> Int {
         if MemoryLayout<Int>.size == 8 {
-            return Int(try decode(Int64.self))
+            return try Int(decode(Int64.self))
         } else if MemoryLayout<Int>.size == 4 {
-            return Int(try decode(Int32.self))
+            return try Int(decode(Int32.self))
         } else {
             fatalError("unsupporterd UInt.bitWidth")
         }
     }
 
     func decode(_ type: Int8.Type) throws -> Int8 {
-        guard let value = Int8(exactly: try decode(Int32.self)) else {
+        guard let value = try Int8(exactly: decode(Int32.self)) else {
             throw FlutterSwiftError.integerOutOfRange
         }
         return value
     }
 
     func decode(_ type: Int16.Type) throws -> Int16 {
-        guard let value = Int16(exactly: try decode(Int32.self)) else {
+        guard let value = try Int16(exactly: decode(Int32.self)) else {
             throw FlutterSwiftError.integerOutOfRange
         }
         return value
@@ -273,32 +273,32 @@ class FlutterStandardDecodingState {
     }
 
     func decode(_ type: UInt.Type) throws -> UInt {
-        guard let value = UInt(exactly: try decodeInteger(Int.self)) else {
+        guard let value = try UInt(exactly: decodeInteger(Int.self)) else {
             throw FlutterSwiftError.integerOutOfRange
         }
         return value
     }
 
     func decode(_ type: UInt8.Type) throws -> UInt8 {
-        guard let value = UInt8(exactly: try decode(Int32.self)) else {
+        guard let value = try UInt8(exactly: decode(Int32.self)) else {
             throw FlutterSwiftError.integerOutOfRange
         }
         return value
     }
 
     func decode(_ type: UInt16.Type) throws -> UInt16 {
-        guard let value = UInt16(exactly: try decode(Int32.self)) else {
+        guard let value = try UInt16(exactly: decode(Int32.self)) else {
             throw FlutterSwiftError.integerOutOfRange
         }
         return value
     }
 
     func decode(_ type: UInt32.Type) throws -> UInt32 {
-        UInt32(bitPattern: try decode(Int32.self))
+        try UInt32(bitPattern: decode(Int32.self))
     }
 
     func decode(_ type: UInt64.Type) throws -> UInt64 {
-        UInt64(bitPattern: try decode(Int64.self))
+        try UInt64(bitPattern: decode(Int64.self))
     }
 
     func decode<T>(_ type: T.Type, codingPath: [any CodingKey]) throws -> T where T: Decodable {

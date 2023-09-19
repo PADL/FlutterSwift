@@ -119,7 +119,7 @@ public class FlutterMethodChannel: FlutterChannel {
                 let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
                 let envelope: FlutterEnvelope<Result>
                 do {
-                    envelope = .success(try await unwrappedHandler(call))
+                    envelope = try await .success(unwrappedHandler(call))
                 } catch let error as FlutterError {
                     envelope = .failure(error)
                 }

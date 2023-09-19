@@ -19,20 +19,20 @@ public enum FlutterEnvelope<Success: Codable>: Codable {
         if var container = container as? UnkeyedFlutterStandardDecodingContainer {
             switch try container.state.decodeDiscriminant() {
             case 0:
-                self = .success(try container.decodeIfPresent(Success.self))
+                self = try .success(container.decodeIfPresent(Success.self))
             case 1:
-                self = .failure(try container.decode(FlutterError.self))
+                self = try .failure(container.decode(FlutterError.self))
             default:
                 throw FlutterSwiftError.unknownDiscriminant
             }
         } else {
             switch container.count {
             case 1:
-                self = .success(try container.decodeIfPresent(Success.self))
+                self = try .success(container.decodeIfPresent(Success.self))
             case 3:
                 fallthrough
             case 4: // contains stacktrace
-                self = .failure(try container.decode(FlutterError.self))
+                self = try .failure(container.decode(FlutterError.self))
             default:
                 throw FlutterSwiftError.unknownDiscriminant
             }

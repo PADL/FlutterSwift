@@ -201,7 +201,7 @@ final class FlutterStandardEncoderTests: XCTestCase {
         to expectedArray: [UInt8],
         line: UInt = #line
     ) throws where Value: Encodable {
-        XCTAssertEqual(Array(try encoder.encode(value)), expectedArray, line: line)
+        XCTAssertEqual(try Array(encoder.encode(value)), expectedArray, line: line)
     }
 
     private func assertThat<Value>(

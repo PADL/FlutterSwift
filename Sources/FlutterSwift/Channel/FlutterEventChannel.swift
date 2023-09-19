@@ -77,14 +77,14 @@ public class FlutterEventChannel: FlutterChannel {
                         let envelope = FlutterEnvelope.success(event)
                         try await binaryMessenger.send(
                             on: name,
-                            message: try codec.encode(envelope)
+                            message: codec.encode(envelope)
                         )
                         try Task.checkCancellation()
                     }
                     try await binaryMessenger.send(on: name, message: nil)
                 } catch let error as FlutterError {
                     let envelope = FlutterEnvelope<Event>.failure(error)
-                    try await binaryMessenger.send(on: name, message: try codec.encode(envelope))
+                    try await binaryMessenger.send(on: name, message: codec.encode(envelope))
                 } catch is CancellationError {
                     // FIXME: should we ignore this or send the finish message?
                 } catch {
@@ -130,7 +130,7 @@ public class FlutterEventChannel: FlutterChannel {
                     throw FlutterSwiftError.methodNotImplemented
                 }
 
-                let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
+                let call: FlutterMethodCall<Arguments> = try codec.decode(message)
                 let envelope: FlutterEnvelope<Arguments>? = try await onMethod(
                     call: call,
                     onListen: unwrappedHandler,

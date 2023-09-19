@@ -119,7 +119,7 @@ enum Counter {
             debugPrint("failed to initialize window!")
             exit(2)
         }
-        let _ = ChannelManager(window.viewController)
+        _ = ChannelManager(window.viewController)
         window.run()
     }
 }
