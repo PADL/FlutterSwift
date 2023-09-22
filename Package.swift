@@ -61,23 +61,23 @@ targets = [
     ),
     .systemLibrary(
         name: "CEGL",
-        pkgConfig: "egl"
-        // providers: .apt(["libegl1-mesa-dev", "libgles2-mesa-dev"])
+        pkgConfig: "egl",
+        providers: [.apt(["libegl1-mesa-dev", "libgles2-mesa-dev"])]
     ),
     .systemLibrary(
         name: "CWaylandCursor",
-        pkgConfig: "wayland-cursor"
-        // providers: .apt(["libwayland-dev", "wayland-protocols"])
+        pkgConfig: "wayland-cursor",
+        providers: [.apt(["libwayland-dev", "wayland-protocols"])]
     ),
     .systemLibrary(
         name: "CWaylandEGL",
-        pkgConfig: "wayland-egl"
-        // providers: .apt(["libwayland-dev", "wayland-protocols"])
+        pkgConfig: "wayland-egl",
+        providers: [.apt(["libwayland-dev", "wayland-protocols"])]
     ),
     .systemLibrary(
         name: "CXKBCommon",
-        pkgConfig: "xkbcommon"
-        // providers: .apt(["libxkbcommon-dev"])
+        pkgConfig: "xkbcommon",
+        providers: [.apt(["libxkbcommon-dev"])]
     ),
     .target(
         name: "CxxFlutterSwift",
