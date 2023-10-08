@@ -4,7 +4,7 @@
 
 import Foundation
 
-struct KeyValuePair<Key: Hashable & Codable, Value: Codable>: Codable, Hashable {
+struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Codable, Hashable, Sendable {
     static func == (lhs: KeyValuePair<Key, Value>, rhs: KeyValuePair<Key, Value>) -> Bool {
         guard lhs.key == rhs.key else {
             return false
@@ -22,8 +22,8 @@ struct KeyValuePair<Key: Hashable & Codable, Value: Codable>: Codable, Hashable 
 }
 
 protocol FlutterMapRepresentable<Key, Value> {
-    associatedtype Key: Codable & Hashable
-    associatedtype Value: Codable
+    associatedtype Key: Codable & Hashable & Sendable
+    associatedtype Value: Codable & Sendable
 
     init(map: Set<KeyValuePair<Key, Value>>)
     var map: Set<KeyValuePair<Key, Value>> { get }

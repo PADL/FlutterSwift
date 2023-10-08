@@ -30,7 +30,7 @@ import Foundation
  * - `NSDictionary`: `Map`
  */
 public final class FlutterStandardMessageCodec: FlutterMessageCodec {
-    public static var shared: FlutterStandardMessageCodec = .init()
+    public static let shared: FlutterStandardMessageCodec = .init()
 
     public func encode<T>(_ message: T) throws -> Data where T: Encodable {
         try FlutterStandardEncoder().encode(message)

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #if os(Linux)
+@preconcurrency
 import AnyCodable
 @_implementationOnly
 import CxxFlutterSwift
@@ -44,7 +45,7 @@ enum FlutterPlatformViewKey: String, CaseIterable {
     case params
 }
 
-public class FlutterPlatformViewsPlugin: FlutterPlugin {
+public final class FlutterPlatformViewsPlugin: FlutterPlugin {
     var viewFactories = [String: FlutterPlatformViewFactory]()
     var platformViews = [Int: FlutterPlatformView]()
     var currentViewId: Int = -1

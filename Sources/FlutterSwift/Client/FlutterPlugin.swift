@@ -8,8 +8,8 @@ import CxxFlutterSwift
 import Foundation
 
 public protocol FlutterPlugin {
-    associatedtype Arguments: Codable
-    associatedtype Result: Codable
+    associatedtype Arguments: Codable & Sendable
+    associatedtype Result: Codable & Sendable
 
     init()
 
@@ -47,9 +47,9 @@ extension FlutterPlugin {
     }
 }
 
-struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlugin {
-    let _handleMethod: (FlutterMethodCall<Arguments>) throws -> Result
-    let _detachFromEngine: (FlutterPluginRegistrar) -> ()
+struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendable>: FlutterPlugin {
+    let _handleMethod: @Sendable (FlutterMethodCall<Arguments>) throws -> Result
+    let _detachFromEngine: @Sendable (FlutterPluginRegistrar) -> ()
 
     public init() {
         _handleMethod = { _ in fatalError() }
@@ -70,7 +70,7 @@ struct AnyFlutterPlugin<Arguments: Codable, Result: Codable>: FlutterPlugin {
     }
 }
 
-public protocol FlutterPluginRegistrar {
+public protocol FlutterPluginRegistrar: Sendable {
     var pluginKey: String { get }
     var binaryMessenger: FlutterBinaryMessenger? { get }
     var view: FlutterView? { get }

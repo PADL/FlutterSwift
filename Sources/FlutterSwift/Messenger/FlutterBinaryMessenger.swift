@@ -29,7 +29,7 @@ public protocol FlutterBinaryMessenger: Actor {
 }
 
 extension FlutterBinaryMessenger {
-    func withPriority<Value>(
+    func withPriority<Value: Sendable>(
         _ priority: TaskPriority?,
         _ block: @escaping () async throws -> Value
     ) async throws -> Value {

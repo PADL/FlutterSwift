@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import AsyncAlgorithms
+@preconcurrency
 import AsyncExtensions
 import Foundation
 

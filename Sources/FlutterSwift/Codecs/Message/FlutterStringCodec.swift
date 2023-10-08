@@ -12,7 +12,7 @@ import Foundation
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  */
 public final class FlutterStringCodec: FlutterMessageCodec {
-    public static var shared: FlutterStringCodec = .init()
+    public static let shared: FlutterStringCodec = .init()
 
     public func encode<T>(_ message: T) throws -> Data where T: Encodable {
         let string = message as! String

@@ -17,8 +17,9 @@
 extern "C" {
 #endif
 
-typedef void (^FlutterDesktopBinaryReplyBlock)(const uint8_t *_Nullable data,
-                                               size_t data_size);
+typedef __attribute__((__swift_attr__("@Sendable"))) void (
+    ^FlutterDesktopBinaryReplyBlock)(const uint8_t *_Nullable data,
+                                     size_t data_size);
 
 FLUTTER_EXPORT bool FlutterDesktopMessengerSendWithReplyBlock(
     _Nonnull FlutterDesktopMessengerRef messenger,
@@ -27,18 +28,21 @@ FLUTTER_EXPORT bool FlutterDesktopMessengerSendWithReplyBlock(
     const size_t message_size,
     _Nullable FlutterDesktopBinaryReplyBlock replyBlock);
 
-typedef void (^FlutterDesktopMessageCallbackBlock)(
-    _Nonnull FlutterDesktopMessengerRef, const FlutterDesktopMessage *_Nonnull);
+typedef __attribute__((__swift_attr__("@Sendable"))) void (
+    ^FlutterDesktopMessageCallbackBlock)(_Nonnull FlutterDesktopMessengerRef,
+                                         const FlutterDesktopMessage *_Nonnull);
 
 FLUTTER_EXPORT void FlutterDesktopMessengerSetCallbackBlock(
     _Nonnull FlutterDesktopMessengerRef messenger,
     const char *_Nonnull channel,
     _Nullable FlutterDesktopMessageCallbackBlock callbackBlock);
 
-typedef void (^FlutterDesktopMessageCallbackBlock)(
-    _Nonnull FlutterDesktopMessengerRef, const FlutterDesktopMessage *_Nonnull);
+typedef __attribute__((__swift_attr__("@Sendable"))) void (
+    ^FlutterDesktopMessageCallbackBlock)(_Nonnull FlutterDesktopMessengerRef,
+                                         const FlutterDesktopMessage *_Nonnull);
 
-typedef void (^FlutterDesktopOnPluginRegistrarDestroyedBlock)(
+typedef __attribute__((__swift_attr__("@Sendable"))) void (
+    ^FlutterDesktopOnPluginRegistrarDestroyedBlock)(
     _Nonnull FlutterDesktopPluginRegistrarRef);
 
 FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(

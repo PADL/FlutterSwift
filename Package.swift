@@ -214,7 +214,10 @@ let package = Package(
                     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
                 ),
             ],
-            swiftSettings: [.interoperabilityMode(.Cxx)],
+            swiftSettings: [
+                .interoperabilityMode(.Cxx),
+                .enableExperimentalFeature("StrictConcurrency")
+            ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),
             ]
@@ -231,7 +234,7 @@ let package = Package(
             swiftSettings: [
                 // FIXME: https://github.com/apple/swift-package-manager/issues/6661
                 .interoperabilityMode(.Cxx),
-                .unsafeFlags(["-cxx-interoperability-mode=default"]),
+                .unsafeFlags(["-cxx-interoperability-mode=default"])
             ],
             linkerSettings: [
                 .unsafeFlags(FlutterUnsafeLinkerFlags),

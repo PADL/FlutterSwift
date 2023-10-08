@@ -6,7 +6,7 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public final class FlutterEngine: FlutterPluginRegistry {
+public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     var engine: FlutterDesktopEngineRef! // strong or weak ref
     var pluginPublications = [String: Any]()
     let project: DartProject

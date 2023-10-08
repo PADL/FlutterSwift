@@ -24,7 +24,7 @@ public typealias FlutterMethodCallHandler<Arguments: Codable, Result: Codable> =
  * @param method the name of the method to call.
  * @param arguments the arguments value.
  */
-public struct FlutterMethodCall<Arguments: Codable>: Codable {
+public struct FlutterMethodCall<Arguments: Codable & Sendable>: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case method
         case arguments = "args"

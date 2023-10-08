@@ -16,7 +16,7 @@ import Foundation
  * those supported as top-level or leaf values by `FlutterJSONMessageCodec`.
  */
 public final class FlutterJSONMethodCodec: FlutterMethodCodec {
-    public var shared: FlutterJSONMethodCodec = .init()
+    public let shared: FlutterJSONMethodCodec = .init()
 
     public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
         try JSONEncoder().encode(call)
