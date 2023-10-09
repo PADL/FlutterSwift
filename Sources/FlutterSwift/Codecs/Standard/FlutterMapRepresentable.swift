@@ -21,7 +21,7 @@ struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendabl
     var value: Value
 }
 
-protocol FlutterMapRepresentable<Key, Value> {
+protocol FlutterMapRepresentable<Key, Value>: Sendable {
     associatedtype Key: Codable & Hashable & Sendable
     associatedtype Value: Codable & Sendable
 

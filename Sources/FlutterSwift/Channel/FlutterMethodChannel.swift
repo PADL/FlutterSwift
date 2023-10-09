@@ -14,7 +14,7 @@ import Foundation
  *     method was unknown. Any other values, including `nil`, are interpreted as
  *     successful results.  This can be invoked from any thread.
  */
-public typealias FlutterMethodCallHandler<Arguments: Codable, Result: Codable> =
+public typealias FlutterMethodCallHandler<Arguments: Codable & Sendable, Result: Codable & Sendable> =
     (FlutterMethodCall<Arguments>) async throws -> Result?
 
 /**
@@ -54,7 +54,7 @@ extension FlutterMethodCall: Hashable where Arguments: Codable & Hashable {
  * A channel for communicating with the Flutter side using invocation of
  * asynchronous methods.
  */
-public class FlutterMethodChannel: FlutterChannel {
+public final class FlutterMethodChannel: FlutterChannel {
     let name: String
     let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec

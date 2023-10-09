@@ -23,7 +23,7 @@
 
 import Foundation
 
-class FlutterStandardEncodingState {
+final class FlutterStandardEncodingState {
     private(set) var data: Data = .init()
 
     init(data: Data = .init()) {

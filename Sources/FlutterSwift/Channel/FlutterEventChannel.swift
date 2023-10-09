@@ -15,7 +15,7 @@ public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-public class FlutterEventChannel: FlutterChannel {
+public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     let name: String
     let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
@@ -122,11 +122,11 @@ public class FlutterEventChannel: FlutterChannel {
      * @param handler The stream handler.
      */
     public func setStreamHandler<Event: Codable, Arguments: Codable>(
-        onListen: ((Arguments?) async throws -> FlutterEventStream<Event>)?,
-        onCancel: ((Arguments?) async throws -> ())?
+        onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
+        onCancel: (@Sendable (Arguments?) async throws -> ())?
     ) async throws {
         try await setMessageHandler(onListen) { [self] unwrappedHandler in
-            { [self] message in
+            { message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented
                 }

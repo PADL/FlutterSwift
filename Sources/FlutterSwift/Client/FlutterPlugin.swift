@@ -90,9 +90,10 @@ public protocol FlutterPluginRegistry {
     func valuePublished(by pluginKey: String) -> Any?
 }
 
-public class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
+public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     public let pluginKey: String
-    public var engine: FlutterEngine
+    public let engine: FlutterEngine
+
     var registrar: FlutterDesktopPluginRegistrarRef?
     var detachFromEngineCallbacks = [FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]()
 

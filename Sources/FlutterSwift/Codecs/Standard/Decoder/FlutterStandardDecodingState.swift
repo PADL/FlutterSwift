@@ -24,7 +24,7 @@
 import Foundation
 
 /// The internal state used by the decoders.
-class FlutterStandardDecodingState {
+final class FlutterStandardDecodingState {
     private var data: Data
 
     var isAtEnd: Bool { data.isEmpty }

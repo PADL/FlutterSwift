@@ -47,7 +47,7 @@ extension FlutterChannel {
 
     func setMessageHandler<Handler>(
         _ optionalHandler: Handler?,
-        _ block: (Handler) -> FlutterBinaryMessageHandler
+        _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
     ) async throws {
         guard let unwrappedHandler = optionalHandler else {
             try await removeMessageHandler()

@@ -7,7 +7,7 @@ import FlutterSwift
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
-class ChannelManager {
+final class ChannelManager {
     typealias Arguments = FlutterNull
     typealias Event = Int32
     typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
@@ -27,10 +27,12 @@ class ChannelManager {
         return magicCookie
     }
 
+    @Sendable
     private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
         flutterEventStream.eraseToAnyAsyncSequence()
     }
 
+    @Sendable
     private func onCancel(_ arguments: Arguments?) throws {
         cancelTask()
     }
