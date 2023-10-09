@@ -4,7 +4,9 @@
 
 import Foundation
 
-struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Codable, Hashable, Sendable {
+struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Codable,
+    Hashable, Sendable
+{
     static func == (lhs: KeyValuePair<Key, Value>, rhs: KeyValuePair<Key, Value>) -> Bool {
         guard lhs.key == rhs.key else {
             return false

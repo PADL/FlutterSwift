@@ -14,7 +14,10 @@ import Foundation
  *     method was unknown. Any other values, including `nil`, are interpreted as
  *     successful results.  This can be invoked from any thread.
  */
-public typealias FlutterMethodCallHandler<Arguments: Codable & Sendable, Result: Codable & Sendable> =
+public typealias FlutterMethodCallHandler<
+    Arguments: Codable & Sendable,
+    Result: Codable & Sendable
+> =
     (FlutterMethodCall<Arguments>) async throws -> Result?
 
 /**

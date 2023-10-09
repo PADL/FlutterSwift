@@ -148,7 +148,8 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
         try await send(on: channel, message: message, nil)
     }
 
-    private func onDesktopMessage(
+    @Sendable
+    private nonisolated func onDesktopMessage(
         _ messenger: FlutterDesktopMessengerRef,
         _ message: UnsafePointer<FlutterDesktopMessage>
     ) {
@@ -164,17 +165,21 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
 
         let capturedMessageData = messageData
         Task {
-            let handlerInfo = messengerHandlers[channel]
+            let handlerInfo = await messengerHandlers[channel]
             Task(priority: handlerInfo?.priority) {
                 if let handlerInfo {
                     let response = try await handlerInfo.handler(capturedMessageData)
-                    try? sendResponse(
+                    try? await sendResponse(
                         on: channel,
                         handle: message.response_handle,
                         response: response
                     )
                 } else {
-                    try? sendResponse(on: channel, handle: message.response_handle, response: nil)
+                    try? await sendResponse(
+                        on: channel,
+                        handle: message.response_handle,
+                        response: nil
+                    )
                 }
             }
         }

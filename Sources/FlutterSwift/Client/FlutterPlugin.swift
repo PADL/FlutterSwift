@@ -70,7 +70,7 @@ struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendabl
     }
 }
 
-public protocol FlutterPluginRegistrar: Sendable {
+public protocol FlutterPluginRegistrar {
     var pluginKey: String { get }
     var binaryMessenger: FlutterBinaryMessenger? { get }
     var view: FlutterView? { get }

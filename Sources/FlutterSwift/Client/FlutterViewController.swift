@@ -6,7 +6,7 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public final class FlutterViewController: Sendable {
+public final class FlutterViewController {
     private let controller: FlutterDesktopViewControllerRef
     public let engine: FlutterEngine
 

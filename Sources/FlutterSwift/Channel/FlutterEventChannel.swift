@@ -72,7 +72,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
                 self.task = nil
             }
             let stream = try await onListen(call.arguments)
-            task = Task<(), Error>(priority: priority) {
+            task = Task<(), Error>(priority: priority) { [self] in
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
@@ -126,7 +126,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         onCancel: (@Sendable (Arguments?) async throws -> ())?
     ) async throws {
         try await setMessageHandler(onListen) { [self] unwrappedHandler in
-            { message in
+            { [self] message in
                 guard let message else {
                     throw FlutterSwiftError.methodNotImplemented
                 }
