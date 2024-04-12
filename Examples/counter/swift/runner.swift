@@ -7,7 +7,7 @@ import FlutterSwift
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
-final class ChannelManager {
+final class ChannelManager: @unchecked Sendable {
     typealias Arguments = FlutterNull
     typealias Event = Int32
     typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
