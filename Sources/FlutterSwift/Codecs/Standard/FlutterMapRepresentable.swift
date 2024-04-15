@@ -23,12 +23,13 @@ struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendabl
     var value: Value
 }
 
-protocol FlutterMapRepresentable<Key, Value>: Sendable {
+protocol FlutterMapRepresentable<Key, Value>: Collection, Sendable {
     associatedtype Key: Codable & Hashable & Sendable
     associatedtype Value: Codable & Sendable
 
-    init(map: Set<KeyValuePair<Key, Value>>)
-    var map: Set<KeyValuePair<Key, Value>> { get }
+    init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>)
+    init(from: FlutterStandardDecoderImpl) throws
+    func forEach(_ block: (Key, Value) throws -> ()) rethrows
 }
 
 extension FlutterMapRepresentable {
@@ -37,14 +38,21 @@ extension FlutterMapRepresentable {
     }
 }
 
-extension Dictionary: FlutterMapRepresentable where Key: Codable, Value: Codable {
-    init(map: Set<KeyValuePair<Key, Value>>) {
-        self = Dictionary(uniqueKeysWithValues: map.map {
+extension Dictionary: FlutterMapRepresentable where Key: Codable & Hashable, Value: Codable {
+    init(setOfKeyValuePairs set: Set<KeyValuePair<Key, Value>>) {
+        self = Dictionary(uniqueKeysWithValues: set.map {
             ($0.key, $0.value)
         })
     }
 
-    var map: Set<KeyValuePair<Key, Value>> {
-        Set(self.map { KeyValuePair(key: $0, value: $1) })
+    init(from flutterStandardDecoder: FlutterStandardDecoderImpl) throws {
+        try self
+            .init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>(from: flutterStandardDecoder))
+    }
+
+    func forEach(_ block: (Key, Value) throws -> ()) rethrows {
+        for (key, value) in self {
+            try block(key, value)
+        }
     }
 }

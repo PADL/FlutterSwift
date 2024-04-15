@@ -49,7 +49,8 @@ extension FlutterPlugin {
 
 struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendable>: FlutterPlugin {
     let _handleMethod: @Sendable (FlutterMethodCall<Arguments>) throws -> Result
-    let _detachFromEngine: @Sendable (FlutterPluginRegistrar) -> ()
+    let _detachFromEngine: @Sendable (FlutterPluginRegistrar)
+        -> ()
 
     public init() {
         _handleMethod = { _ in fatalError() }

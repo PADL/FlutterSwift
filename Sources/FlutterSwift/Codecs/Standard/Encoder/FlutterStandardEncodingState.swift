@@ -108,21 +108,16 @@ final class FlutterStandardEncodingState {
         try encodeStandardField(.list)
         try encodeSize(value.count)
         try value.forEach {
-            try $0
-                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
+            try encode($0, codingPath: codingPath)
         }
     }
 
     private func encodeMap(_ value: some FlutterMapRepresentable, codingPath: [CodingKey]) throws {
-        let map = value.map
-
         try encodeStandardField(.map)
-        try encodeSize(map.count)
-        try map.forEach {
-            try $0.key
-                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
-            try $0.value
-                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
+        try encodeSize(value.count)
+        try value.forEach {
+            try encode($0, codingPath: codingPath)
+            try encode($1, codingPath: codingPath)
         }
     }
 

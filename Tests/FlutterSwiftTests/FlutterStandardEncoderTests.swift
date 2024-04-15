@@ -147,6 +147,25 @@ final class FlutterStandardEncoderTests: XCTestCase {
         )
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["foo", "bar", "baz"])
 
+        // map tests
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["K": "V"])
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [1: "V"])
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: ["K1": "V1", "K2": "V2"]
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: [1: 1234, 2: 2345, 3: 3456]
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: ["F1": Int64(-1_214_423_123), "F2": Int64(1_214_423)]
+        )
+
         let error = FlutterError(code: "1234", message: "hello", details: "something")
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: error)
 

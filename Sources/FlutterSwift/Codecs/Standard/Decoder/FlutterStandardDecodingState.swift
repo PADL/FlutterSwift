@@ -302,34 +302,51 @@ final class FlutterStandardDecodingState {
     }
 
     func decode<T>(_ type: T.Type, codingPath: [any CodingKey]) throws -> T where T: Decodable {
-        var count: Int? = nil
-        let value: T
+        try FlutterStandardDecodingState.decode(type, state: self, codingPath: [])
+    }
 
-        switch type {
-        case is Data.Type:
-            value = try decodeData() as! T
-        case is [UInt8].Type:
-            value = try decodeArray(UInt8.self) as! T
-        case is [Int32].Type:
-            value = try decodeArray(Int32.self) as! T
-        case is [Int64].Type:
-            value = try decodeArray(Int64.self) as! T
-        case is [Float].Type:
-            value = try decodeArray(Float.self) as! T
-        case is [Double].Type:
-            value = try decodeArray(Double.self) as! T
-        case is any FlutterListRepresentable.Type:
-            try assertStandardField(.list)
-            count = try decodeSize()
-            fallthrough
-        default:
-            value = try T(from: FlutterStandardDecoderImpl(
-                state: self,
-                codingPath: codingPath,
+    static func decode<T>(
+        _ type: T.Type,
+        state: FlutterStandardDecodingState,
+        codingPath: [any CodingKey]
+    ) throws -> T where T: Decodable {
+        var count: Int?
+        if let type = type as? any FlutterMapRepresentable.Type {
+            try state.assertStandardField(.map)
+            count = try state.decodeSize()
+            let decoder = FlutterStandardDecoderImpl(
+                state: state,
+                codingPath: [],
                 count: count
-            ))
+            )
+            return try type.init(from: decoder) as! T
+        } else {
+            let value: T
+            switch type {
+            case is Data.Type:
+                value = try state.decodeData() as! T
+            case is [UInt8].Type:
+                value = try state.decodeArray(UInt8.self) as! T
+            case is [Int32].Type:
+                value = try state.decodeArray(Int32.self) as! T
+            case is [Int64].Type:
+                value = try state.decodeArray(Int64.self) as! T
+            case is [Float].Type:
+                value = try state.decodeArray(Float.self) as! T
+            case is [Double].Type:
+                value = try state.decodeArray(Double.self) as! T
+            case is any FlutterListRepresentable.Type:
+                try state.assertStandardField(.list)
+                count = try state.decodeSize()
+                fallthrough
+            default:
+                value = try T(from: FlutterStandardDecoderImpl(
+                    state: state,
+                    codingPath: codingPath,
+                    count: count
+                ))
+            }
+            return value
         }
-
-        return value
     }
 }
