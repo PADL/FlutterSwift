@@ -147,6 +147,14 @@ final class FlutterStandardEncoderTests: XCTestCase {
         )
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["foo", "bar", "baz"])
 
+        // list of lists
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: [[UInt8(1), UInt8(2)], [UInt8(125)]]
+        )
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [[1, 2], [3, 4]])
+
         // map tests
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["K": "V"])
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [1: "V"])
