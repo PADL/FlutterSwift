@@ -54,12 +54,10 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
 
     // MARK: - public API
 
-    @MainActor
     public func send(on channel: String, message: Data?) async throws {
         _send(on: channel, message: message, nil)
     }
 
-    @MainActor
     public func send(
         on channel: String,
         message: Data?,
