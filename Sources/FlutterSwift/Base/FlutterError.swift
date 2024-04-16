@@ -31,7 +31,7 @@ public struct FlutterError: Error, Codable, @unchecked Sendable {
         var container = try decoder.unkeyedContainer()
         code = try container.decode(String.self)
         message = try container.decodeIfPresent(String.self)
-        details = try container.decodeIfPresent(FlutterStandardFieldVariant.self)
+        details = try container.decodeIfPresent(FlutterStandardVariant.self)
         if container.count ?? 0 > 3 {
             stacktrace = try container.decode(String.self)
         } else {
@@ -48,7 +48,7 @@ public struct FlutterError: Error, Codable, @unchecked Sendable {
             try container.encodeNil()
         }
         if let details {
-            try container.encode(FlutterStandardFieldVariant(details))
+            try container.encode(FlutterStandardVariant(details))
         } else {
             try container.encodeNil()
         }

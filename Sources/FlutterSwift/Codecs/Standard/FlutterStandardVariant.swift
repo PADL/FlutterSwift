@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
+public indirect enum FlutterStandardVariant: Hashable, Sendable {
     case `nil`
     case `true`
     case `false`
@@ -14,8 +14,8 @@ public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
     case int32Data([Int32])
     case int64Data([Int64])
     case float64Data([Double])
-    case list([FlutterStandardFieldVariant])
-    case map([FlutterStandardFieldVariant: FlutterStandardFieldVariant])
+    case list([FlutterStandardVariant])
+    case map([FlutterStandardVariant: FlutterStandardVariant])
     case float32Data([Float])
 
     public init(_ any: Any?) throws {
@@ -45,11 +45,11 @@ public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
         } else if let float64Data = any as? [Double] {
             self = .float64Data(float64Data)
         } else if let list = any as? [Any] {
-            self = .list(try list.map { try FlutterStandardFieldVariant($0) })
+            self = .list(try list.map { try FlutterStandardVariant($0) })
         } else if let map = any as? [AnyHashable: Any] {
             self = .map(try map.reduce([:]) {
                 var result = $0
-                try result[FlutterStandardFieldVariant($1.key)] = FlutterStandardFieldVariant(
+                try result[FlutterStandardVariant($1.key)] = FlutterStandardVariant(
                     $1
                         .value
                 )
@@ -60,7 +60,7 @@ public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
         }
     }
 
-    public var value: Any? {
+    public var value: Any! {
         switch self {
         case .nil:
             return nil

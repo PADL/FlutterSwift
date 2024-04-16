@@ -55,12 +55,12 @@ final class FlutterStandardEncoderTests: XCTestCase {
 
         try assertThat(encoder, encodes: FlutterNull?.none, to: [0x00])
         try assertThat(encoder, encodes: true, to: [0x01])
-        try assertThat(encoder, encodes: FlutterStandardFieldVariant.true, to: [0x01])
+        try assertThat(encoder, encodes: FlutterStandardVariant.true, to: [0x01])
         try assertThat(encoder, encodes: false, to: [0x02])
         try assertThat(encoder, encodes: [UInt8(0xFE)], to: [0x08, 0x01, 0xFE])
         try assertThat(
             encoder,
-            encodes: FlutterStandardFieldVariant.uint8Data([0xFE]),
+            encodes: FlutterStandardVariant.uint8Data([0xFE]),
             to: [0x08, 0x01, 0xFE]
         )
 
@@ -71,8 +71,8 @@ final class FlutterStandardEncoderTests: XCTestCase {
         )
         try assertThat(
             encoder,
-            encodes: FlutterStandardFieldVariant.map([FlutterStandardFieldVariant.int64(0x1):
-                    FlutterStandardFieldVariant
+            encodes: FlutterStandardVariant.map([FlutterStandardVariant.int64(0x1):
+                    FlutterStandardVariant
                     .int64(0x2)]),
             to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
         )
@@ -199,42 +199,42 @@ final class FlutterStandardEncoderTests: XCTestCase {
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.true
+            canEncodeDecode: FlutterStandardVariant.true
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.false
+            canEncodeDecode: FlutterStandardVariant.false
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.int64(1)
+            canEncodeDecode: FlutterStandardVariant.int64(1)
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.float64(1.0)
+            canEncodeDecode: FlutterStandardVariant.float64(1.0)
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.string("hello")
+            canEncodeDecode: FlutterStandardVariant.string("hello")
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.list(
-                [FlutterStandardFieldVariant.true, FlutterStandardFieldVariant.false]
+            canEncodeDecode: FlutterStandardVariant.list(
+                [FlutterStandardVariant.true, FlutterStandardVariant.false]
             )
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardFieldVariant.map(
+            canEncodeDecode: FlutterStandardVariant.map(
                 [
-                    FlutterStandardFieldVariant.int32(1): FlutterStandardFieldVariant.true,
-                    FlutterStandardFieldVariant.int32(2): FlutterStandardFieldVariant.false,
+                    FlutterStandardVariant.int32(1): FlutterStandardVariant.true,
+                    FlutterStandardVariant.int32(2): FlutterStandardVariant.false,
                 ]
             )
         )

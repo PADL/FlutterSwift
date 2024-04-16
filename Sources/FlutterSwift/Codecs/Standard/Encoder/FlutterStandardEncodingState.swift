@@ -241,44 +241,75 @@ final class FlutterStandardEncodingState {
     }
 }
 
-extension FlutterStandardFieldVariant: Encodable {
+extension FlutterStandardVariant: Encodable {
     public func encode(to encoder: any Encoder) throws {
-        guard let encoder = encoder as? FlutterStandardEncoderImpl else {
-            throw FlutterSwiftError.variantNotEncodable
-        }
+        if let encoder = encoder as? FlutterStandardEncoderImpl {
+            let container = encoder
+                .singleValueContainer() as! SingleValueFlutterStandardEncodingContainer
 
-        let container = encoder
-            .singleValueContainer() as! SingleValueFlutterStandardEncodingContainer
+            switch self {
+            case .true:
+                try container.state.encode(true)
+            case .false:
+                try container.state.encode(false)
+            case let .int32(int32):
+                try container.state.encode(int32)
+            case let .int64(int64):
+                try container.state.encode(int64)
+            case let .float64(float64):
+                try container.state.encode(float64)
+            case let .string(string):
+                try container.state.encode(string)
+            case let .uint8Data(uint8Data):
+                try container.state.encodeArray(uint8Data)
+            case let .int32Data(int32Data):
+                try container.state.encodeArray(int32Data)
+            case let .int64Data(int64Data):
+                try container.state.encodeArray(int64Data)
+            case let .float32Data(float32Data):
+                try container.state.encodeArray(float32Data)
+            case let .float64Data(float64Data):
+                try container.state.encodeArray(float64Data)
+            case let .list(list):
+                try container.state.encodeList(list, codingPath: container.codingPath)
+            case let .map(map):
+                try container.state.encodeMap(map, codingPath: container.codingPath)
+            default:
+                throw FlutterSwiftError.variantNotEncodable
+            }
+        } else {
+            var container = encoder.singleValueContainer()
 
-        switch self {
-        case .true:
-            try container.state.encode(true)
-        case .false:
-            try container.state.encode(false)
-        case let .int32(int32):
-            try container.state.encode(int32)
-        case let .int64(int64):
-            try container.state.encode(int64)
-        case let .float64(float64):
-            try container.state.encode(float64)
-        case let .string(string):
-            try container.state.encode(string)
-        case let .uint8Data(uint8Data):
-            try container.state.encodeArray(uint8Data)
-        case let .int32Data(int32Data):
-            try container.state.encodeArray(int32Data)
-        case let .int64Data(int64Data):
-            try container.state.encodeArray(int64Data)
-        case let .float32Data(float32Data):
-            try container.state.encodeArray(float32Data)
-        case let .float64Data(float64Data):
-            try container.state.encodeArray(float64Data)
-        case let .list(list):
-            try container.state.encodeList(list, codingPath: container.codingPath)
-        case let .map(map):
-            try container.state.encodeMap(map, codingPath: container.codingPath)
-        default:
-            throw FlutterSwiftError.notRepresentableAsVariant
+            switch self {
+            case .true:
+                try container.encode(true)
+            case .false:
+                try container.encode(false)
+            case let .int32(int32):
+                try container.encode(int32)
+            case let .int64(int64):
+                try container.encode(int64)
+            case let .float64(float64):
+                try container.encode(float64)
+            case let .string(string):
+                try container.encode(string)
+            case let .uint8Data(uint8Data):
+                try container.encode(uint8Data)
+            case let .int32Data(int32Data):
+                try container.encode(int32Data)
+            case let .int64Data(int64Data):
+                try container.encode(int64Data)
+            case let .float32Data(float32Data):
+                try container.encode(float32Data)
+            case let .float64Data(float64Data):
+                try container.encode(float64Data)
+            case let .list(list):
+                try container.encode(list)
+            case let .map(map):
+                try container.encode(map)
+            default:
+                throw FlutterSwiftError.variantNotEncodable
+            }
         }
     }
 }
