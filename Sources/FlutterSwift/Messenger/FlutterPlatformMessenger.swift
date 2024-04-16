@@ -49,7 +49,13 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
         message: Data?,
         _ binaryReply: FlutterBinaryReply?
     ) {
-        platformBinaryMessenger.send(onChannel: channel, message: message, binaryReply: binaryReply)
+        DispatchQueue.main.async { [self] in
+            platformBinaryMessenger.send(
+                onChannel: channel,
+                message: message,
+                binaryReply: binaryReply
+            )
+        }
     }
 
     // MARK: - public API
