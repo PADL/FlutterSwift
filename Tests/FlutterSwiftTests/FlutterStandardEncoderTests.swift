@@ -55,7 +55,28 @@ final class FlutterStandardEncoderTests: XCTestCase {
 
         try assertThat(encoder, encodes: FlutterNull?.none, to: [0x00])
         try assertThat(encoder, encodes: true, to: [0x01])
+        try assertThat(encoder, encodes: FlutterStandardFieldVariant.true, to: [0x01])
         try assertThat(encoder, encodes: false, to: [0x02])
+        try assertThat(encoder, encodes: [UInt8(0xFE)], to: [0x08, 0x01, 0xFE])
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardFieldVariant.uint8Data([0xFE]),
+            to: [0x08, 0x01, 0xFE]
+        )
+
+        try assertThat(
+            encoder,
+            encodes: [0x1: 0x2],
+            to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
+        )
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardFieldVariant.map([FlutterStandardFieldVariant.int64(0x1):
+                    FlutterStandardFieldVariant
+                    .int64(0x2)]),
+            to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
+        )
+
         try assertThat(encoder, encodes: UInt8(0xFE), to: [0x03, 0xFE, 0x00, 0x00, 0x00])
         try assertThat(encoder, encodes: UInt16(0xFEDC), to: [0x03, 0xDC, 0xFE, 0x00, 0x00])
         try assertThat(
@@ -174,6 +195,50 @@ final class FlutterStandardEncoderTests: XCTestCase {
             canEncodeDecode: ["F1": Int64(-1_214_423_123), "F2": Int64(1_214_423)]
         )
 
+        // variants
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.true
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.false
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.int64(1)
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.float64(1.0)
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.string("hello")
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.list(
+                [FlutterStandardFieldVariant.true, FlutterStandardFieldVariant.false]
+            )
+        )
+        try assertThat(
+            encoder: encoder,
+            decoder: decoder,
+            canEncodeDecode: FlutterStandardFieldVariant.map(
+                [
+                    FlutterStandardFieldVariant.int32(1): FlutterStandardFieldVariant.true,
+                    FlutterStandardFieldVariant.int32(2): FlutterStandardFieldVariant.false,
+                ]
+            )
+        )
+
         let error = FlutterError(code: "1234", message: "hello", details: "something")
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: error)
 
@@ -217,7 +282,6 @@ final class FlutterStandardEncoderTests: XCTestCase {
         line: UInt = #line
     ) throws where Value: Codable & Equatable {
         let encoded = try encoder.encode(value)
-        // debugPrint("encoded to \(encoded.hexEncodedString())")
         let decoded = try decoder.decode(Value.self, from: encoded)
         XCTAssertEqual(value, decoded, line: line)
     }

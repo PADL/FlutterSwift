@@ -67,41 +67,41 @@ final class FlutterStandardEncodingState {
         try encodeStandardField(.nil)
     }
 
-    private func encodeArray(_ value: [UInt8]) throws {
+    fileprivate func encodeArray(_ value: [UInt8]) throws {
         try encodeStandardField(.uint8Data)
         try encodeSize(value.count)
         data += value
     }
 
-    private func encodeArray(_ value: [Int32]) throws {
+    fileprivate func encodeArray(_ value: [Int32]) throws {
         try encodeStandardField(.int32Data)
         try encodeSize(value.count)
         try encodeAlignment(MemoryLayout<Int32>.stride)
         try value.forEach { try encodeInteger($0) }
     }
 
-    private func encodeArray(_ value: [Int64]) throws {
+    fileprivate func encodeArray(_ value: [Int64]) throws {
         try encodeStandardField(.int32Data)
         try encodeSize(value.count)
         try encodeAlignment(MemoryLayout<Int64>.stride)
         try value.forEach { try encodeInteger($0) }
     }
 
-    private func encodeArray(_ value: [Double]) throws {
+    fileprivate func encodeArray(_ value: [Double]) throws {
         try encodeStandardField(.float64Data)
         try encodeSize(value.count)
         try encodeAlignment(MemoryLayout<Double>.stride)
         try value.forEach { try encodeInteger($0.bitPattern) }
     }
 
-    private func encodeArray(_ value: [Float]) throws {
+    fileprivate func encodeArray(_ value: [Float]) throws {
         try encodeStandardField(.float32Data)
         try encodeSize(value.count)
         try encodeAlignment(MemoryLayout<Float>.stride)
         try value.forEach { try encodeInteger($0.bitPattern) }
     }
 
-    private func encodeList(
+    fileprivate func encodeList(
         _ value: some FlutterListRepresentable,
         codingPath: [CodingKey]
     ) throws {
@@ -112,7 +112,10 @@ final class FlutterStandardEncodingState {
         }
     }
 
-    private func encodeMap(_ value: some FlutterMapRepresentable, codingPath: [CodingKey]) throws {
+    fileprivate func encodeMap(
+        _ value: some FlutterMapRepresentable,
+        codingPath: [CodingKey]
+    ) throws {
         try encodeStandardField(.map)
         try encodeSize(value.count)
         try value.forEach {
@@ -234,6 +237,48 @@ final class FlutterStandardEncodingState {
         default:
             try value
                 .encode(to: FlutterStandardEncoderImpl(state: state, codingPath: codingPath))
+        }
+    }
+}
+
+extension FlutterStandardFieldVariant: Encodable {
+    public func encode(to encoder: any Encoder) throws {
+        guard let encoder = encoder as? FlutterStandardEncoderImpl else {
+            throw FlutterSwiftError.variantNotEncodable
+        }
+
+        let container = encoder
+            .singleValueContainer() as! SingleValueFlutterStandardEncodingContainer
+
+        switch self {
+        case .true:
+            try container.state.encode(true)
+        case .false:
+            try container.state.encode(false)
+        case let .int32(int32):
+            try container.state.encode(int32)
+        case let .int64(int64):
+            try container.state.encode(int64)
+        case let .float64(float64):
+            try container.state.encode(float64)
+        case let .string(string):
+            try container.state.encode(string)
+        case let .uint8Data(uint8Data):
+            try container.state.encodeArray(uint8Data)
+        case let .int32Data(int32Data):
+            try container.state.encodeArray(int32Data)
+        case let .int64Data(int64Data):
+            try container.state.encodeArray(int64Data)
+        case let .float32Data(float32Data):
+            try container.state.encodeArray(float32Data)
+        case let .float64Data(float64Data):
+            try container.state.encodeArray(float64Data)
+        case let .list(list):
+            try container.state.encodeList(list, codingPath: container.codingPath)
+        case let .map(map):
+            try container.state.encodeMap(map, codingPath: container.codingPath)
+        default:
+            throw FlutterSwiftError.notRepresentableAsVariant
         }
     }
 }

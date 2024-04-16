@@ -33,7 +33,7 @@ final class FlutterStandardDecodingState {
         self.data = data
     }
 
-    private func peekStandardField() throws -> FlutterStandardField {
+    fileprivate func peekStandardField() throws -> FlutterStandardField {
         guard let byte = data.first else {
             throw FlutterSwiftError.eofTooEarly
         }
@@ -348,6 +348,52 @@ final class FlutterStandardDecodingState {
                 ))
             }
             return value
+        }
+    }
+}
+
+extension FlutterStandardFieldVariant: Decodable {
+    public init(from decoder: any Decoder) throws {
+        guard let decoder = decoder as? FlutterStandardDecoderImpl else {
+            throw FlutterSwiftError.variantNotDecodable
+        }
+
+        let container = try decoder
+            .singleValueContainer() as! SingleValueFlutterStandardDecodingContainer
+
+        switch try container.state.peekStandardField() {
+        case .nil:
+            try container.state.assertStandardField(.nil)
+            self = .nil
+        case .true:
+            fallthrough
+        case .false:
+            let b = try container.state.decode(Bool.self)
+            self = b ? .true : .false
+        case .int32:
+            self = try .int32(container.state.decode(Int32.self))
+        case .int64:
+            self = try .int64(container.state.decode(Int64.self))
+        case .float64:
+            self = try .float64(container.state.decode(Double.self))
+        case .string:
+            self = try .string(container.state.decode(String.self))
+        case .uint8Data:
+            self = try .uint8Data(container.state.decodeArray(UInt8.self))
+        case .int32Data:
+            self = try .int32Data(container.state.decodeArray(Int32.self))
+        case .int64Data:
+            self = try .int64Data(container.state.decodeArray(Int64.self))
+        case .float32Data:
+            self = try .float32Data(container.state.decodeArray(Float.self))
+        case .float64Data:
+            self = try .float64Data(container.state.decodeArray(Double.self))
+        case .list:
+            self = try .list(container.state.decode([Self].self, codingPath: []))
+        case .map:
+            self = try .map(container.state.decode([Self: Self].self, codingPath: []))
+        default:
+            throw FlutterSwiftError.variantNotDecodable
         }
     }
 }

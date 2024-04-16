@@ -22,8 +22,7 @@
 
 /// A (stateful) binary decoder.
 struct FlutterStandardDecoderImpl: Decoder {
-    private let state: FlutterStandardDecodingState
-
+    let state: FlutterStandardDecodingState
     let codingPath: [any CodingKey]
     var userInfo: [CodingUserInfoKey: Any] { [:] }
     let count: Int?
