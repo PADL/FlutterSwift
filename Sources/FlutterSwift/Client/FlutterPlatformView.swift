@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #if os(Linux)
-@preconcurrency
-import AnyCodable
 @_implementationOnly
 import CxxFlutterSwift
 
@@ -52,7 +50,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
 
     public required init() {}
 
-    public func handleMethod(call: FlutterMethodCall<AnyCodable>) throws -> AnyCodable? {
+    public func handleMethod(call: FlutterMethodCall<FlutterStandardFieldVariant>) throws -> FlutterStandardFieldVariant? {
         guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
             throw FlutterSwiftError.methodNotImplemented
         }
@@ -77,7 +75,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
         viewFactories[viewType] = factory
     }
 
-    func create(_ arguments: AnyCodable?) throws -> AnyCodable? {
+    func create(_ arguments: FlutterStandardFieldVariant?) throws -> FlutterStandardFieldVariant? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
@@ -120,7 +118,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
         return nil
     }
 
-    func dispose(_ arguments: AnyCodable?) throws -> AnyCodable? {
+    func dispose(_ arguments: FlutterStandardFieldVariant?) throws -> FlutterStandardFieldVariant? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
