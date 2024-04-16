@@ -119,6 +119,7 @@ final class FlutterStandardDecodingState {
         let count = try decodeSize()
         try assertAlignment(MemoryLayout<Value>.stride)
         var values = [Value]()
+        values.reserveCapacity(count)
         for _ in 0..<count {
             try values.append(block())
         }
