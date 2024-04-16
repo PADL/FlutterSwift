@@ -202,30 +202,38 @@ final class FlutterStandardEncodingState {
     }
 
     func encode<T>(_ value: T, codingPath: [any CodingKey]) throws where T: Encodable {
+        try Self.encode(value, state: self, codingPath: codingPath)
+    }
+
+    static func encode<T>(
+        _ value: T,
+        state: FlutterStandardEncodingState,
+        codingPath: [any CodingKey]
+    ) throws where T: Encodable {
         switch value {
         case let value as Data:
-            try encode(value)
+            try state.encode(value)
         case let value as [UInt8]:
-            try encodeArray(value)
+            try state.encodeArray(value)
         case let value as [Int32]:
-            try encodeArray(value)
+            try state.encodeArray(value)
         case let value as [Int64]:
-            try encodeArray(value)
+            try state.encodeArray(value)
         case let value as [Float]:
-            try encodeArray(value)
+            try state.encodeArray(value)
         case let value as [Double]:
-            try encodeArray(value)
+            try state.encodeArray(value)
         case let value as any FlutterListRepresentable:
-            try encodeList(value, codingPath: codingPath)
+            try state.encodeList(value, codingPath: codingPath)
         case let value as any FlutterMapRepresentable:
-            try encodeMap(value, codingPath: codingPath)
+            try state.encodeMap(value, codingPath: codingPath)
         #if canImport(Foundation)
         case is NSNull:
-            try encodeNil()
+            try state.encodeNil()
         #endif
         default:
             try value
-                .encode(to: FlutterStandardEncoderImpl(state: self, codingPath: codingPath))
+                .encode(to: FlutterStandardEncoderImpl(state: state, codingPath: codingPath))
         }
     }
 }
