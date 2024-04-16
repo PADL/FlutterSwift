@@ -18,7 +18,7 @@ public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
     case map([FlutterStandardFieldVariant: FlutterStandardFieldVariant])
     case float32Data([Float])
 
-    init(_ any: Any?) throws {
+    public init(_ any: Any?) throws {
         guard let any else {
             self = .nil
             return
@@ -60,7 +60,7 @@ public indirect enum FlutterStandardFieldVariant: Hashable, Sendable {
         }
     }
 
-    var value: Any? {
+    public var value: Any? {
         switch self {
         case .nil:
             return nil
