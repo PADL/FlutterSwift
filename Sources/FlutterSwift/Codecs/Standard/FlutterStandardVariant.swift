@@ -98,4 +98,37 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
             return float32Data
         }
     }
+
+    public var field: FlutterStandardField {
+        switch self {
+        case .nil:
+            return .nil
+        case .true:
+            return .true
+        case .false:
+            return .false
+        case .int32:
+            return .int32
+        case .int64:
+            return .int64
+        case .float64:
+            return .float64
+        case .string:
+            return .string
+        case .uint8Data:
+            return .uint8Data
+        case .int32Data:
+            return .int32Data
+        case .int64Data:
+            return .int64Data
+        case .float64Data:
+            return .float64Data
+        case .list:
+            return .list
+        case .map:
+            return .map
+        case .float32Data:
+            return .float32Data
+        }
+    }
 }
