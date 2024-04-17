@@ -30,6 +30,8 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
             self = .int32(int32)
         } else if let int64 = any as? Int64 {
             self = .int64(int64)
+        } else if let float32 = any as? Float {
+            self = .float64(Double(float32))
         } else if let float64 = any as? Double {
             self = .float64(float64)
         } else if let string = any as? String {
