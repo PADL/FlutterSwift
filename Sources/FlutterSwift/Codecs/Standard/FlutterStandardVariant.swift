@@ -155,64 +155,64 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
         }
     }
 
-    public func value<T>(_ type: T.Type) throws -> T? {
+    public func value(_ type: Any.Type) throws -> Any? {
         switch self {
         case .nil:
             return nil
         case .true:
             guard type is Bool.Type else { throw FlutterSwiftError.variantNotDecodable }
-            return true as? T
+            return true
         case .false:
             guard type is Bool.Type else { throw FlutterSwiftError.variantNotDecodable }
-            return false as? T
+            return false
         case let .int32(int32):
             guard type is Int32.Type else { throw FlutterSwiftError.variantNotDecodable }
-            return int32 as? T
+            return int32
         case let .int64(int64):
             guard type is Int64.Type else { throw FlutterSwiftError.variantNotDecodable }
-            return int64 as? T
+            return int64
         case let .float64(float64):
             if type is Double.Type {
-                return float64 as? T
+                return float64
             } else if type is Float.Type {
-                return Float(float64) as? T
+                return Float(float64)
             } else {
                 throw FlutterSwiftError.variantNotDecodable
             }
         case let .string(string):
             guard type is String.Type else { throw FlutterSwiftError.variantNotDecodable }
-            return string as? T
+            return string
         case let .uint8Data(uint8Data):
             if type is [UInt8].Type {
-                return uint8Data as? T
+                return uint8Data
             } else if type is Data.Type {
-                return Data(uint8Data) as? T
+                return Data(uint8Data)
             } else {
                 throw FlutterSwiftError.variantNotDecodable
             }
         case let .int32Data(int32Data):
             if type is [Int32].Type {
-                return int32Data as? T
+                return int32Data
             } else if type is [UInt32].Type {
-                return int32Data.map { UInt32(bitPattern: $0) } as? T
+                return int32Data.map { UInt32(bitPattern: $0) }
             } else {
                 throw FlutterSwiftError.variantNotDecodable
             }
         case let .int64Data(int64Data):
             if type is [Int64].Type {
-                return int64Data as? T
+                return int64Data
             } else if type is [UInt64].Type {
-                return int64Data.map { UInt64(bitPattern: $0) } as? T
+                return int64Data.map { UInt64(bitPattern: $0) }
             } else {
                 throw FlutterSwiftError.variantNotDecodable
             }
         case let .float64Data(float64Data):
             guard type is [Double].Type else { throw FlutterSwiftError.variantNotDecodable }
-            return float64Data as? T
+            return float64Data
         case let .list(list):
             guard type is any FlutterListRepresentable.Type
             else { throw FlutterSwiftError.variantNotDecodable }
-            return list.map(\.value) as? T
+            return list.map(\.value)
         case let .map(map):
             guard type is any FlutterMapRepresentable.Type
             else { throw FlutterSwiftError.variantNotDecodable }
@@ -222,10 +222,10 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
                     result[AnyHashable(key)] = $1.value.value
                 }
                 return result
-            } as? T
+            }
         case let .float32Data(float32Data):
             guard type is [Float].Type else { throw FlutterSwiftError.variantNotDecodable }
-            return float32Data as? T
+            return float32Data
         }
     }
 
