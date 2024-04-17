@@ -56,12 +56,26 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
             return
         }
 
+        // expand smaller and unsigned integer types on input
+
         if let bool = any as? Bool {
             self = bool ? .true : .false
+        } else if let int8 = any as? Int8 {
+            self = .int32(Int32(int8))
+        } else if let int16 = any as? Int16 {
+            self = .int32(Int32(int16))
         } else if let int32 = any as? Int32 {
             self = .int32(int32)
         } else if let int64 = any as? Int64 {
             self = .int64(int64)
+        } else if let uint8 = any as? UInt8 {
+            self = .int32(Int32(uint8))
+        } else if let uint16 = any as? UInt16 {
+            self = .int32(Int32(uint16))
+        } else if let uint32 = any as? UInt32 {
+            self = .int32(Int32(bitPattern: uint32))
+        } else if let uint64 = any as? UInt64 {
+            self = .int64(Int64(bitPattern: uint64))
         } else if let float32 = any as? Float {
             self = .float64(Double(float32))
         } else if let float64 = any as? Double {
@@ -74,6 +88,10 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
             self = .int32Data(int32Data)
         } else if let int64Data = any as? [Int64] {
             self = .int64Data(int64Data)
+        } else if let uint32Data = any as? [UInt32] {
+            self = .int32Data(uint32Data.map { Int32(bitPattern: $0) })
+        } else if let uint64Data = any as? [UInt64] {
+            self = .int64Data(uint64Data.map { Int64(bitPattern: $0) })
         } else if let float32Data = any as? [Float] {
             self = .float32Data(float32Data)
         } else if let float64Data = any as? [Double] {
