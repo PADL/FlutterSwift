@@ -18,7 +18,7 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
     case map([FlutterStandardVariant: FlutterStandardVariant])
     case float32Data([Float])
 
-    public static func isValidVariantType<T>(_ type: T.Type) -> Bool {
+    public static func isValidVariantType(_ type: Any.Type) -> Bool {
         if type is ExpressibleByNilLiteral.Type {
             return true
         } else if type is Int32.Type {
