@@ -11,13 +11,13 @@ import Foundation
 public struct FlutterError: Error, Codable, @unchecked Sendable {
     let code: String
     let message: String?
-    let details: (any Codable)?
+    let details: FlutterStandardVariant?
     let stacktrace: String?
 
     public init(
         code: String,
         message: String? = nil,
-        details: (any Codable)? = nil,
+        details: FlutterStandardVariant? = nil,
         stacktrace: String? = nil
     ) {
         self.code = code
@@ -48,7 +48,7 @@ public struct FlutterError: Error, Codable, @unchecked Sendable {
             try container.encodeNil()
         }
         if let details {
-            try container.encode(FlutterStandardVariant(details))
+            try container.encode(details)
         } else {
             try container.encodeNil()
         }
