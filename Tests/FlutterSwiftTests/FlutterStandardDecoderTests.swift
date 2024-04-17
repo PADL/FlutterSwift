@@ -35,6 +35,7 @@ final class FlutterStandardDecoderTests: XCTestCase {
         try assertThat(decoder, decodes: [0x00], to: FlutterNull?.none)
         try assertThat(decoder, decodes: [0x01], to: true)
         try assertThat(decoder, decodes: [0x02], to: false)
+
         try assertThat(decoder, decodes: [0x03, 0xFE, 0x00, 0x00, 0x00], to: UInt8(0xFE))
         try assertThat(decoder, decodes: [0x03, 0xDC, 0xFE, 0x00, 0x00], to: UInt16(0xFEDC))
         try assertThat(
@@ -111,6 +112,13 @@ final class FlutterStandardDecoderTests: XCTestCase {
             decodes: [0x07, 0x06, 0x68, 0xF0, 0x9F, 0x98, 0x82, 0x77],
             to: "h\u{0001F602}w"
         )
+    }
+
+    func testDefaultStandardVariantDecoder() throws {
+        let decoder = FlutterStandardDecoder()
+
+        try assertThat(decoder, decodes: [0x01], to: FlutterStandardVariant.true)
+        try assertThat(decoder, decodes: [0x02], to: FlutterStandardVariant.false)
     }
 
     private func assertThat<Value>(

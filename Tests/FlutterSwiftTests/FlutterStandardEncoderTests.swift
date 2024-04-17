@@ -55,30 +55,18 @@ final class FlutterStandardEncoderTests: XCTestCase {
 
         try assertThat(encoder, encodes: FlutterNull?.none, to: [0x00])
         try assertThat(encoder, encodes: true, to: [0x01])
-        try assertThat(encoder, encodes: FlutterStandardVariant.true, to: [0x01])
         try assertThat(encoder, encodes: false, to: [0x02])
         try assertThat(encoder, encodes: [UInt8(0xFE)], to: [0x08, 0x01, 0xFE])
-        try assertThat(
-            encoder,
-            encodes: FlutterStandardVariant.uint8Data([0xFE]),
-            to: [0x08, 0x01, 0xFE]
-        )
 
         try assertThat(
             encoder,
             encodes: [0x1: 0x2],
             to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
         )
-        try assertThat(
-            encoder,
-            encodes: FlutterStandardVariant.map([FlutterStandardVariant.int64(0x1):
-                    FlutterStandardVariant
-                    .int64(0x2)]),
-            to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
-        )
 
         try assertThat(encoder, encodes: UInt8(0xFE), to: [0x03, 0xFE, 0x00, 0x00, 0x00])
         try assertThat(encoder, encodes: UInt16(0xFEDC), to: [0x03, 0xDC, 0xFE, 0x00, 0x00])
+
         try assertThat(
             encoder,
             encodes: UInt64(0xFEDC_BA09),
@@ -145,6 +133,40 @@ final class FlutterStandardEncoderTests: XCTestCase {
         )
     }
 
+    func testDefaultStandardVariantEncoder() throws {
+        let encoder = FlutterStandardEncoder()
+
+        try assertThat(encoder, encodes: FlutterStandardVariant.true, to: [0x01])
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardVariant.uint8Data([0xFE]),
+            to: [0x08, 0x01, 0xFE]
+        )
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardVariant.map([FlutterStandardVariant.int64(0x1):
+                    FlutterStandardVariant
+                    .int64(0x2)]),
+            to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
+        )
+
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardVariant.int32(0xFEDC),
+            to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
+        )
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardVariant(UInt16(0xFEDC)),
+            to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
+        )
+        try assertThat(
+            encoder,
+            encodes: FlutterStandardVariant(UInt32(0xFEDC)),
+            to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
+        )
+    }
+
     func testDefaultStandardEncoderDecoder() throws {
         let decoder = FlutterStandardDecoder()
         let encoder = FlutterStandardEncoder()
@@ -195,7 +217,46 @@ final class FlutterStandardEncoderTests: XCTestCase {
             canEncodeDecode: ["F1": Int64(-1_214_423_123), "F2": Int64(1_214_423)]
         )
 
-        // variants
+        let error = FlutterError(code: "1234", message: "hello", details: "something")
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: error)
+
+        let method = FlutterMethodCall<[String]>(method: "hello", arguments: ["world", "moon"])
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: method)
+    }
+
+    func testConstructedStandardEncoderDecoder() throws {
+        let decoder = FlutterStandardDecoder()
+        let encoder = FlutterStandardEncoder()
+
+        let error = FlutterError(code: "1231231", message: "hello", details: "something")
+        let envelope = FlutterEnvelope<String>("hello")
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope)
+
+        let envelope2 = FlutterEnvelope<String>(error)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope2)
+
+        let simple = Simple(x: 1, y: 2, z: 3)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: simple)
+
+        let composite = Composite(before: 1, inner: Composite.Inner(value: 99), after: 7_834_868)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: composite)
+
+        let variablePrefix = VariablePrefix(prefix: [2, 23], value: 99)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variablePrefix)
+
+        let variableSuffix = VariableSuffix(value: 78, suffix: [99, 11])
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variableSuffix)
+
+        let generic = Generic<String>(value: "Hello, world", additional: 255)
+        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: generic)
+
+        // FIXME: Either -- enums are not supported, we need to interrogate metadata to determine number of keys, this is possible but probably useless because there is no direct equivalent on the Flutter side
+    }
+
+    func testConstructedStandardVariantEncoderDecoder() throws {
+        let decoder = FlutterStandardDecoder()
+        let encoder = FlutterStandardEncoder()
+
         try assertThat(
             encoder: encoder,
             decoder: decoder,
@@ -238,41 +299,6 @@ final class FlutterStandardEncoderTests: XCTestCase {
                 ]
             )
         )
-
-        let error = FlutterError(code: "1234", message: "hello", details: "something")
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: error)
-
-        let method = FlutterMethodCall<[String]>(method: "hello", arguments: ["world", "moon"])
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: method)
-    }
-
-    func testConstructedStandardEncoderDecoder() throws {
-        let decoder = FlutterStandardDecoder()
-        let encoder = FlutterStandardEncoder()
-
-        let error = FlutterError(code: "1231231", message: "hello", details: "something")
-        let envelope = FlutterEnvelope<String>("hello")
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope)
-
-        let envelope2 = FlutterEnvelope<String>(error)
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope2)
-
-        let simple = Simple(x: 1, y: 2, z: 3)
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: simple)
-
-        let composite = Composite(before: 1, inner: Composite.Inner(value: 99), after: 7_834_868)
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: composite)
-
-        let variablePrefix = VariablePrefix(prefix: [2, 23], value: 99)
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variablePrefix)
-
-        let variableSuffix = VariableSuffix(value: 78, suffix: [99, 11])
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: variableSuffix)
-
-        let generic = Generic<String>(value: "Hello, world", additional: 255)
-        try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: generic)
-
-        // FIXME: Either -- enums are not supported, we need to interrogate metadata to determine number of keys, this is possible but probably useless because there is no direct equivalent on the Flutter side
     }
 
     private func assertThat<Value>(
