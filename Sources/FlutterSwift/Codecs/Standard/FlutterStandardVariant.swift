@@ -18,6 +18,38 @@ public indirect enum FlutterStandardVariant: Hashable, Sendable {
     case map([FlutterStandardVariant: FlutterStandardVariant])
     case float32Data([Float])
 
+    public static func isValidVariantType<T>(_ type: T.Type) -> Bool {
+        if type is ExpressibleByNilLiteral.Type {
+            return true
+        } else if type is Int32.Type {
+            return true
+        } else if type is Int64.Type {
+            return true
+        } else if type is Float.Type {
+            return true
+        } else if type is Double.Type {
+            return true
+        } else if type is String.Type {
+            return true
+        } else if type is [UInt8].Type {
+            return true
+        } else if type is [Int32].Type {
+            return true
+        } else if type is [Int64].Type {
+            return true
+        } else if type is [Float].Type {
+            return true
+        } else if type is [Double].Type {
+            return true
+        } else if type is any FlutterListRepresentable.Type {
+            return true
+        } else if type is any FlutterMapRepresentable.Type {
+            return true
+        } else {
+            return false
+        }
+    }
+
     public init(_ any: Any?) throws {
         guard let any else {
             self = .nil
