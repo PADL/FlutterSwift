@@ -136,23 +136,23 @@ final class FlutterStandardEncoderTests: XCTestCase {
     func testDefaultStandardVariantEncoder() throws {
         let encoder = FlutterStandardEncoder()
 
-        try assertThat(encoder, encodes: FlutterStandardVariant.true, to: [0x01])
+        try assertThat(encoder, encodes: AnyFlutterStandardCodable.true, to: [0x01])
         try assertThat(
             encoder,
-            encodes: FlutterStandardVariant.uint8Data([0xFE]),
+            encodes: AnyFlutterStandardCodable.uint8Data([0xFE]),
             to: [0x08, 0x01, 0xFE]
         )
         try assertThat(
             encoder,
-            encodes: FlutterStandardVariant.map([FlutterStandardVariant.int64(0x1):
-                    FlutterStandardVariant
+            encodes: AnyFlutterStandardCodable.map([AnyFlutterStandardCodable.int64(0x1):
+                    AnyFlutterStandardCodable
                     .int64(0x2)]),
             to: [13, 1, 4, 1, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0]
         )
 
         try assertThat(
             encoder,
-            encodes: FlutterStandardVariant.int32(0xFEDC),
+            encodes: AnyFlutterStandardCodable.int32(0xFEDC),
             to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
         )
         /*
@@ -222,7 +222,7 @@ final class FlutterStandardEncoderTests: XCTestCase {
         let error = FlutterError(
             code: "1234",
             message: "hello",
-            details: FlutterStandardVariant.string("something")
+            details: AnyFlutterStandardCodable.string("something")
         )
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: error)
 
@@ -237,7 +237,7 @@ final class FlutterStandardEncoderTests: XCTestCase {
         let error = FlutterError(
             code: "1231231",
             message: "hello",
-            details: FlutterStandardVariant.string("something")
+            details: AnyFlutterStandardCodable.string("something")
         )
         let envelope = FlutterEnvelope<String>("hello")
         try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: envelope)
@@ -270,42 +270,42 @@ final class FlutterStandardEncoderTests: XCTestCase {
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.true
+            canEncodeDecode: AnyFlutterStandardCodable.true
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.false
+            canEncodeDecode: AnyFlutterStandardCodable.false
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.int64(1)
+            canEncodeDecode: AnyFlutterStandardCodable.int64(1)
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.float64(1.0)
+            canEncodeDecode: AnyFlutterStandardCodable.float64(1.0)
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.string("hello")
+            canEncodeDecode: AnyFlutterStandardCodable.string("hello")
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.list(
-                [FlutterStandardVariant.true, FlutterStandardVariant.false]
+            canEncodeDecode: AnyFlutterStandardCodable.list(
+                [AnyFlutterStandardCodable.true, AnyFlutterStandardCodable.false]
             )
         )
         try assertThat(
             encoder: encoder,
             decoder: decoder,
-            canEncodeDecode: FlutterStandardVariant.map(
+            canEncodeDecode: AnyFlutterStandardCodable.map(
                 [
-                    FlutterStandardVariant.int32(1): FlutterStandardVariant.true,
-                    FlutterStandardVariant.int32(2): FlutterStandardVariant.false,
+                    AnyFlutterStandardCodable.int32(1): AnyFlutterStandardCodable.true,
+                    AnyFlutterStandardCodable.int32(2): AnyFlutterStandardCodable.false,
                 ]
             )
         )

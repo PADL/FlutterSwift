@@ -117,8 +117,8 @@ final class FlutterStandardDecoderTests: XCTestCase {
     func testDefaultStandardVariantDecoder() throws {
         let decoder = FlutterStandardDecoder()
 
-        try assertThat(decoder, decodes: [0x01], to: FlutterStandardVariant.true)
-        try assertThat(decoder, decodes: [0x02], to: FlutterStandardVariant.false)
+        try assertThat(decoder, decodes: [0x01], to: AnyFlutterStandardCodable.true)
+        try assertThat(decoder, decodes: [0x02], to: AnyFlutterStandardCodable.false)
     }
 
     private func assertThat<Value>(

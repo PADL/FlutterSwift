@@ -11,13 +11,13 @@ import Foundation
 public struct FlutterError: Error, Codable, @unchecked Sendable {
     let code: String
     let message: String?
-    let details: FlutterStandardVariant?
+    let details: AnyFlutterStandardCodable?
     let stacktrace: String?
 
     public init(
         code: String,
         message: String? = nil,
-        details: FlutterStandardVariant? = nil,
+        details: AnyFlutterStandardCodable? = nil,
         stacktrace: String? = nil
     ) {
         self.code = code
@@ -31,7 +31,7 @@ public struct FlutterError: Error, Codable, @unchecked Sendable {
         var container = try decoder.unkeyedContainer()
         code = try container.decode(String.self)
         message = try container.decodeIfPresent(String.self)
-        details = try container.decodeIfPresent(FlutterStandardVariant.self)
+        details = try container.decodeIfPresent(AnyFlutterStandardCodable.self)
         if container.count ?? 0 > 3 {
             stacktrace = try container.decode(String.self)
         } else {

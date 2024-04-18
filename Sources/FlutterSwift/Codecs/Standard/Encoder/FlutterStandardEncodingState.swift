@@ -241,7 +241,7 @@ final class FlutterStandardEncodingState {
     }
 }
 
-extension FlutterStandardVariant: Encodable {
+extension AnyFlutterStandardCodable: Encodable {
     public func encode(to encoder: any Encoder) throws {
         if let encoder = encoder as? FlutterStandardEncoderImpl {
             let container = encoder

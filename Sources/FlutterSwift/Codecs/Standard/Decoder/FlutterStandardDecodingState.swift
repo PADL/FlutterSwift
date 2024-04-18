@@ -352,7 +352,7 @@ final class FlutterStandardDecodingState {
     }
 }
 
-extension FlutterStandardVariant: Decodable {
+extension AnyFlutterStandardCodable: Decodable {
     public init(from decoder: any Decoder) throws {
         guard let decoder = decoder as? FlutterStandardDecoderImpl else {
             throw FlutterSwiftError.variantNotDecodable

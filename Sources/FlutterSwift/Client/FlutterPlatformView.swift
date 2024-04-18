@@ -50,8 +50,8 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
 
     public required init() {}
 
-    public func handleMethod(call: FlutterMethodCall<FlutterStandardVariant>) throws
-        -> FlutterStandardVariant?
+    public func handleMethod(call: FlutterMethodCall<AnyFlutterStandardCodable>) throws
+        -> AnyFlutterStandardCodable?
     {
         guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
             throw FlutterSwiftError.methodNotImplemented
@@ -77,7 +77,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
         viewFactories[viewType] = factory
     }
 
-    func create(_ arguments: FlutterStandardVariant?) throws -> FlutterStandardVariant? {
+    func create(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
@@ -120,7 +120,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin {
         return nil
     }
 
-    func dispose(_ arguments: FlutterStandardVariant?) throws -> FlutterStandardVariant? {
+    func dispose(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
         guard let arguments = arguments?.value as? [String: Any] else {
             throw FlutterError(code: "Couldn't parse arguments")
         }
