@@ -275,7 +275,7 @@ extension AnyFlutterStandardCodable: Encodable {
             case let .map(map):
                 try container.state.encodeMap(map, codingPath: container.codingPath)
             default:
-                throw FlutterSwiftError.variantNotEncodable
+                throw FlutterSwiftError.fieldNotEncodable
             }
         } else {
             var container = encoder.singleValueContainer()
@@ -308,7 +308,7 @@ extension AnyFlutterStandardCodable: Encodable {
             case let .map(map):
                 try container.encode(map)
             default:
-                throw FlutterSwiftError.variantNotEncodable
+                throw FlutterSwiftError.fieldNotEncodable
             }
         }
     }

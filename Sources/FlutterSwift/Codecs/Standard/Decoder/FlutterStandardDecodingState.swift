@@ -355,7 +355,7 @@ final class FlutterStandardDecodingState {
 extension AnyFlutterStandardCodable: Decodable {
     public init(from decoder: any Decoder) throws {
         guard let decoder = decoder as? FlutterStandardDecoderImpl else {
-            throw FlutterSwiftError.variantNotDecodable
+            throw FlutterSwiftError.fieldNotDecodable
         }
 
         let container = try decoder
@@ -393,7 +393,7 @@ extension AnyFlutterStandardCodable: Decodable {
         case .map:
             self = try .map(container.state.decode([Self: Self].self, codingPath: []))
         default:
-            throw FlutterSwiftError.variantNotDecodable
+            throw FlutterSwiftError.fieldNotDecodable
         }
     }
 }

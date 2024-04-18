@@ -13,14 +13,14 @@ public enum FlutterSwiftError: Error, Codable, Equatable {
     case messageSendFailure
     case messengerNotAvailable
     case methodNotImplemented
-    case notRepresentableAsVariant
+    case notRepresentableAsStandardField
     case stringNotDecodable(Data)
     case stringNotEncodable(String)
     case unexpectedStandardFieldType(FlutterStandardField)
     case unknownDiscriminant
     case unknownStandardFieldType(UInt8)
     case variableSizedTypeTooBig
-    case variantNotDecodable
-    case variantNotEncodable
+    case fieldNotDecodable
+    case fieldNotEncodable
     case viewNotFound
 }
