@@ -20,8 +20,9 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     let binaryMessenger: FlutterBinaryMessenger
     let codec: FlutterMessageCodec
     let priority: TaskPriority?
-    var task: Task<(), Error>?
+
     var connection: FlutterBinaryMessengerConnection = 0
+    private var tasks = [AnyHashable: Task<(), Error>]()
 
     /**
      * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -52,13 +53,13 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     }
 
     deinit {
-        task?.cancel()
+        tasks.values.forEach { $0.cancel() }
         Task {
             try? await removeMessageHandler()
         }
     }
 
-    private func onMethod<Event: Codable, Arguments: Codable>(
+    private func onMethod<Event: Codable, Arguments: Codable & Hashable>(
         call: FlutterMethodCall<Arguments>,
         onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
         onCancel: ((Arguments?) async throws -> ())?
@@ -67,12 +68,12 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
         switch call.method {
         case "listen":
-            if let task {
+            if let task = tasks[call.arguments] {
                 task.cancel()
-                self.task = nil
+                tasks.removeValue(forKey: call.arguments)
             }
             let stream = try await onListen(call.arguments)
-            task = Task<(), Error>(priority: priority) { [self] in
+            tasks[call.arguments] = Task<(), Error>(priority: priority) { [self] in
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
@@ -94,9 +95,9 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
             }
             envelope = FlutterEnvelope.success(nil)
         case "cancel":
-            if let task {
+            if let task = tasks[call.arguments] {
                 task.cancel()
-                self.task = nil
+                tasks.removeValue(forKey: call.arguments)
             }
             do {
                 if let onCancel {
@@ -121,7 +122,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
      *
      * @param handler The stream handler.
      */
-    public func setStreamHandler<Event: Codable, Arguments: Codable>(
+    public func setStreamHandler<Event: Codable, Arguments: Codable & Hashable>(
         onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
         onCancel: (@Sendable (Arguments?) async throws -> ())?
     ) async throws {
