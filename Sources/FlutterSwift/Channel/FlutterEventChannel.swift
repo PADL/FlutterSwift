@@ -22,7 +22,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     let priority: TaskPriority?
 
     var connection: FlutterBinaryMessengerConnection = 0
-    private var tasks = [AnyHashable: Task<(), Error>]()
+    private var tasks = [String: Task<(), Error>]()
 
     /**
      * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -59,14 +59,14 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         }
     }
 
-    private func _removeTask(_ id: AnyHashable) {
+    private func _removeTask(_ id: String) {
         if let task = tasks[id] {
             task.cancel()
             tasks.removeValue(forKey: id)
         }
     }
 
-    private func onMethod<Event: Codable, Arguments: Codable & Hashable>(
+    private func onMethod<Event: Codable, Arguments: Codable>(
         call: FlutterMethodCall<Arguments>,
         onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
         onCancel: ((Arguments?) async throws -> ())?
@@ -133,7 +133,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
      *
      * @param handler The stream handler.
      */
-    public func setStreamHandler<Event: Codable, Arguments: Codable & Hashable>(
+    public func setStreamHandler<Event: Codable, Arguments: Codable>(
         onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
         onCancel: (@Sendable (Arguments?) async throws -> ())?
     ) async throws {
