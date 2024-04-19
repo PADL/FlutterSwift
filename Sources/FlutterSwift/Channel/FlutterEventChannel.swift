@@ -92,7 +92,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
                     let envelope = FlutterEnvelope<Event>.failure(error)
                     try await binaryMessenger.send(on: name, message: codec.encode(envelope))
                 } catch is CancellationError {
-                    // FIXME: should we ignore this or send the finish message?
+                    try await binaryMessenger.send(on: name, message: nil)
                 } catch {
                     throw FlutterSwiftError.invalidEventError
                 }
