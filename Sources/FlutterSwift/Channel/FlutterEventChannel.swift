@@ -59,6 +59,13 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         }
     }
 
+    private func removeTask(forKey key: AnyHashable) {
+        if let task = tasks[key] {
+            task.cancel()
+            tasks.removeValue(forKey: key)
+        }
+    }
+
     private func onMethod<Event: Codable, Arguments: Codable & Hashable>(
         call: FlutterMethodCall<Arguments>,
         onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
@@ -68,10 +75,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
         switch call.method {
         case "listen":
-            if let task = tasks[call.arguments] {
-                task.cancel()
-                tasks.removeValue(forKey: call.arguments)
-            }
+            removeTask(forKey: call.arguments)
             let stream = try await onListen(call.arguments)
             tasks[call.arguments] = Task<(), Error>(priority: priority) { [self] in
                 do {
@@ -95,10 +99,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
             }
             envelope = FlutterEnvelope.success(nil)
         case "cancel":
-            if let task = tasks[call.arguments] {
-                task.cancel()
-                tasks.removeValue(forKey: call.arguments)
-            }
+            removeTask(forKey: call.arguments)
             do {
                 if let onCancel {
                     try await onCancel(call.arguments)
