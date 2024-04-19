@@ -23,20 +23,6 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
     var connection: FlutterBinaryMessengerConnection = 0
     private var tasks = [AnyHashable: Task<(), Error>]()
-    private let flags: Flags
-
-    public struct Flags: OptionSet {
-        public typealias RawValue = UInt32
-
-        public let rawValue: RawValue
-
-        public init(rawValue: RawValue) {
-            self.rawValue = rawValue
-        }
-
-        // support several event channels multiplexed by argument
-        public static let argumentMultiplexing = Flags(rawValue: 1 << 0)
-    }
 
     /**
      * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -58,14 +44,12 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         name: String,
         binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
-        priority: TaskPriority? = nil,
-        flags: Flags = []
+        priority: TaskPriority? = nil
     ) {
         self.name = name
         self.binaryMessenger = binaryMessenger
         self.codec = codec
         self.priority = priority
-        self.flags = flags
     }
 
     deinit {
@@ -91,8 +75,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         let method = call.method.split(separator: "#", maxSplits: 2)
         let id: String, name: String
 
-        if flags.contains(.argumentMultiplexing) {
-            guard method.count == 2 else { throw FlutterSwiftError.invalidEventError }
+        if method.count > 1 {
             id = String(method[1])
             name = self.name + "#" + id
         } else {
@@ -102,7 +85,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
         _removeTask(id)
 
-        switch flags.contains(.argumentMultiplexing) ? String(method[0]) : call.method {
+        switch method.count > 1 ? String(method[0]) : call.method {
         case "listen":
             let stream = try await onListen(call.arguments)
             tasks[id] = Task<(), Error>(priority: priority) { [self] in
