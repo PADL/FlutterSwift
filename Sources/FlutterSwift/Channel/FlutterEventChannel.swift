@@ -59,7 +59,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
         priority: TaskPriority? = nil,
-        flags: Flags
+        flags: Flags = []
     ) {
         self.name = name
         self.binaryMessenger = binaryMessenger
