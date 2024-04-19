@@ -23,6 +23,20 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
     var connection: FlutterBinaryMessengerConnection = 0
     private var tasks = [AnyHashable: Task<(), Error>]()
+    private let flags: Flags
+
+    public struct Flags: OptionSet {
+        public typealias RawValue = UInt32
+
+        public let rawValue: RawValue
+
+        public init(rawValue: RawValue) {
+            self.rawValue = rawValue
+        }
+
+        // support several event channels multiplexed by argument
+        public static let argumentMultiplexing = Flags(rawValue: 1 << 0)
+    }
 
     /**
      * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -44,12 +58,14 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         name: String,
         binaryMessenger: FlutterBinaryMessenger,
         codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
-        priority: TaskPriority? = nil
+        priority: TaskPriority? = nil,
+        flags: Flags
     ) {
         self.name = name
         self.binaryMessenger = binaryMessenger
         self.codec = codec
         self.priority = priority
+        self.flags = flags
     }
 
     deinit {
@@ -59,10 +75,10 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         }
     }
 
-    private func removeTask(forKey key: AnyHashable) {
-        if let task = tasks[key] {
+    private func _removeTask(_ id: AnyHashable) {
+        if let task = tasks[id] {
             task.cancel()
-            tasks.removeValue(forKey: key)
+            tasks.removeValue(forKey: id)
         }
     }
 
@@ -72,12 +88,24 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
         onCancel: ((Arguments?) async throws -> ())?
     ) async throws -> FlutterEnvelope<Arguments>? {
         let envelope: FlutterEnvelope<Arguments>?
+        let method = call.method.split(separator: "#", maxSplits: 2)
+        let id: String, name: String
 
-        switch call.method {
+        if flags.contains(.argumentMultiplexing) {
+            guard method.count == 2 else { throw FlutterSwiftError.invalidEventError }
+            id = String(method[1])
+            name = self.name + "#" + id
+        } else {
+            id = ""
+            name = self.name
+        }
+
+        _removeTask(id)
+
+        switch flags.contains(.argumentMultiplexing) ? String(method[0]) : call.method {
         case "listen":
-            removeTask(forKey: call.arguments)
             let stream = try await onListen(call.arguments)
-            tasks[call.arguments] = Task<(), Error>(priority: priority) { [self] in
+            tasks[id] = Task<(), Error>(priority: priority) { [self] in
                 do {
                     for try await event in stream {
                         let envelope = FlutterEnvelope.success(event)
@@ -99,7 +127,6 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
             }
             envelope = FlutterEnvelope.success(nil)
         case "cancel":
-            removeTask(forKey: call.arguments)
             do {
                 if let onCancel {
                     try await onCancel(call.arguments)
