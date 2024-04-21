@@ -22,23 +22,27 @@ let SwiftLibRoot = tryGuessSwiftLibRoot()
 
 #if os(iOS) || os(macOS)
 let FlutterRoot = "/opt/flutter"
-let FlutterPlatform: String
-let FlutterFramework: String
-#if os(iOS)
-FlutterPlatform = "ios"
-FlutterFramework = "Flutter"
-#elseif os(macOS)
-FlutterPlatform = "darwin-x64"
-FlutterFramework = "FlutterMacOS"
-#endif
-let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/\(FlutterPlatform)"
-let FlutterUnsafeLinkerFlags = [
-  "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
-]
-#elseif os(Linux)
+let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
 
+let FlutterPlatform_iOS = "ios"
+let FlutterFramework_iOS = "Flutter"
+let FlutterLibPath_iOS = "\(FlutterLibPath)/\(FlutterPlatform_iOS)"
+let FlutterUnsafeLinkerFlags_iOS = [
+  "-Xlinker", "-F", "-Xlinker", FlutterLibPath_iOS,
+  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath_iOS,
+  "-Xlinker", "-framework", "-Xlinker", FlutterFramework_iOS,
+]
+
+let FlutterPlatform_macOS = "darwin-x64"
+let FlutterFramework_macOS = "FlutterMacOS"
+let FlutterLibPath_macOS = "\(FlutterLibPath)/\(FlutterPlatform_macOS)"
+let FlutterUnsafeLinkerFlags_macOS = [
+  "-Xlinker", "-F", "-Xlinker", FlutterLibPath_macOS,
+  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath_macOS,
+  "-Xlinker", "-framework", "-Xlinker", FlutterFramework_macOS,
+]
+
+#elseif os(Linux)
 // FIXME: this is clearly not right
 let FlutterRoot = ".build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle"
 #if arch(arm64)
@@ -48,6 +52,7 @@ let FlutterArch = "x64"
 #else
 #error("Unknown architecture")
 #endif
+// FIXME: for release target
 let FlutterLibPath = "\(FlutterRoot)/elinux-\(FlutterArch)-debug"
 let FlutterAltLibPath = "/opt/flutter-elinux/lib"
 let FlutterUnsafeLinkerFlags: [String] = [
@@ -138,7 +143,6 @@ targets = [
       .unsafeFlags(["-I", SwiftLibRoot, "-std=c++17"]),
     ],
     linkerSettings: [
-      .unsafeFlags(FlutterUnsafeLinkerFlags),
     ]
   ),
   .executableTarget(
@@ -161,7 +165,6 @@ targets = [
       .unsafeFlags(["-cxx-interoperability-mode=default"]),
     ],
     linkerSettings: [
-      .unsafeFlags(FlutterUnsafeLinkerFlags),
     ]
   ),
 ]
@@ -227,7 +230,8 @@ let package = Package(
 //                .enableExperimentalFeature("StrictConcurrency")
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags),
+        .unsafeFlags(FlutterUnsafeLinkerFlags_iOS, .when(platforms: [.iOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags_macOS, .when(platforms: [.macOS])),
       ]
     ),
     .testTarget(
@@ -245,7 +249,8 @@ let package = Package(
         .unsafeFlags(["-cxx-interoperability-mode=default"]),
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags),
+        .unsafeFlags(FlutterUnsafeLinkerFlags_iOS, .when(platforms: [.iOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags_macOS, .when(platforms: [.macOS])),
       ]
     ),
   ] + targets,
