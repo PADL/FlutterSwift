@@ -20,26 +20,17 @@ func tryGuessSwiftLibRoot() -> String {
 
 let SwiftLibRoot = tryGuessSwiftLibRoot()
 
-#if os(iOS) || os(macOS)
+#if os(macOS) // Note: This is the _build_ platform
 let FlutterRoot = "/opt/flutter"
-let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
+let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
 
-let FlutterPlatform_iOS = "ios"
-let FlutterFramework_iOS = "Flutter"
-let FlutterLibPath_iOS = "\(FlutterLibPath)/\(FlutterPlatform_iOS)"
-let FlutterUnsafeLinkerFlags_iOS = [
-  "-Xlinker", "-F", "-Xlinker", FlutterLibPath_iOS,
-  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath_iOS,
-  "-Xlinker", "-framework", "-Xlinker", FlutterFramework_iOS,
-]
-
-let FlutterPlatform_macOS = "darwin-x64"
-let FlutterFramework_macOS = "FlutterMacOS"
-let FlutterLibPath_macOS = "\(FlutterLibPath)/\(FlutterPlatform_macOS)"
-let FlutterUnsafeLinkerFlags_macOS = [
-  "-Xlinker", "-F", "-Xlinker", FlutterLibPath_macOS,
-  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath_macOS,
-  "-Xlinker", "-framework", "-Xlinker", FlutterFramework_macOS,
+let FlutterPlatform = "darwin-x64"
+let FlutterFramework = "FlutterMacOS"
+let FlutterLibPath = "\(_FlutterLibPath)/\(FlutterPlatform)"
+let FlutterUnsafeLinkerFlags = [
+  "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
+  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
+  "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
 ]
 
 #elseif os(Linux)
@@ -205,6 +196,7 @@ let package = Package(
       name: "FlutterSwift",
       dependencies: [
         .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
+        .target(name: "Flutter", condition: .when(platforms: [.iOS])),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         "AsyncExtensions",
       ],
@@ -230,8 +222,7 @@ let package = Package(
 //                .enableExperimentalFeature("StrictConcurrency")
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags_iOS, .when(platforms: [.iOS])),
-        .unsafeFlags(FlutterUnsafeLinkerFlags_macOS, .when(platforms: [.macOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS])),
       ]
     ),
     .testTarget(
@@ -249,9 +240,12 @@ let package = Package(
         .unsafeFlags(["-cxx-interoperability-mode=default"]),
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags_iOS, .when(platforms: [.iOS])),
-        .unsafeFlags(FlutterUnsafeLinkerFlags_macOS, .when(platforms: [.macOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS])),
       ]
+    ),
+    .binaryTarget(
+      name: "Flutter",
+      path: "Flutter.xcframework.zip"
     ),
   ] + targets,
   cLanguageStandard: .c17,
