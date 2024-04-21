@@ -35,14 +35,18 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     on channel: String,
     _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
   ) -> FlutterBinaryMessengerConnection {
-    platformBinaryMessenger.setMessageHandlerOnChannel(
-      channel,
-      binaryMessageHandler: binaryMessageHandler
-    )
+    DispatchQueue.main.sync { [self] in
+      platformBinaryMessenger.setMessageHandlerOnChannel(
+        channel,
+        binaryMessageHandler: binaryMessageHandler
+      )
+    }
   }
 
   private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
-    platformBinaryMessenger.cleanUpConnection(connection)
+    DispatchQueue.main.async { [self] in
+      platformBinaryMessenger.cleanUpConnection(connection)
+    }
   }
 
   public func _send(
