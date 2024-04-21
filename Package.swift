@@ -32,7 +32,6 @@ let FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
 ]
-
 #elseif os(Linux)
 // FIXME: this is clearly not right
 let FlutterRoot = ".build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle"
@@ -221,7 +220,7 @@ let package = Package(
         .interoperabilityMode(.Cxx),
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
       ]
     ),
     .testTarget(
@@ -239,7 +238,7 @@ let package = Package(
         .unsafeFlags(["-cxx-interoperability-mode=default"]),
       ],
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
       ]
     ),
     .binaryTarget(
