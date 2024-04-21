@@ -28,6 +28,14 @@ let FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-framework", "-Xlinker", "FlutterMacOS",
 ]
+#elseif os(iOS)
+let FlutterRoot = "/opt/flutter"
+let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/ios"
+let FlutterUnsafeLinkerFlags = [
+  "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
+  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
+  "-Xlinker", "-framework", "-Xlinker", "Flutter",
+]
 #elseif os(Linux)
 
 // FIXME: this is clearly not right
@@ -179,6 +187,7 @@ let package = Package(
   name: "FlutterSwift",
   platforms: [
     .macOS(.v10_15),
+    .iOS(.v13)
   ],
   products: [
     .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
