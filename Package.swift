@@ -187,7 +187,7 @@ let package = Package(
   name: "FlutterSwift",
   platforms: [
     .macOS(.v10_15),
-    .iOS(.v13)
+    .iOS(.v16)
   ],
   products: [
     .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
