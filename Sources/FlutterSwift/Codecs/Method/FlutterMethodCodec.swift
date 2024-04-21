@@ -20,10 +20,10 @@ import Foundation
  * populate a `FlutterError`.
  */
 public protocol FlutterMethodCodec {
-    var shared: Self { get }
+  var shared: Self { get }
 
-    func encode<T>(method: FlutterMethodCall<T>) throws -> Data
-    func decode<T>(method: Data) throws -> FlutterMethodCall<T>
-    func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data
-    func decode<T>(envelope: Data) throws -> FlutterEnvelope<T>
+  func encode<T>(method: FlutterMethodCall<T>) throws -> Data
+  func decode<T>(method: Data) throws -> FlutterMethodCall<T>
+  func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data
+  func decode<T>(envelope: Data) throws -> FlutterEnvelope<T>
 }

@@ -30,13 +30,13 @@ import Foundation
  * - `NSDictionary`: `Map`
  */
 public final class FlutterStandardMessageCodec: FlutterMessageCodec {
-    public static let shared: FlutterStandardMessageCodec = .init()
+  public static let shared: FlutterStandardMessageCodec = .init()
 
-    public func encode<T>(_ message: T) throws -> Data where T: Encodable {
-        try FlutterStandardEncoder().encode(message)
-    }
+  public func encode<T>(_ message: T) throws -> Data where T: Encodable {
+    try FlutterStandardEncoder().encode(message)
+  }
 
-    public func decode<T>(_ message: Data) throws -> T where T: Decodable {
-        try FlutterStandardDecoder().decode(T.self, from: message)
-    }
+  public func decode<T>(_ message: Data) throws -> T where T: Decodable {
+    try FlutterStandardDecoder().decode(T.self, from: message)
+  }
 }

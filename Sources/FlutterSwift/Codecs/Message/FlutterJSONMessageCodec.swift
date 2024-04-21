@@ -19,13 +19,13 @@ import Foundation
  * package.
  */
 public final class FlutterJSONMessageCodec: FlutterMessageCodec {
-    public static let shared: FlutterJSONMessageCodec = .init()
+  public static let shared: FlutterJSONMessageCodec = .init()
 
-    public func encode<T>(_ message: T) throws -> Data where T: Encodable {
-        try JSONEncoder().encode(message)
-    }
+  public func encode<T>(_ message: T) throws -> Data where T: Encodable {
+    try JSONEncoder().encode(message)
+  }
 
-    public func decode<T>(_ message: Data) throws -> T where T: Decodable {
-        try JSONDecoder().decode(T.self, from: message)
-    }
+  public func decode<T>(_ message: Data) throws -> T where T: Decodable {
+    try JSONDecoder().decode(T.self, from: message)
+  }
 }

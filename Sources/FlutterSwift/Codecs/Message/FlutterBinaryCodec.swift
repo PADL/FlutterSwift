@@ -15,14 +15,14 @@ import Foundation
  * On the Dart side, messages are represented using `ByteData`.
  */
 public final class FlutterBinaryCodec: FlutterMessageCodec {
-    public static let shared: FlutterBinaryCodec = .init()
+  public static let shared: FlutterBinaryCodec = .init()
 
-    public func encode<T>(_ message: T) throws -> Data where T: Encodable {
-        let message = message as! Data
-        return message
-    }
+  public func encode<T>(_ message: T) throws -> Data where T: Encodable {
+    let message = message as! Data
+    return message
+  }
 
-    public func decode<T>(_ message: Data) throws -> T where T: Decodable {
-        message as! T
-    }
+  public func decode<T>(_ message: Data) throws -> T where T: Decodable {
+    message as! T
+  }
 }

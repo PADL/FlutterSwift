@@ -16,25 +16,25 @@ public typealias FlutterBinaryMessageHandler = (Data?) async throws -> Data?
 public typealias FlutterBinaryMessengerConnection = Int64
 
 public protocol FlutterBinaryMessenger: Actor {
-    func send(on channel: String, message: Data?) async throws
-    func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
+  func send(on channel: String, message: Data?) async throws
+  func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
 
-    func setMessageHandler(
-        on channel: String,
-        handler: FlutterBinaryMessageHandler?,
-        priority: TaskPriority?
-    ) async throws -> FlutterBinaryMessengerConnection
+  func setMessageHandler(
+    on channel: String,
+    handler: FlutterBinaryMessageHandler?,
+    priority: TaskPriority?
+  ) async throws -> FlutterBinaryMessengerConnection
 
-    func cleanUp(connection: FlutterBinaryMessengerConnection) async throws
+  func cleanUp(connection: FlutterBinaryMessengerConnection) async throws
 }
 
 extension FlutterBinaryMessenger {
-    func withPriority<Value: Sendable>(
-        _ priority: TaskPriority?,
-        _ block: @escaping () async throws -> Value
-    ) async throws -> Value {
-        try await Task<Value, Error>(priority: priority) {
-            try await block()
-        }.value
-    }
+  func withPriority<Value: Sendable>(
+    _ priority: TaskPriority?,
+    _ block: @escaping () async throws -> Value
+  ) async throws -> Value {
+    try await Task<Value, Error>(priority: priority) {
+      try await block()
+    }.value
+  }
 }

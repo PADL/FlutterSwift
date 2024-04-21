@@ -5,54 +5,54 @@
 import Foundation
 
 struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Codable,
-    Hashable, Sendable
+  Hashable, Sendable
 {
-    static func == (lhs: KeyValuePair<Key, Value>, rhs: KeyValuePair<Key, Value>) -> Bool {
-        guard lhs.key == rhs.key else {
-            return false
-        }
-
-        return true
+  static func == (lhs: KeyValuePair<Key, Value>, rhs: KeyValuePair<Key, Value>) -> Bool {
+    guard lhs.key == rhs.key else {
+      return false
     }
 
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(key)
-    }
+    return true
+  }
 
-    var key: Key
-    var value: Value
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(key)
+  }
+
+  var key: Key
+  var value: Value
 }
 
 protocol FlutterMapRepresentable<Key, Value>: Collection, Sendable {
-    associatedtype Key: Codable & Hashable & Sendable
-    associatedtype Value: Codable & Sendable
+  associatedtype Key: Codable & Hashable & Sendable
+  associatedtype Value: Codable & Sendable
 
-    init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>)
-    init(from: FlutterStandardDecoderImpl) throws
-    func forEach(_ block: (Key, Value) throws -> ()) rethrows
+  init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>)
+  init(from: FlutterStandardDecoderImpl) throws
+  func forEach(_ block: (Key, Value) throws -> ()) rethrows
 }
 
 extension FlutterMapRepresentable {
-    static var pairType: KeyValuePair<Key, Value>.Type {
-        KeyValuePair<Key, Value>.self
-    }
+  static var pairType: KeyValuePair<Key, Value>.Type {
+    KeyValuePair<Key, Value>.self
+  }
 }
 
 extension Dictionary: FlutterMapRepresentable where Key: Codable & Hashable, Value: Codable {
-    init(setOfKeyValuePairs set: Set<KeyValuePair<Key, Value>>) {
-        self = Dictionary(uniqueKeysWithValues: set.map {
-            ($0.key, $0.value)
-        })
-    }
+  init(setOfKeyValuePairs set: Set<KeyValuePair<Key, Value>>) {
+    self = Dictionary(uniqueKeysWithValues: set.map {
+      ($0.key, $0.value)
+    })
+  }
 
-    init(from flutterStandardDecoder: FlutterStandardDecoderImpl) throws {
-        try self
-            .init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>(from: flutterStandardDecoder))
-    }
+  init(from flutterStandardDecoder: FlutterStandardDecoderImpl) throws {
+    try self
+      .init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>(from: flutterStandardDecoder))
+  }
 
-    func forEach(_ block: (Key, Value) throws -> ()) rethrows {
-        for (key, value) in self {
-            try block(key, value)
-        }
+  func forEach(_ block: (Key, Value) throws -> ()) rethrows {
+    for (key, value) in self {
+      try block(key, value)
     }
+  }
 }

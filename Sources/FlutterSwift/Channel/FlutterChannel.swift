@@ -16,47 +16,47 @@ import Foundation
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
 protocol FlutterChannel: AnyObject, Hashable, Equatable {
-    var name: String { get }
-    var binaryMessenger: FlutterBinaryMessenger { get }
-    var codec: FlutterMessageCodec { get }
-    var priority: TaskPriority? { get }
-    var connection: FlutterBinaryMessengerConnection { get set }
+  var name: String { get }
+  var binaryMessenger: FlutterBinaryMessenger { get }
+  var codec: FlutterMessageCodec { get }
+  var priority: TaskPriority? { get }
+  var connection: FlutterBinaryMessengerConnection { get set }
 }
 
 extension FlutterChannel {
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.name == rhs.name
-    }
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.name == rhs.name
+  }
 
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(name)
-    }
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+  }
 
-    func removeMessageHandler() async throws {
-        if connection > 0 {
-            try await binaryMessenger.cleanUp(connection: connection)
-            connection = 0
-        } else {
-            _ = try await binaryMessenger.setMessageHandler(
-                on: name,
-                handler: nil,
-                priority: priority
-            )
-        }
+  func removeMessageHandler() async throws {
+    if connection > 0 {
+      try await binaryMessenger.cleanUp(connection: connection)
+      connection = 0
+    } else {
+      _ = try await binaryMessenger.setMessageHandler(
+        on: name,
+        handler: nil,
+        priority: priority
+      )
     }
+  }
 
-    func setMessageHandler<Handler>(
-        _ optionalHandler: Handler?,
-        _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
-    ) async throws {
-        guard let unwrappedHandler = optionalHandler else {
-            try await removeMessageHandler()
-            return
-        }
-        connection = try await binaryMessenger.setMessageHandler(
-            on: name,
-            handler: block(unwrappedHandler),
-            priority: priority
-        )
+  func setMessageHandler<Handler>(
+    _ optionalHandler: Handler?,
+    _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
+  ) async throws {
+    guard let unwrappedHandler = optionalHandler else {
+      try await removeMessageHandler()
+      return
     }
+    connection = try await binaryMessenger.setMessageHandler(
+      on: name,
+      handler: block(unwrappedHandler),
+      priority: priority
+    )
+  }
 }

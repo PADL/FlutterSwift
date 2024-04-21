@@ -7,135 +7,135 @@
 import CxxFlutterSwift
 
 public protocol FlutterPlatformView {
-    var registrar: FlutterPluginRegistrar { get }
-    var viewId: Int { get }
-    var textureId: Int { get set }
-    var isFocused: Bool { get set }
+  var registrar: FlutterPluginRegistrar { get }
+  var viewId: Int { get }
+  var textureId: Int { get set }
+  var isFocused: Bool { get set }
 
-    func dispose() -> ()
+  func dispose() -> ()
 }
 
 public protocol FlutterPlatformViewFactory {
-    var registrar: FlutterPluginRegistrar { get }
+  var registrar: FlutterPluginRegistrar { get }
 
-    func create(viewId: Int, width: Double, height: Double, params: [UInt8])
-        -> FlutterPlatformView?
+  func create(viewId: Int, width: Double, height: Double, params: [UInt8])
+    -> FlutterPlatformView?
 }
 
 enum FlutterPlatformViewMethod: String {
-    case create
-    case dispose
-    case resize
-    case setDirection
-    case clearFocus
-    case touchMethod
-    case acceptGesture
-    case rejectGesture
-    case enter
-    case exit
+  case create
+  case dispose
+  case resize
+  case setDirection
+  case clearFocus
+  case touchMethod
+  case acceptGesture
+  case rejectGesture
+  case enter
+  case exit
 }
 
 enum FlutterPlatformViewKey: String, CaseIterable {
-    case viewType
-    case id
-    case width
-    case height
-    case params
+  case viewType
+  case id
+  case width
+  case height
+  case params
 }
 
 public final class FlutterPlatformViewsPlugin: FlutterPlugin {
-    var viewFactories = [String: FlutterPlatformViewFactory]()
-    var platformViews = [Int: FlutterPlatformView]()
-    var currentViewId: Int = -1
+  var viewFactories = [String: FlutterPlatformViewFactory]()
+  var platformViews = [Int: FlutterPlatformView]()
+  var currentViewId: Int = -1
 
-    public required init() {}
+  public required init() {}
 
-    public func handleMethod(call: FlutterMethodCall<AnyFlutterStandardCodable>) throws
-        -> AnyFlutterStandardCodable?
-    {
-        guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
-            throw FlutterSwiftError.methodNotImplemented
-        }
-
-        switch methodName {
-        case .create:
-            return try create(call.arguments)
-        case .dispose:
-            return try dispose(call.arguments)
-        default:
-            throw FlutterSwiftError.methodNotImplemented
-        }
+  public func handleMethod(call: FlutterMethodCall<AnyFlutterStandardCodable>) throws
+    -> AnyFlutterStandardCodable?
+  {
+    guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
+      throw FlutterSwiftError.methodNotImplemented
     }
 
-    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {}
+    switch methodName {
+    case .create:
+      return try create(call.arguments)
+    case .dispose:
+      return try dispose(call.arguments)
+    default:
+      throw FlutterSwiftError.methodNotImplemented
+    }
+  }
 
-    public func register(viewType: String, factory: FlutterPlatformViewFactory) {
-        guard !viewFactories.keys.contains(viewType) else {
-            debugPrint("Platform view factory for \(viewType) is already registered")
-            return
-        }
-        viewFactories[viewType] = factory
+  public func detachFromEngine(for registrar: FlutterPluginRegistrar) {}
+
+  public func register(viewType: String, factory: FlutterPlatformViewFactory) {
+    guard !viewFactories.keys.contains(viewType) else {
+      debugPrint("Platform view factory for \(viewType) is already registered")
+      return
+    }
+    viewFactories[viewType] = factory
+  }
+
+  func create(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
+    guard let arguments = arguments?.value as? [String: Any] else {
+      throw FlutterError(code: "Couldn't parse arguments")
     }
 
-    func create(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
-        guard let arguments = arguments?.value as? [String: Any] else {
-            throw FlutterError(code: "Couldn't parse arguments")
-        }
-
-        guard let viewType = arguments[FlutterPlatformViewKey.viewType.rawValue] as? String else {
-            throw FlutterError(code: "Couldn't find the view type in the arguments")
-        }
-
-        guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
-            throw FlutterError(code: "Couldn't find the view id in the arguments")
-        }
-
-        guard let width = arguments[FlutterPlatformViewKey.width.rawValue] as? Double else {
-            throw FlutterError(code: "Couldn't find the width in the arguments")
-        }
-
-        guard let height = arguments[FlutterPlatformViewKey.height.rawValue] as? Double else {
-            throw FlutterError(code: "Couldn't find the height in the arguments")
-        }
-
-        guard let factory = viewFactories[viewType] else {
-            throw FlutterError(code: "Couldn't find the view type")
-        }
-
-        let params = arguments[FlutterPlatformViewKey.params.rawValue] as? [UInt8]
-        guard let view = factory.create(
-            viewId: viewId,
-            width: width,
-            height: height,
-            params: params ?? []
-        ) else {
-            throw FlutterError(code: "Failed to create a platform view")
-        }
-
-        platformViews[viewId] = view
-        if var currentView = platformViews[currentViewId] {
-            currentView.isFocused = false
-        }
-        currentViewId = viewId
-        return nil
+    guard let viewType = arguments[FlutterPlatformViewKey.viewType.rawValue] as? String else {
+      throw FlutterError(code: "Couldn't find the view type in the arguments")
     }
 
-    func dispose(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
-        guard let arguments = arguments?.value as? [String: Any] else {
-            throw FlutterError(code: "Couldn't parse arguments")
-        }
-
-        guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
-            throw FlutterError(code: "Couldn't find the view id in the arguments")
-        }
-
-        guard let platformView = platformViews[viewId] else {
-            throw FlutterError(code: "Couldn't find the view id in the arguments")
-        }
-
-        platformView.dispose()
-        return nil
+    guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
+      throw FlutterError(code: "Couldn't find the view id in the arguments")
     }
+
+    guard let width = arguments[FlutterPlatformViewKey.width.rawValue] as? Double else {
+      throw FlutterError(code: "Couldn't find the width in the arguments")
+    }
+
+    guard let height = arguments[FlutterPlatformViewKey.height.rawValue] as? Double else {
+      throw FlutterError(code: "Couldn't find the height in the arguments")
+    }
+
+    guard let factory = viewFactories[viewType] else {
+      throw FlutterError(code: "Couldn't find the view type")
+    }
+
+    let params = arguments[FlutterPlatformViewKey.params.rawValue] as? [UInt8]
+    guard let view = factory.create(
+      viewId: viewId,
+      width: width,
+      height: height,
+      params: params ?? []
+    ) else {
+      throw FlutterError(code: "Failed to create a platform view")
+    }
+
+    platformViews[viewId] = view
+    if var currentView = platformViews[currentViewId] {
+      currentView.isFocused = false
+    }
+    currentViewId = viewId
+    return nil
+  }
+
+  func dispose(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
+    guard let arguments = arguments?.value as? [String: Any] else {
+      throw FlutterError(code: "Couldn't parse arguments")
+    }
+
+    guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
+      throw FlutterError(code: "Couldn't find the view id in the arguments")
+    }
+
+    guard let platformView = platformViews[viewId] else {
+      throw FlutterError(code: "Couldn't find the view id in the arguments")
+    }
+
+    platformView.dispose()
+    return nil
+  }
 }
 
 #endif

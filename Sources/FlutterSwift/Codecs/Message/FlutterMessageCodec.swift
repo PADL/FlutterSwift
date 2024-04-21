@@ -8,8 +8,8 @@ import Foundation
  * A message encoding/decoding mechanism.
  */
 public protocol FlutterMessageCodec {
-    static var shared: Self { get }
+  static var shared: Self { get }
 
-    func encode<T: Encodable>(_ message: T) throws -> Data
-    func decode<T: Decodable>(_ message: Data) throws -> T
+  func encode<T: Encodable>(_ message: T) throws -> Data
+  func decode<T: Decodable>(_ message: Data) throws -> T
 }

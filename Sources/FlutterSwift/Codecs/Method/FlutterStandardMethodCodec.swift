@@ -15,21 +15,21 @@ import Foundation
  * `FlutterStandardMessageCodec`.
  */
 public final class FlutterStandardMethodCodec: FlutterMethodCodec {
-    public let shared: FlutterStandardMethodCodec = .init()
+  public let shared: FlutterStandardMethodCodec = .init()
 
-    public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
-        try FlutterStandardEncoder().encode(call)
-    }
+  public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
+    try FlutterStandardEncoder().encode(call)
+  }
 
-    public func decode<T>(method message: Data) throws -> FlutterMethodCall<T> {
-        try FlutterStandardDecoder().decode(FlutterMethodCall<T>.self, from: message)
-    }
+  public func decode<T>(method message: Data) throws -> FlutterMethodCall<T> {
+    try FlutterStandardDecoder().decode(FlutterMethodCall<T>.self, from: message)
+  }
 
-    public func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data {
-        try FlutterStandardEncoder().encode(envelope)
-    }
+  public func encode<T>(envelope: FlutterEnvelope<T>) throws -> Data {
+    try FlutterStandardEncoder().encode(envelope)
+  }
 
-    public func decode<T>(envelope: Data) throws -> FlutterEnvelope<T> {
-        try FlutterStandardDecoder().decode(FlutterEnvelope<T>.self, from: envelope)
-    }
+  public func decode<T>(envelope: Data) throws -> FlutterEnvelope<T> {
+    try FlutterStandardDecoder().decode(FlutterEnvelope<T>.self, from: envelope)
+  }
 }

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 protocol FlutterListRepresentable: Collection, Codable where Element: Codable {
-    var count: Int { get }
-    func forEach(_ body: (Self.Element) throws -> ()) rethrows
+  var count: Int { get }
+  func forEach(_ body: (Self.Element) throws -> ()) rethrows
 }
 
 extension Array: FlutterListRepresentable where Element: Codable {}

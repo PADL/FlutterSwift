@@ -12,28 +12,28 @@ import Foundation
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  */
 public final class FlutterStringCodec: FlutterMessageCodec {
-    public static let shared: FlutterStringCodec = .init()
+  public static let shared: FlutterStringCodec = .init()
 
-    public func encode<T>(_ message: T) throws -> Data where T: Encodable {
-        let string = message as! String
-        guard let data = string.data(using: .utf8) else {
-            let context = EncodingError.Context(
-                codingPath: [],
-                debugDescription: "Invalid UTF8 string"
-            )
-            throw EncodingError.invalidValue(string, context)
-        }
-        return data
+  public func encode<T>(_ message: T) throws -> Data where T: Encodable {
+    let string = message as! String
+    guard let data = string.data(using: .utf8) else {
+      let context = EncodingError.Context(
+        codingPath: [],
+        debugDescription: "Invalid UTF8 string"
+      )
+      throw EncodingError.invalidValue(string, context)
     }
+    return data
+  }
 
-    public func decode<T>(_ message: Data) throws -> T where T: Decodable {
-        guard let string = String(data: message, encoding: .utf8) else {
-            let context = DecodingError.Context(
-                codingPath: [],
-                debugDescription: "Invalid UTF8 string"
-            )
-            throw DecodingError.dataCorrupted(context)
-        }
-        return string as! T
+  public func decode<T>(_ message: Data) throws -> T where T: Decodable {
+    guard let string = String(data: message, encoding: .utf8) else {
+      let context = DecodingError.Context(
+        codingPath: [],
+        debugDescription: "Invalid UTF8 string"
+      )
+      throw DecodingError.dataCorrupted(context)
     }
+    return string as! T
+  }
 }

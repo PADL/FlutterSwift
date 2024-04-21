@@ -4,15 +4,15 @@
 
 #if os(Linux)
 public struct DartProject {
-    let assetsPath: String
-    let icuDataPath: String
-    let aotLibraryPath: String
-    var dartEntryPointArguments = [String]()
+  let assetsPath: String
+  let icuDataPath: String
+  let aotLibraryPath: String
+  var dartEntryPointArguments = [String]()
 
-    public init(path: String) {
-        assetsPath = path + "/data/flutter_assets"
-        icuDataPath = path + "/data/icudtl.dat"
-        aotLibraryPath = path + "/lib/libapp.so"
-    }
+  public init(path: String) {
+    assetsPath = path + "/data/flutter_assets"
+    icuDataPath = path + "/data/icudtl.dat"
+    aotLibraryPath = path + "/lib/libapp.so"
+  }
 }
 #endif

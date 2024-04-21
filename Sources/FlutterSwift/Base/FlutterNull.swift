@@ -3,5 +3,5 @@
 // found in the LICENSE file.
 
 public struct FlutterNull: Codable, Equatable {
-    public init() {}
+  public init() {}
 }

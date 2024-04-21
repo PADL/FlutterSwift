@@ -1,4 +1,4 @@
---indent 4
+--indent 2
 --indentcase false
 --trimwhitespace always
 --voidtype tuple

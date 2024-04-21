@@ -24,17 +24,17 @@ import Foundation
 
 /// A decoder that decodes Swift structures from a flat binary representation.
 public struct FlutterStandardDecoder {
-    /// Decodes a value from a flat binary representation.
-    public func decode<Value>(_ type: Value.Type, from data: Data) throws -> Value
-        where Value: Decodable
-    {
-        if Value.self is ExpressibleByNilLiteral.Type, data.count == 0 {
-            // FIXME: abstraction violation
-            return Any?.none as! Value
-        }
-
-        let state: FlutterStandardDecodingState
-        state = FlutterStandardDecodingState(data: Data(data))
-        return try FlutterStandardDecodingState.decode(type, state: state, codingPath: [])
+  /// Decodes a value from a flat binary representation.
+  public func decode<Value>(_ type: Value.Type, from data: Data) throws -> Value
+    where Value: Decodable
+  {
+    if Value.self is ExpressibleByNilLiteral.Type, data.count == 0 {
+      // FIXME: abstraction violation
+      return Any?.none as! Value
     }
+
+    let state: FlutterStandardDecodingState
+    state = FlutterStandardDecodingState(data: Data(data))
+    return try FlutterStandardDecodingState.decode(type, state: state, codingPath: [])
+  }
 }
