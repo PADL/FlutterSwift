@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 #if canImport(Flutter) || canImport(FlutterMacOS)
+#if os(iOS)
+import UIKit
+#else
 import AppKit
+#endif
 import AsyncAlgorithms
 #if canImport(Flutter)
 import Flutter
