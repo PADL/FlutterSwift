@@ -20,21 +20,22 @@ func tryGuessSwiftLibRoot() -> String {
 
 let SwiftLibRoot = tryGuessSwiftLibRoot()
 
-#if os(macOS)
+#if os(iOS) || os(macOS)
 let FlutterRoot = "/opt/flutter"
-let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/darwin-x64"
+let FlutterPlatform: String
+let FlutterFramework: String
+#if os(iOS)
+FlutterPlatform = "ios"
+FlutterFramework = "Flutter"
+#elseif os(macOS)
+FlutterPlatform = "darwin-x64"
+FlutterFramework = "FlutterMacOS"
+#endif
+let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/\(FlutterPlatform)"
 let FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-framework", "-Xlinker", "FlutterMacOS",
-]
-#elseif os(iOS)
-let FlutterRoot = "/opt/flutter"
-let FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine/ios"
-let FlutterUnsafeLinkerFlags = [
-  "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-framework", "-Xlinker", "Flutter",
+  "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
 ]
 #elseif os(Linux)
 
@@ -187,7 +188,7 @@ let package = Package(
   name: "FlutterSwift",
   platforms: [
     .macOS(.v10_15),
-    .iOS(.v16)
+    .iOS(.v16),
   ],
   products: [
     .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
