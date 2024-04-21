@@ -3,28 +3,25 @@
 // found in the LICENSE file.
 
 #if canImport(Flutter) || canImport(FlutterMacOS)
-#if os(iOS)
-import UIKit
-#else
-import AppKit
-#endif
 import AsyncAlgorithms
 #if canImport(Flutter)
 import Flutter
+import UIKit
 #elseif canImport(FlutterMacOS)
+import AppKit
 import FlutterMacOS
 #endif
 
 public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
   #if canImport(Flutter)
   public typealias PlatformFlutterBinaryMessenger = Flutter.FlutterBinaryMessenger
-  public typealias PlatformFlutterBinaryMessageHandler = Flutter.FlutterBinaryMessengerHandler
+  public typealias PlatformFlutterBinaryMessageHandler = Flutter.FlutterBinaryMessageHandler
   #elseif canImport(FlutterMacOS)
   public typealias PlatformFlutterBinaryMessenger = FlutterMacOS.FlutterBinaryMessenger
   public typealias PlatformFlutterBinaryMessageHandler = FlutterMacOS.FlutterBinaryMessageHandler
   #endif
 
-  private let platformBinaryMessenger: FlutterMacOS.FlutterBinaryMessenger
+  private let platformBinaryMessenger: PlatformFlutterBinaryMessenger
 
   // MARK: - Initializers
 
