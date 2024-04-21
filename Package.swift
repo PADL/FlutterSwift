@@ -219,7 +219,6 @@ let package = Package(
       ],
       swiftSettings: [
         .interoperabilityMode(.Cxx),
-//                .enableExperimentalFeature("StrictConcurrency")
       ],
       linkerSettings: [
         .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS])),
