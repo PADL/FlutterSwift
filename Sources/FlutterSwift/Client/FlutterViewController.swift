@@ -23,8 +23,8 @@ public final class FlutterViewController {
   }
 
   public struct ViewProperties {
-    let width: CInt
-    let height: CInt
+    let width: Int32
+    let height: Int32
     let viewRotation: ViewRotation
     let viewMode: ViewMode
     let title: String?
@@ -32,12 +32,15 @@ public final class FlutterViewController {
     let useMouseCursor: Bool
     let useOnscreenKeyboard: Bool
     let useWindowDecoration: Bool
+    let textScaleFactor: Double
+    let enableHighContrast: Bool
     let forceScaleFactor: Bool
     let scaleFactor: Double
+    let enableVSync: Bool
 
     public init(
-      width: CInt,
-      height: CInt,
+      width: Int32,
+      height: Int32,
       viewRotation: ViewRotation = .kRotation_0,
       viewMode: ViewMode = .kNormal,
       title: String? = nil,
@@ -45,8 +48,11 @@ public final class FlutterViewController {
       useMouseCursor: Bool = true,
       useOnscreenKeyboard: Bool = false,
       useWindowDecoration: Bool = true,
+      textScaleFactor: Double = 1.0,
+      enableHighContrast: Bool = false,
       forceScaleFactor: Bool = false,
-      scaleFactor: Double = 1.0
+      scaleFactor: Double = 1.0,
+      enableVSync: Bool = true
     ) {
       self.width = width
       self.height = height
@@ -57,8 +63,11 @@ public final class FlutterViewController {
       self.useMouseCursor = useMouseCursor
       self.useOnscreenKeyboard = useOnscreenKeyboard
       self.useWindowDecoration = useWindowDecoration
+      self.textScaleFactor = textScaleFactor
+      self.enableHighContrast = enableHighContrast
       self.forceScaleFactor = forceScaleFactor
       self.scaleFactor = scaleFactor
+      self.enableVSync = enableVSync
     }
   }
 
@@ -90,8 +99,11 @@ public final class FlutterViewController {
     cViewProperties.use_mouse_cursor = viewProperties.useMouseCursor
     cViewProperties.use_onscreen_keyboard = viewProperties.useOnscreenKeyboard
     cViewProperties.use_window_decoration = viewProperties.useWindowDecoration
+    cViewProperties.text_scale_factor = viewProperties.textScaleFactor
+    cViewProperties.enable_high_contrast = viewProperties.enableHighContrast
     cViewProperties.force_scale_factor = viewProperties.forceScaleFactor
     cViewProperties.scale_factor = viewProperties.scaleFactor
+    cViewProperties.enable_vsync = viewProperties.enableVSync
     viewProperties.title?.withCString { title in
       cViewProperties.title = title
       viewProperties.appId?.withCString { appId in
