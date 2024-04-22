@@ -155,18 +155,16 @@ final class FlutterStandardEncoderTests: XCTestCase {
       encodes: AnyFlutterStandardCodable.int32(0xFEDC),
       to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
     )
-    /*
-     try assertThat(
-         encoder,
-         encodes: FlutterStandardVariant(UInt16(0xFEDC)),
-         to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
-     )
-     try assertThat(
-         encoder,
-         encodes: FlutterStandardVariant(UInt32(0xFEDC)),
-         to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
-     )
-      */
+    try assertThat(
+      encoder,
+      encodes: AnyFlutterStandardCodable(UInt16(0xFEDC)),
+      to: [0x03, 0xDC, 0xFE, 0x00, 0x00]
+    )
+    try assertThat(
+      encoder,
+      encodes: AnyFlutterStandardCodable(UInt32(0xFEDC)),
+      to: [0x04, 0xDC, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    )
   }
 
   func testDefaultStandardEncoderDecoder() throws {
