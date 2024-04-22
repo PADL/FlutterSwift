@@ -37,9 +37,9 @@ public extension AnyFlutterStandardCodable {
     } else if let float64Data = any as? [Double] {
       self = .float64Data(float64Data)
     } else if let list = any as? [Any] {
-      self = .list(try list.map { try AnyFlutterStandardCodable($0) })
+      self = try .list(list.map { try AnyFlutterStandardCodable($0) })
     } else if let map = any as? [AnyHashable: Any] {
-      self = .map(try map.reduce([:]) {
+      self = try .map(map.reduce([:]) {
         var result = $0
         try result[AnyFlutterStandardCodable($1.key)] = AnyFlutterStandardCodable(
           $1
@@ -189,7 +189,7 @@ private extension CaseIterable {
       return nil
     }
 
-    for aCase in Self.allCases {
+    for aCase in allCases {
       let rawValue = (aCase as! any RawRepresentable).rawValue
       guard let rawValue = rawValue as? any FixedWidthInteger else {
         return nil
