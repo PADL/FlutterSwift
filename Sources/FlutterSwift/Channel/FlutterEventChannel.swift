@@ -20,9 +20,12 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
   let binaryMessenger: FlutterBinaryMessenger
   let codec: FlutterMessageCodec
   let priority: TaskPriority?
+  let lock = NSLock()
 
   var connection: FlutterBinaryMessengerConnection = 0
-  private var tasks = [String: Task<(), Error>]()
+
+  private typealias EventStreamTask = Task<(), Error>
+  private var tasks = [String: EventStreamTask]()
 
   /**
    * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -60,9 +63,19 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
   }
 
   private func _removeTask(_ id: String) {
-    if let task = tasks[id] {
-      task.cancel()
+    var task: EventStreamTask?
+
+    lock.withLock {
+      task = tasks[id]
       tasks.removeValue(forKey: id)
+    }
+
+    if let task { task.cancel() }
+  }
+
+  private func _addTask(_ id: String, _ task: EventStreamTask) {
+    lock.withLock {
+      tasks[id] = task
     }
   }
 
@@ -88,7 +101,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
       let stream = try await onListen(call.arguments)
-      tasks[id] = Task<(), Error>(priority: priority) { [self] in
+      let task = EventStreamTask(priority: priority) { [self] in
         do {
           for try await event in stream {
             let envelope = FlutterEnvelope.success(event)
@@ -108,6 +121,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
           throw FlutterSwiftError.invalidEventError
         }
       }
+      _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
       do {
