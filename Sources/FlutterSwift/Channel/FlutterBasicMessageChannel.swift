@@ -19,11 +19,12 @@ private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
  * A channel for communicating with the Flutter side using basic, asynchronous
  * message passing.
  */
-public final class FlutterBasicMessageChannel: FlutterChannel {
+public final class FlutterBasicMessageChannel: FlutterChannel, @unchecked Sendable {
   let name: String
   let binaryMessenger: FlutterBinaryMessenger
   let codec: FlutterMessageCodec
   let priority: TaskPriority?
+  @MainActor
   var connection: FlutterBinaryMessengerConnection = 0
 
   public init(

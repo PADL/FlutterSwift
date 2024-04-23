@@ -32,6 +32,7 @@ extension FlutterChannel {
     hasher.combine(name)
   }
 
+  @MainActor
   func removeMessageHandler() async throws {
     if connection > 0 {
       try await binaryMessenger.cleanUp(connection: connection)
@@ -45,6 +46,7 @@ extension FlutterChannel {
     }
   }
 
+  @MainActor
   func setMessageHandler<Handler>(
     _ optionalHandler: Handler?,
     _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler

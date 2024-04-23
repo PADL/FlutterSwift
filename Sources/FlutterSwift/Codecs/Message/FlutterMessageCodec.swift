@@ -7,7 +7,7 @@ import Foundation
 /**
  * A message encoding/decoding mechanism.
  */
-public protocol FlutterMessageCodec {
+public protocol FlutterMessageCodec: Sendable {
   static var shared: Self { get }
 
   func encode<T: Encodable>(_ message: T) throws -> Data

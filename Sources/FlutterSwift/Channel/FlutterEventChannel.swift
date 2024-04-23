@@ -22,6 +22,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
   let priority: TaskPriority?
   let lock = NSLock()
 
+  @MainActor
   var connection: FlutterBinaryMessengerConnection = 0
 
   private typealias EventStreamTask = Task<(), Error>
