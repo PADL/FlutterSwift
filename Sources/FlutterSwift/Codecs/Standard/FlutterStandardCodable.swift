@@ -301,6 +301,7 @@ extension AnyFlutterStandardCodable {
 extension Encodable {
   func bridgeToAnyFlutterStandardCodable() throws -> AnyFlutterStandardCodable {
     let jsonEncodedValue = try JSONEncoder().encode(self)
-    return try JSONDecoder().decode(AnyFlutterStandardCodable.self, from: jsonEncodedValue)
+    let jsonDecodedValue = try JSONSerialization.jsonObject(with: jsonEncodedValue)
+    return try AnyFlutterStandardCodable(jsonDecodedValue)
   }
 }
