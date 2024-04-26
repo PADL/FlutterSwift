@@ -187,7 +187,7 @@ let package = Package(
     .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
   ] + products,
   dependencies: [
-    .package(url: "https://github.com/apple/swift-async-algorithms", from: "0.1.0"),
+    .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
   ],
   targets: [
