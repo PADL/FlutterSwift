@@ -31,8 +31,7 @@ public struct FlutterWindow {
   public func run() async throws {
     repeat {
       var waitDurationNS = viewController.engine.processMessages()
-      let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
-        NanosecondsPerMillisecond
+      let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate))
 
       if frameDurationNS < waitDurationNS {
         waitDurationNS = frameDurationNS
@@ -42,7 +41,7 @@ public struct FlutterWindow {
         break
       }
 
-      try await Task.sleep(nanoseconds: waitDurationNS)
+      try await Task.sleep(for: .nanoseconds(waitDurationNS))
     } while !Task.isCancelled
   }
 

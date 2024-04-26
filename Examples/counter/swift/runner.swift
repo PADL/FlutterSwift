@@ -4,6 +4,7 @@
 
 import AsyncAlgorithms
 import FlutterSwift
+import Foundation
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
@@ -122,6 +123,7 @@ enum Counter {
       exit(2)
     }
     _ = ChannelManager(window.viewController)
-    window.run()
+    Task { try await window.run() }
+    RunLoop.main.run()
   }
 }
