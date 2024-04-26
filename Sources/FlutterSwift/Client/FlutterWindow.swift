@@ -27,25 +27,27 @@ public struct FlutterWindow {
     // caller should register plugins before calling run()
   }
 
+  @MainActor
+  public func run() async throws {
+    repeat {
+      var waitDurationNS = viewController.engine.processMessages()
+      let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
+        NanosecondsPerMillisecond
+
+      if frameDurationNS < waitDurationNS {
+        waitDurationNS = frameDurationNS
+      }
+
+      guard viewController.view.dispatchEvent() else {
+        break
+      }
+
+      try await Task.sleep(nanoseconds: waitDurationNS)
+    } while !Task.isCancelled
+  }
+
   public func run() {
-    Task(priority: .userInitiated) { @MainActor in
-      repeat {
-        var waitDurationNS = viewController.engine.processMessages()
-        let frameDurationNS = UInt64(1_000_000.0 / Float(viewController.view.frameRate)) *
-          NanosecondsPerMillisecond
-
-        if frameDurationNS < waitDurationNS {
-          waitDurationNS = frameDurationNS
-        }
-
-        guard viewController.view.dispatchEvent() else {
-          break
-        }
-
-        try await Task.sleep(nanoseconds: waitDurationNS)
-      } while !Task.isCancelled
-    }
-
+    Task { try await run() }
     RunLoop.main.run()
   }
 }
