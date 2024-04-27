@@ -14,31 +14,34 @@ public protocol FlutterStandardCodable {
 /// extension for initializing a type from a type-erased value
 public extension AnyFlutterStandardCodable {
   init(_ any: Any) throws {
-    if isNil(any) {
+    guard !isNil(any) else {
       self = .nil
-    } else if let bool = any as? Bool {
+      return
+    }
+    switch any {
+    case let bool as Bool:
       self = bool ? .true : .false
-    } else if let int32 = any as? Int32 {
+    case let int32 as Int32:
       self = .int32(int32)
-    } else if let int64 = any as? Int64 {
+    case let int64 as Int64:
       self = .int64(int64)
-    } else if let float64 = any as? Double {
+    case let float64 as Double:
       self = .float64(float64)
-    } else if let string = any as? String {
+    case let string as String:
       self = .string(string)
-    } else if let uint8Data = any as? [UInt8] {
+    case let uint8Data as [UInt8]:
       self = .uint8Data(uint8Data)
-    } else if let int32Data = any as? [Int32] {
+    case let int32Data as [Int32]:
       self = .int32Data(int32Data)
-    } else if let int64Data = any as? [Int64] {
+    case let int64Data as [Int64]:
       self = .int64Data(int64Data)
-    } else if let float32Data = any as? [Float] {
+    case let float32Data as [Float]:
       self = .float32Data(float32Data)
-    } else if let float64Data = any as? [Double] {
+    case let float64Data as [Double]:
       self = .float64Data(float64Data)
-    } else if let list = any as? [Any] {
+    case let list as [Any]:
       self = try .list(list.map { try AnyFlutterStandardCodable($0) })
-    } else if let map = any as? [AnyHashable: Any] {
+    case let map as [AnyHashable: Any]:
       self = try .map(map.reduce([:]) {
         var result = $0
         try result[AnyFlutterStandardCodable($1.key)] = AnyFlutterStandardCodable(
@@ -47,13 +50,13 @@ public extension AnyFlutterStandardCodable {
         )
         return result
       })
-    } else if let any = any as? FlutterStandardCodable {
+    case let any as FlutterStandardCodable:
       self = try any.bridgeToAnyFlutterStandardCodable()
-    } else if let raw = any as? (any RawRepresentable) {
+    case let raw as any RawRepresentable:
       self = try raw.bridgeToAnyFlutterStandardCodable()
-    } else if let encodable = any as? Encodable {
+    case let encodable as Encodable:
       self = try encodable.bridgeToAnyFlutterStandardCodable()
-    } else {
+    default:
       throw FlutterSwiftError.notRepresentableAsStandardField
     }
   }
