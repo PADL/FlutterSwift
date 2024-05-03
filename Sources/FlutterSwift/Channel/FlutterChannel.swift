@@ -23,6 +23,8 @@ protocol FlutterChannel: AnyObject, Hashable, Equatable {
   var connection: FlutterBinaryMessengerConnection { get set }
 }
 
+private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
+
 extension FlutterChannel {
   public static func == (lhs: Self, rhs: Self) -> Bool {
     lhs.name == rhs.name
@@ -60,5 +62,11 @@ extension FlutterChannel {
       handler: block(unwrappedHandler),
       priority: priority
     )
+  }
+
+  public func resizeChannelBuffer(_ newSize: Int) async throws {
+    let messageString = "resize\r\(name)\r\(newSize)"
+    let message = messageString.data(using: .utf8)!
+    try await binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
   }
 }

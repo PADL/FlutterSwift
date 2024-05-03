@@ -13,8 +13,6 @@ import Foundation
 public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> = (Message?) async
   -> Reply?
 
-private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
-
 /**
  * A channel for communicating with the Flutter side using basic, asynchronous
  * message passing.
@@ -79,11 +77,5 @@ public final class FlutterBasicMessageChannel: FlutterChannel, @unchecked Sendab
         return try self.codec.encode(reply)
       }
     }
-  }
-
-  public func resizeChannelBuffer(_ newSize: Int) async throws {
-    let messageString = "resize\r\(name)\r\(newSize)"
-    let message = messageString.data(using: .utf8)!
-    try await binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
   }
 }
