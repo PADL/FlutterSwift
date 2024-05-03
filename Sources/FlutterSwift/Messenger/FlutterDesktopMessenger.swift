@@ -64,9 +64,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
   ) throws {
     precondition(isAvailable)
 
-    let message = [UInt8](message ?? Data())
-
-    guard message.withUnsafeBytes({ bytes in
+    guard (message ?? Data()).withUnsafeBytes({ bytes in
       // run on main actor, so don't need to take lock
       FlutterDesktopMessengerSendWithReplyBlock(
         messenger,
@@ -103,13 +101,12 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     // FIXME: do we need to take a lock here? doesn't look like other platforms do
-    let response = [UInt8](response ?? Data())
-    response.withUnsafeBytes {
+    (response ?? Data()).withUnsafeBytes {
       FlutterDesktopMessengerSendResponse(
         messenger,
         handle,
         $0.baseAddress,
-        response.count
+        response?.count ?? 0
       )
     }
   }
