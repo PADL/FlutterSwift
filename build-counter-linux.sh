@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 set -Eeu
+
+pwd=`pwd`
 
 # Path to Flutter SDK
 export FLUTTER_SDK=/opt/flutter-elinux/flutter
@@ -9,10 +11,13 @@ export PATH=$PATH:${FLUTTER_SDK}/bin
 
 # Package name of the build target Flutter app
 export APP_PACKAGE_NAME=counter
+export SOURCE_DIR=${pwd}/Examples/${APP_PACKAGE_NAME}
 
 # The build data.
 export RESULT_DIR=build/elinux/arm64
 export BUILD_MODE=debug
+
+pushd ${SOURCE_DIR}
 
 mkdir -p .dart_tool/flutter_build/flutter-embedded-linux
 mkdir -p ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/
@@ -50,4 +55,8 @@ ${FLUTTER_SDK}/bin/cache/artifacts/engine/linux-arm64/gen_snapshot \
   .dart_tool/flutter_build/flutter-embedded-linux/app.dill
 
 cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/
+
+popd
+
+swift build
 

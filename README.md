@@ -11,6 +11,11 @@ This repository will build the Sony eLinux Wayland engine as a submodule, but it
 
 Some examples follow.
 
+Counter Demo
+------------
+
+Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object followed by the Swift runner.
+
 Initialization
 --------------
 
