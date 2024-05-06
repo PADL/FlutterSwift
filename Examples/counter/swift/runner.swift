@@ -103,8 +103,8 @@ final class ChannelManager: @unchecked Sendable {
 
 #if os(Linux)
 extension ChannelManager {
-  convenience init(viewController: FlutterViewController) async throws {
-    try await self.init(binaryMessenger: viewController.engine.binaryMessenger)
+  convenience init(viewController: FlutterViewController) {
+    self.init(binaryMessenger: viewController.engine.binaryMessenger)
   }
 }
 
@@ -126,8 +126,8 @@ enum Counter {
     guard let window else {
       exit(2)
     }
+    _ = ChannelManager(viewController: window.viewController)
     Task { @MainActor in
-      _ = try await ChannelManager(viewController: window.viewController)
       try await window.run()
     }
     RunLoop.main.run()
