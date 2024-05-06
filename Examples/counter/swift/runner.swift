@@ -11,11 +11,11 @@ private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 final class ChannelManager: @unchecked Sendable {
   typealias Arguments = FlutterNull
   typealias Event = Int32
-  typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
+  typealias Stream = AsyncThrowingChannel<Event?, FlutterSwift.FlutterError>
 
-  var flutterBasicMessageChannel: FlutterBasicMessageChannel!
-  var flutterEventChannel: FlutterEventChannel!
-  var flutterMethodChannel: FlutterMethodChannel!
+  var flutterBasicMessageChannel: FlutterSwift.FlutterBasicMessageChannel!
+  var flutterEventChannel: FlutterSwift.FlutterEventChannel!
+  var flutterMethodChannel: FlutterSwift.FlutterMethodChannel!
   var task: Task<(), Error>?
   var counter: Event = 0
 
@@ -76,9 +76,7 @@ final class ChannelManager: @unchecked Sendable {
     }
   }
 
-  init(_ viewController: FlutterViewController) {
-    let binaryMessenger = viewController.engine.binaryMessenger
-
+  init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) {
     flutterBasicMessageChannel = FlutterBasicMessageChannel(
       name: "com.padl.example",
       binaryMessenger: binaryMessenger,
@@ -103,6 +101,13 @@ final class ChannelManager: @unchecked Sendable {
   }
 }
 
+#if os(Linux)
+extension ChannelManager {
+  convenience init(viewController: FlutterViewController) async throws {
+    try await self.init(binaryMessenger: viewController.engine.binaryMessenger)
+  }
+}
+
 @main
 enum Counter {
   static func main() {
@@ -112,18 +117,20 @@ enum Counter {
     }
     let dartProject = DartProject(path: CommandLine.arguments[1])
     let viewProperties = FlutterViewController.ViewProperties(
-      width: 640,
+      width: 800,
       height: 480,
       title: "Counter",
       appId: "com.padl.counter"
     )
     let window = FlutterWindow(properties: viewProperties, project: dartProject)
     guard let window else {
-      debugPrint("failed to initialize window!")
       exit(2)
     }
-    _ = ChannelManager(window.viewController)
-    Task { try await window.run() }
+    Task { @MainActor in
+      _ = try await ChannelManager(viewController: window.viewController)
+      try await window.run()
+    }
     RunLoop.main.run()
   }
 }
+#endif
