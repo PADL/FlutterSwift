@@ -108,7 +108,9 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
               on: name,
               message: codec.encode(envelope)
             )
-            try Task.checkCancellation()
+            if Task.isCancelled {
+              break
+            }
           }
           try await binaryMessenger.send(on: name, message: nil)
         } catch let error as FlutterError {
