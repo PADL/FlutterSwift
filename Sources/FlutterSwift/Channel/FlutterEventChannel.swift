@@ -71,7 +71,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
       tasks.removeValue(forKey: id)
     }
 
-    if let task { task.cancel() }
+    task?.cancel()
   }
 
   private func _addTask(_ id: String, _ task: EventStreamTask) {
@@ -96,8 +96,6 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
       id = ""
       name = self.name
     }
-
-    _removeTask(id)
 
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
@@ -126,13 +124,12 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
       do {
-        if let onCancel {
-          try await onCancel(call.arguments)
-        }
+        try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
       }
+      _removeTask(id)
     default:
       envelope = nil
     }
