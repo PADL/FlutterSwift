@@ -169,17 +169,3 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     }
   }
 }
-
-#if os(Linux)
-// doesn't seem to be in swift-corelibs-foundation we are using
-fileprivate extension NSLock {
-  func withLock<R>(_ body: () throws -> R) rethrows -> R {
-    lock()
-    defer {
-      self.unlock()
-    }
-
-    return try body()
-  }
-}
-#endif
