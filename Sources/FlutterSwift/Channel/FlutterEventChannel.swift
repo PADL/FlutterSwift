@@ -123,13 +123,13 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
+      _removeTask(id)
       do {
         try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
       }
-      _removeTask(id)
     default:
       envelope = nil
     }
