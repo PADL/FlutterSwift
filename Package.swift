@@ -142,9 +142,6 @@ targets = [
       "CFlutterEngine",
     ],
     path: "Examples/counter/swift",
-    exclude: [
-      "README.md",
-    ],
     cSettings: [
     ],
     cxxSettings: [
