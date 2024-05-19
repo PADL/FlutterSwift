@@ -8,7 +8,7 @@ import Foundation
  * Error object representing an unsuccessful outcome of invoking a method
  * on a `FlutterMethodChannel`, or an error event on a `FlutterEventChannel`.
  */
-public struct FlutterError: Error, Codable, @unchecked Sendable {
+public struct FlutterError: Error, Codable, Sendable {
   let code: String
   let message: String?
   let details: AnyFlutterStandardCodable?

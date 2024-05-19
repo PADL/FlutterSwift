@@ -15,18 +15,33 @@ public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
+public final class FlutterEventChannel: FlutterChannel, Sendable {
   let name: String
   let binaryMessenger: FlutterBinaryMessenger
   let codec: FlutterMessageCodec
   let priority: TaskPriority?
-  let lock = NSLock()
-
-  @MainActor
-  var connection: FlutterBinaryMessengerConnection = 0
 
   private typealias EventStreamTask = Task<(), Error>
-  private var tasks = [String: EventStreamTask]()
+
+  private struct State {
+    var tasks = [String: EventStreamTask]()
+    var connection: FlutterBinaryMessengerConnection = 0
+  }
+
+  private let state: ManagedCriticalState<State>
+
+  var connection: FlutterBinaryMessengerConnection {
+    get {
+      state.withCriticalRegion { state in
+        state.connection
+      }
+    }
+    set {
+      state.withCriticalRegion { state in
+        state.connection = newValue
+      }
+    }
+  }
 
   /**
    * Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -50,6 +65,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
+    state = ManagedCriticalState(State())
     self.name = name
     self.binaryMessenger = binaryMessenger
     self.codec = codec
@@ -57,7 +73,9 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
   }
 
   deinit {
-    tasks.values.forEach { $0.cancel() }
+    state.withCriticalRegion { state in
+      state.tasks.values.forEach { $0.cancel() }
+    }
     Task {
       try? await removeMessageHandler()
     }
@@ -66,17 +84,17 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
   private func _removeTask(_ id: String) {
     var task: EventStreamTask?
 
-    lock.withLock {
-      task = tasks[id]
-      tasks.removeValue(forKey: id)
+    state.withCriticalRegion { state in
+      task = state.tasks[id]
+      state.tasks.removeValue(forKey: id)
     }
 
     task?.cancel()
   }
 
   private func _addTask(_ id: String, _ task: EventStreamTask) {
-    lock.withLock {
-      tasks[id] = task
+    state.withCriticalRegion { state in
+      state.tasks[id] = task
     }
   }
 
@@ -91,6 +109,7 @@ public final class FlutterEventChannel: FlutterChannel, @unchecked Sendable {
 
     if method.count > 1 {
       id = String(method[1])
+      precondition(!id.isEmpty)
       name = self.name + "#" + id
     } else {
       id = ""

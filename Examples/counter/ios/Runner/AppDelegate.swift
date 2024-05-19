@@ -2,7 +2,7 @@ import Flutter.FlutterBinaryMessenger
 import FlutterSwift
 import UIKit
 
-@UIApplicationMain
+@main
 @objc
 class AppDelegate: FlutterAppDelegate {
   var channelManager: ChannelManager?

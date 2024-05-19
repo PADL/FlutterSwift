@@ -17,13 +17,30 @@ public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> = (
  * A channel for communicating with the Flutter side using basic, asynchronous
  * message passing.
  */
-public final class FlutterBasicMessageChannel: FlutterChannel, @unchecked Sendable {
+public final class FlutterBasicMessageChannel: FlutterChannel, Sendable {
   let name: String
   let binaryMessenger: FlutterBinaryMessenger
   let codec: FlutterMessageCodec
   let priority: TaskPriority?
-  @MainActor
-  var connection: FlutterBinaryMessengerConnection = 0
+
+  private struct State {
+    var connection: FlutterBinaryMessengerConnection = 0
+  }
+
+  private let state: ManagedCriticalState<State>
+
+  var connection: FlutterBinaryMessengerConnection {
+    get {
+      state.withCriticalRegion { state in
+        state.connection
+      }
+    }
+    set {
+      state.withCriticalRegion { state in
+        state.connection = newValue
+      }
+    }
+  }
 
   public init(
     name: String,
@@ -31,6 +48,7 @@ public final class FlutterBasicMessageChannel: FlutterChannel, @unchecked Sendab
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
+    state = ManagedCriticalState(State())
     self.name = name
     self.binaryMessenger = binaryMessenger
     self.codec = codec
