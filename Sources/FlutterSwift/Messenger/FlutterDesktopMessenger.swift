@@ -14,43 +14,53 @@ struct FlutterEngineHandlerInfo {
 }
 
 public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
+  private final class ManagedReference: @unchecked Sendable {
+    private let messenger: FlutterDesktopMessengerRef
+
+    init(_ messenger: FlutterDesktopMessengerRef) {
+      self.messenger = messenger
+      FlutterDesktopMessengerAddRef(messenger)
+    }
+
+    deinit {
+      FlutterDesktopMessengerRelease(messenger)
+    }
+
+    func withUnsafeRegion<T>(
+      _ block: (_: FlutterDesktopMessengerRef) throws
+        -> T
+    ) throws -> T {
+      guard FlutterDesktopMessengerIsAvailable(messenger) else {
+        throw FlutterSwiftError.messengerNotAvailable
+      }
+      return try block(messenger)
+    }
+
+    func withRegion<T>(
+      _ block: (_: FlutterDesktopMessengerRef) throws
+        -> T
+    ) throws -> T {
+      FlutterDesktopMessengerLock(messenger)
+      defer { FlutterDesktopMessengerUnlock(messenger) }
+      return try withUnsafeRegion(block)
+    }
+  }
+
   private var messengerHandlers = [String: FlutterEngineHandlerInfo]()
   private var currentMessengerConnection: FlutterBinaryMessengerConnection = 0
-  private nonisolated let messenger: FlutterDesktopMessengerRef
+  private let messenger: ManagedReference
 
-  // MARK: - Initializers
+  // : - Initializers
 
   init(messenger: FlutterDesktopMessengerRef) {
-    self.messenger = messenger
-    FlutterDesktopMessengerAddRef(messenger)
+    self.messenger = ManagedReference(messenger)
   }
 
   init(engine: FlutterDesktopEngineRef) {
-    messenger = FlutterDesktopEngineGetMessenger(engine)
-    FlutterDesktopMessengerAddRef(messenger)
-  }
-
-  deinit {
-    FlutterDesktopMessengerRelease(messenger)
+    messenger = ManagedReference(FlutterDesktopEngineGetMessenger(engine))
   }
 
   // MARK: - FlutterDesktopMessenger wrappers
-
-  private nonisolated var isAvailable: Bool {
-    FlutterDesktopMessengerIsAvailable(messenger)
-  }
-
-  private func withLockedMessenger<T>(
-    _ block: (_: FlutterDesktopMessengerRef) throws
-      -> T
-  ) throws -> T {
-    FlutterDesktopMessengerLock(messenger)
-    defer { FlutterDesktopMessengerUnlock(messenger) }
-    guard isAvailable else {
-      throw FlutterSwiftError.messengerNotAvailable
-    }
-    return try block(messenger)
-  }
 
   // looking at the Darwin implementation, as long as message handlers are
   // serialized (here with an actor, in Darwin with a dispatch queue) then
@@ -62,17 +72,16 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     message: Data?,
     _ block: FlutterDesktopBinaryReplyBlock?
   ) throws {
-    precondition(isAvailable)
-
-    guard (message ?? Data()).withUnsafeBytes({ bytes in
-      // run on main actor, so don't need to take lock
-      FlutterDesktopMessengerSendWithReplyBlock(
-        messenger,
-        channel,
-        bytes.count > 0 ? bytes.baseAddress : nil,
-        bytes.count,
-        block
-      )
+    guard try (message ?? Data()).withUnsafeBytes({ bytes in
+      try messenger.withRegion { messenger in
+        FlutterDesktopMessengerSendWithReplyBlock(
+          messenger,
+          channel,
+          bytes.count > 0 ? bytes.baseAddress : nil,
+          bytes.count,
+          block
+        )
+      }
     }) == true else {
       throw FlutterSwiftError.messageSendFailure
     }
@@ -82,7 +91,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     on channel: String,
     _ block: FlutterDesktopMessageCallbackBlock?
   ) throws {
-    try withLockedMessenger { messenger in
+    try messenger.withRegion { messenger in
       FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
     }
   }
@@ -101,13 +110,15 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     // FIXME: do we need to take a lock here? doesn't look like other platforms do
-    (response ?? Data()).withUnsafeBytes {
-      FlutterDesktopMessengerSendResponse(
-        messenger,
-        handle,
-        $0.baseAddress,
-        response?.count ?? 0
-      )
+    try messenger.withUnsafeRegion { messenger in
+      (response ?? Data()).withUnsafeBytes {
+        FlutterDesktopMessengerSendResponse(
+          messenger,
+          handle,
+          $0.baseAddress,
+          response?.count ?? 0
+        )
+      }
     }
   }
 

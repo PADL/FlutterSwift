@@ -7,6 +7,4 @@
   * FlutterSwift/Client/FlutterPlugin.swift:115:13: warning: passing argument of non-sendable type 'FlutterDesktopMessengerRef' (aka 'OpaquePointer') into actor-isolated context may introduce data races
   * FlutterSwift/Messenger/FlutterDesktopMessenger.swift:174:25: warning: passing argument of non-sendable type 'OpaquePointer?' into actor-isolated context may introduce data races
   * FlutterSwift/Messenger/FlutterDesktopMessenger.swift:180:25: warning: passing argument of non-sendable type 'OpaquePointer?' into actor-isolated context may introduce data races
-  * FlutterSwift/Messenger/FlutterDesktopMessenger.swift:40:44: warning: non-sendable type 'FlutterDesktopMessengerRef' (aka 'OpaquePointer') in asynchronous access to nonisolated property 'messenger' cannot cross actor boundary
-  * FlutterSwift/Messenger/FlutterDesktopMessenger.swift:70:17: warning: non-sendable type 'FlutterDesktopMessengerRef' (aka 'OpaquePointer') in asynchronous access to nonisolated property 'messenger' cannot cross actor boundary
 
