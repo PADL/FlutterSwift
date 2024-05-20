@@ -15,25 +15,36 @@ import Foundation
  * method calls.
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
-protocol FlutterChannel: AnyObject, Hashable, Equatable {
+public protocol FlutterChannel: AnyObject, Hashable, Equatable {
   var name: String { get }
   var binaryMessenger: FlutterBinaryMessenger { get }
   var codec: FlutterMessageCodec { get }
   var priority: TaskPriority? { get }
+}
+
+protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
   var connection: FlutterBinaryMessengerConnection { get set }
 }
 
 private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
 
-extension FlutterChannel {
-  public static func == (lhs: Self, rhs: Self) -> Bool {
+public extension FlutterChannel {
+  static func == (lhs: Self, rhs: Self) -> Bool {
     lhs.name == rhs.name
   }
 
-  public func hash(into hasher: inout Hasher) {
+  func hash(into hasher: inout Hasher) {
     hasher.combine(name)
   }
 
+  func resizeChannelBuffer(_ newSize: Int) async throws {
+    let messageString = "resize\r\(name)\r\(newSize)"
+    let message = messageString.data(using: .utf8)!
+    try await binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
+  }
+}
+
+extension _FlutterBinaryMessengerConnectionRepresentable {
   @MainActor
   func removeMessageHandler() async throws {
     if connection > 0 {
@@ -62,11 +73,5 @@ extension FlutterChannel {
       handler: block(unwrappedHandler),
       priority: priority
     )
-  }
-
-  public func resizeChannelBuffer(_ newSize: Int) async throws {
-    let messageString = "resize\r\(name)\r\(newSize)"
-    let message = messageString.data(using: .utf8)!
-    try await binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
   }
 }

@@ -15,11 +15,11 @@ public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-public final class FlutterEventChannel: FlutterChannel, Sendable {
-  let name: String
-  let binaryMessenger: FlutterBinaryMessenger
-  let codec: FlutterMessageCodec
-  let priority: TaskPriority?
+public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionRepresentable, Sendable {
+  public let name: String
+  public let binaryMessenger: FlutterBinaryMessenger
+  public let codec: FlutterMessageCodec
+  public let priority: TaskPriority?
 
   private typealias EventStreamTask = Task<(), Error>
 
