@@ -26,7 +26,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
       FlutterDesktopMessengerRelease(messenger)
     }
 
-    func withUnsafeRegion<T>(
+    private func withUnsafeRegion<T>(
       _ block: (_: FlutterDesktopMessengerRef) throws
         -> T
     ) throws -> T {
@@ -65,7 +65,9 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
   // looking at the Darwin implementation, as long as message handlers are
   // serialized (here with an actor, in Darwin with a dispatch queue) then
   // it is safe to run handlers in any thread. However currently we must
-  // *send* messages from the main thread.
+  // *send* messages from the main thread. according to the eLinux docs,
+  // we only need to acquire the lock when not on the platform thread. But
+  // this doesn't really make sense.
   @MainActor
   private func send(
     on channel: String,
@@ -110,7 +112,7 @@ public actor FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     // FIXME: do we need to take a lock here? doesn't look like other platforms do
-    try messenger.withUnsafeRegion { messenger in
+    try messenger.withRegion { messenger in
       (response ?? Data()).withUnsafeBytes {
         FlutterDesktopMessengerSendResponse(
           messenger,
