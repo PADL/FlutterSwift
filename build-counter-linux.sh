@@ -54,7 +54,7 @@ ${FLUTTER_SDK}/bin/cache/artifacts/engine/linux-arm64/gen_snapshot \
   --strip \
   .dart_tool/flutter_build/flutter-embedded-linux/app.dill
 
-cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/
+cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/libapp.so
 
 popd
 
