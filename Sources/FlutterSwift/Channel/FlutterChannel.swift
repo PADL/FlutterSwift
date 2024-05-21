@@ -29,18 +29,68 @@ protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
 private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
 
 public extension FlutterChannel {
+  private static func resizeChannelBuffer(
+    binaryMessenger: FlutterBinaryMessenger,
+    on channel: String,
+    method: String,
+    _ arg: AnyFlutterStandardCodable
+  ) async throws {
+    let codec = FlutterStandardMessageCodec.shared
+    let arguments: [AnyFlutterStandardCodable] = [AnyFlutterStandardCodable.string(channel), arg]
+    let methodCall = FlutterMethodCall<[AnyFlutterStandardCodable]>(
+      method: method,
+      arguments: arguments
+    )
+    try await binaryMessenger.send(
+      on: kFlutterChannelBuffersChannel,
+      message: codec.encode(methodCall)
+    )
+  }
+
+  private static func resizeChannelBuffer(
+    binaryMessenger: FlutterBinaryMessenger,
+    on channel: String,
+    newSize: Int
+  ) async throws {
+    try await resizeChannelBuffer(
+      binaryMessenger: binaryMessenger,
+      on: channel,
+      method: "resize",
+      AnyFlutterStandardCodable.int32(Int32(newSize))
+    )
+  }
+
+  func resizeChannelBuffer(_ newSize: Int) async throws {
+    try await Self.resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  }
+
+  private static func allowChannelBufferOverflow(
+    binaryMessenger: FlutterBinaryMessenger,
+    on channel: String,
+    allowed: Bool
+  ) async throws {
+    try await resizeChannelBuffer(
+      binaryMessenger: binaryMessenger,
+      on: channel,
+      method: "overflow",
+      allowed ? AnyFlutterStandardCodable.true : AnyFlutterStandardCodable.false
+    )
+  }
+
+  func allowChannelBufferOverflow(_ allowed: Bool) async throws {
+    try await Self.allowChannelBufferOverflow(
+      binaryMessenger: binaryMessenger,
+      on: name,
+      allowed: allowed
+    )
+  }
+
   static func == (lhs: Self, rhs: Self) -> Bool {
     lhs.name == rhs.name
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine(name)
-  }
-
-  func resizeChannelBuffer(_ newSize: Int) async throws {
-    let messageString = "resize\r\(name)\r\(newSize)"
-    let message = messageString.data(using: .utf8)!
-    try await binaryMessenger.send(on: kFlutterChannelBuffersChannel, message: message)
   }
 }
 
