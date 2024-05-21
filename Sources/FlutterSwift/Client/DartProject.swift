@@ -3,16 +3,17 @@
 // found in the LICENSE file.
 
 #if os(Linux)
-public struct DartProject {
+public struct DartProject: Sendable {
   let assetsPath: String
   let icuDataPath: String
   let aotLibraryPath: String
-  var dartEntryPointArguments = [String]()
+  let dartEntryPointArguments: [String]
 
-  public init(path: String) {
+  public init(path: String, arguments: [String] = []) {
     assetsPath = path + "/data/flutter_assets"
     icuDataPath = path + "/data/icudtl.dat"
     aotLibraryPath = path + "/lib/libapp.so"
+    dartEntryPointArguments = arguments
   }
 }
 #endif
