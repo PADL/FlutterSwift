@@ -4,16 +4,17 @@
 
 import Foundation
 
-final class ManagedCriticalState<State> {
+@_spi(FlutterSwiftPrivate)
+public final class ManagedCriticalState<State> {
   private var buffer: State
   private let lock: NSLock
 
-  init(_ initial: State) {
+  public init(_ initial: State) {
     buffer = initial
     lock = NSLock()
   }
 
-  func withCriticalRegion<R>(_ critical: (inout State) throws -> R) rethrows -> R {
+  public func withCriticalRegion<R>(_ critical: (inout State) throws -> R) rethrows -> R {
     lock.lock()
     defer { lock.unlock() }
     return try critical(&buffer)
