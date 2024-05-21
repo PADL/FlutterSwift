@@ -29,7 +29,7 @@ protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
 private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
 
 public extension FlutterChannel {
-  private static func resizeChannelBuffer(
+  private static func _controlChannelBuffers(
     binaryMessenger: FlutterBinaryMessenger,
     on channel: String,
     method: String,
@@ -52,7 +52,7 @@ public extension FlutterChannel {
     on channel: String,
     newSize: Int
   ) async throws {
-    try await resizeChannelBuffer(
+    try await _controlChannelBuffers(
       binaryMessenger: binaryMessenger,
       on: channel,
       method: "resize",
@@ -69,7 +69,7 @@ public extension FlutterChannel {
     on channel: String,
     allowed: Bool
   ) async throws {
-    try await resizeChannelBuffer(
+    try await _controlChannelBuffers(
       binaryMessenger: binaryMessenger,
       on: channel,
       method: "overflow",
