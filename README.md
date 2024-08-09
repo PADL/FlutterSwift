@@ -3,11 +3,14 @@ FlutterSwift
 
 FlutterSwift is a native Swift Flutter client wrapper and platform channel implementation.
 
-It is intended to be used on platforms where Swift is available but Objective-C and AppKit/UIKit are not, specifically the [Sony eLinux embedder](https://github.com/sony/flutter-embedded-linux). It also provides a more idiomatic asynchronous API which would not be possible in Objective-C.
+The end-goal is to allow Flutter to be used for the UI, and Swift the business logic, in a cross-platform manner. Currently this is achieved for macOS, iOS and [embedded Linux](https://github.com/sony/flutter-embedded-linux), but Android is an obvious future target. It also provides a more idiomatic structured concurrency API which would not be possible in Objective-C.
+
+Architecture
+------------
 
 The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. To permit development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger. Thus, you can develop on macOS and deploy on embedded Linux from a single codebase.
 
-This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself: this is assumed to be in `/opt/flutter-elinux/lib` or a build artifact downloaded by [download-engine.sh](download-engine.sh). Further, there is no facility at present for automatically generating runners, you need to build for another platform and manually link (or load, if not AOT compiling).
+This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself: this is assumed to be in `/opt/flutter-elinux/lib` or a build artifact downloaded by [download-engine.sh](download-engine.sh).
 
 Some examples follow.
 
