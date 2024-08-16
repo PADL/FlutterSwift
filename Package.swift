@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 
 import Foundation
 import PackageDescription
@@ -58,6 +58,50 @@ var targets: [Target] = []
 var products: [Product] = []
 
 #if os(Linux)
+enum FlutterELinuxBackendType {
+  static var defaultBackend: FlutterELinuxBackendType {
+    if let backend = ProcessInfo.processInfo.environment["FLUTTER_SWIFT_BACKEND"] {
+      switch backend {
+      case "gbm": return .drmGbm
+      case "eglstream": return .drmEglStream
+      case "wayland": return .wayland
+      default: break
+      }
+    }
+    return .drmGbm
+  }
+
+  case drmGbm
+  case drmEglStream
+  case wayland
+
+  var displayBackendType: String {
+    switch self {
+    case .drmGbm: return "DRM_GBM"
+    case .drmEglStream: return "DRM_EGLSTREAM"
+    case .wayland: return "WAYLAND"
+    }
+  }
+
+  var flutterTargetBackend: String {
+    switch self {
+    case .drmGbm: return "GBM"
+    case .drmEglStream: return "EGLSTREAM"
+    case .wayland: return "WAYLAND"
+    }
+  }
+
+  var targetSpecificDefine: String {
+    switch self {
+    case .drmGbm: return "__GBM__"
+    case .drmEglStream: return "EGL_NO_X11"
+    case .wayland: return "WL_EGL_PLATFORM"
+    }
+  }
+}
+
+let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
+
 targets = [
   .binaryTarget(
     name: "CFlutterEngine",
@@ -69,49 +113,141 @@ targets = [
     providers: [.apt(["libegl1-mesa-dev", "libgles2-mesa-dev"])]
   ),
   .systemLibrary(
-    name: "CWaylandCursor",
-    pkgConfig: "wayland-cursor",
-    providers: [.apt(["libwayland-dev", "wayland-protocols"])]
-  ),
-  .systemLibrary(
-    name: "CWaylandEGL",
-    pkgConfig: "wayland-egl",
-    providers: [.apt(["libwayland-dev", "wayland-protocols"])]
-  ),
-  .systemLibrary(
     name: "CXKBCommon",
     pkgConfig: "xkbcommon",
     providers: [.apt(["libxkbcommon-dev"])]
   ),
+]
+
+switch FlutterELinuxBackend {
+case .drmGbm:
+  targets += [
+    .systemLibrary(
+      name: "CLibUV",
+      pkgConfig: "libuv",
+      providers: [.apt(["libuv1-dev"])]
+    ),
+    .systemLibrary(
+      name: "CLibInput",
+      pkgConfig: "libinput",
+      providers: [.apt(["libinput-dev"])]
+    ),
+    .systemLibrary(
+      name: "CLibDRM",
+      pkgConfig: "libdrm",
+      providers: [.apt(["libdrm-dev"])]
+    ),
+    .systemLibrary(
+      name: "CLibUDev",
+      pkgConfig: "libudev",
+      providers: [.apt(["libudev-dev"])]
+    ),
+    .systemLibrary(
+      name: "CGBM",
+      pkgConfig: "gbm",
+      providers: [.apt(["libgbm-dev"])]
+    ),
+  ]
+case .drmEglStream:
+  break // TODO
+case .wayland:
+  targets += [
+    .systemLibrary(
+      name: "CWaylandCursor",
+      pkgConfig: "wayland-cursor",
+      providers: [.apt(["libwayland-dev", "wayland-protocols"])]
+    ),
+    .systemLibrary(
+      name: "CWaylandEGL",
+      pkgConfig: "wayland-egl",
+      providers: [.apt(["libwayland-dev", "wayland-protocols"])]
+    ),
+  ]
+}
+
+let WaylandSources = [
+  "elinux_window_wayland.cc",
+  "native_window_wayland.cc",
+  "native_window_wayland_decoration.cc",
+]
+let DRMCommonSources = [
+  "native_window_drm.cc",
+]
+let DRMGBMSources = [
+  "native_window_drm_gbm.cc",
+]
+let DRMEGLSources = [
+  "native_window_drm_eglstream.cc"
+]
+
+let X11Sources = ["elinux_window_x11.cc", "native_window_x11.cc"]
+
+let ExcludedSources: [String]
+let BackendDependencies: [Target.Dependency]
+
+switch FlutterELinuxBackend {
+case .drmGbm:
+  BackendDependencies = ["CLibUV", "CLibInput", "CLibDRM", "CLibUDev", "CGBM"]
+  ExcludedSources = WaylandSources + DRMEGLSources
+case .drmEglStream:
+  BackendDependencies = [] // TODO
+  ExcludedSources = WaylandSources + DRMGBMSources
+case .wayland:
+  BackendDependencies = ["CWaylandCursor", "CWaylandEGL"]
+  ExcludedSources = DRMCommonSources + DRMGBMSources + DRMEGLSources
+}
+
+var Exclusions: [String] = [
+  "flutter-embedded-linux/cmake",
+  "flutter-embedded-linux/examples",
+  "flutter-embedded-linux/src/client_wrapper",
+  "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/engine_method_result.cc",
+]
+
+if FlutterELinuxBackend != .wayland {
+  Exclusions += ["wayland",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/elinux_window_wayland.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland_decoration.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_context.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_program.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_button.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_titlebar.cc",
+    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decorations_wayland.cc"]
+}
+
+if FlutterELinuxBackend != .drmEglStream {
+  Exclusions +=
+    [
+      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/surface/context_egl_stream.cc",
+      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/surface/environment_egl_stream.cc",
+    ]
+}
+
+Exclusions += X11Sources
+  .map { "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/\($0)" }
+Exclusions += ExcludedSources
+  .map { "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/\($0)" }
+
+targets += [
   .target(
     name: "CxxFlutterSwift",
-    dependencies: [
-      "CEGL",
-      "CWaylandCursor",
-      "CWaylandEGL",
-      "CXKBCommon",
-    ],
-    exclude: [
-      "flutter-embedded-linux/cmake",
-      "flutter-embedded-linux/examples",
-      "flutter-embedded-linux/src/client_wrapper",
-      "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/engine_method_result.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/surface/context_egl_stream.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_drm.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/elinux_window_x11.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_drm_eglstream.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_drm_gbm.cc",
-      "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_x11.cc",
-    ],
-    cSettings: [
-    ],
+    dependencies: ["CEGL", "CXKBCommon"] + BackendDependencies,
+    exclude: Exclusions,
+    cSettings: [],
     cxxSettings: [
-      .define("DISPLAY_BACKEND_TYPE_WAYLAND"),
-      .define("USE_OPENGL_DIRTY_REGION_MANAGEMENT"),
-      .define("WL_EGL_PLATFORM"),
-      .define("FLUTTER_TARGET_BACKEND_WAYLAND"),
-      .define("DISPLAY_BACKEND_TYPE_WAYLAND"),
-      .define("RAPIDJSON_HAS_STDSTRING"),
+      .define(FlutterELinuxBackend.targetSpecificDefine),
+      .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+      .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+      // USE_DIRTY_REGION_MANAGEMENT OFF
+      // .define("USE_GLES3"),
+      .define("ENABLE_EGL_ALPHA_COMPONENT_OF_COLOR_BUFFER"),
+      // ENABLE_VSYNC OFF
+      // .define("ENABLE_VSYNC"),
+      // ENABLE_ELINUX_EMBEDDER_LOG ON
+      .define("ENABLE_ELINUX_EMBEDDER_LOG"),
+      // .define("FLUTTER_RELEASE") // FIXME: for release
       .define("RAPIDJSON_HAS_STDSTRING"),
       .define("RAPIDJSON_HAS_CXX11_RANGE_FOR"),
       .define("RAPIDJSON_HAS_CXX11_RVALUE_REFS"),
@@ -130,9 +266,10 @@ targets = [
       .headerSearchPath("flutter-embedded-linux/src/third_party/rapidjson/include"),
       // FIXME: .cxxLanguageStandard breaks Foundation compile
       // FIXME: include path for swift/bridging.h
-      .unsafeFlags(["-I", SwiftLibRoot, "-std=c++17"]),
+      .unsafeFlags(["-pthread", "-I", SwiftLibRoot, "-I", "/usr/include/drm", "-std=c++17"]),
     ],
     linkerSettings: [
+      // .unsafeFlags(["-pthread"]),
     ]
   ),
   .executableTarget(
@@ -152,6 +289,7 @@ targets = [
       .unsafeFlags(["-cxx-interoperability-mode=default"]),
     ],
     linkerSettings: [
+      // .unsafeFlags(["-pthread"]),
     ]
   ),
 ]
@@ -199,6 +337,8 @@ let package = Package(
       cSettings: [
       ],
       cxxSettings: [
+        .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+        .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
         .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src"),
         .headerSearchPath(
           "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"
@@ -214,6 +354,8 @@ let package = Package(
         ),
       ],
       swiftSettings: [
+        .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+        .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
         .interoperabilityMode(.Cxx),
       ],
       linkerSettings: [

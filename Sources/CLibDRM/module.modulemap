@@ -1,0 +1,4 @@
+module CLibDRM {
+    umbrella header "CLibDRM.h"
+    link "drm"
+}

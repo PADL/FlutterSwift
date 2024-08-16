@@ -38,16 +38,24 @@ public final class FlutterViewController {
     let scaleFactor: Double
     let enableVSync: Bool
 
+#if FLUTTER_TARGET_BACKEND_GBM || FLUTTER_TARGET_BACKEND_EGLSTREAM
+    public static let ViewModeDefault = ViewMode.kFullscreen
+    public static let UseWindowDecorationDefault = false
+#else
+    public static let ViewModeDefault = ViewMode.kNormal
+    public static let UseWindowDecorationDefault = true
+#endif
+
     public init(
       width: Int32,
       height: Int32,
       viewRotation: ViewRotation = .kRotation_0,
-      viewMode: ViewMode = .kNormal,
+      viewMode: ViewMode = ViewProperties.ViewModeDefault,
       title: String? = nil,
       appId: String? = nil,
       useMouseCursor: Bool = true,
       useOnscreenKeyboard: Bool = false,
-      useWindowDecoration: Bool = true,
+      useWindowDecoration: Bool = ViewProperties.UseWindowDecorationDefault,
       textScaleFactor: Double = 1.0,
       enableHighContrast: Bool = false,
       forceScaleFactor: Bool = false,
