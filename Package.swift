@@ -57,6 +57,9 @@ let FlutterUnsafeLinkerFlags: [String] = [
 var targets: [Target] = []
 var products: [Product] = []
 
+var platformCxxSettings: [CXXSetting] = []
+var platformSwiftSettings: [SwiftSetting] = []
+
 #if os(Linux)
 enum FlutterELinuxBackendType {
   static var defaultBackend: FlutterELinuxBackendType {
@@ -149,7 +152,7 @@ case .drmGbm:
     ),
   ]
 case .drmEglStream:
-  break // TODO
+  break // TODO:
 case .wayland:
   targets += [
     .systemLibrary(
@@ -177,7 +180,7 @@ let DRMGBMSources = [
   "native_window_drm_gbm.cc",
 ]
 let DRMEGLSources = [
-  "native_window_drm_eglstream.cc"
+  "native_window_drm_eglstream.cc",
 ]
 
 let X11Sources = ["elinux_window_x11.cc", "native_window_x11.cc"]
@@ -190,7 +193,7 @@ case .drmGbm:
   BackendDependencies = ["CLibUV", "CLibInput", "CLibDRM", "CLibUDev", "CGBM"]
   ExcludedSources = WaylandSources + DRMEGLSources
 case .drmEglStream:
-  BackendDependencies = [] // TODO
+  BackendDependencies = [] // TODO:
   ExcludedSources = WaylandSources + DRMGBMSources
 case .wayland:
   BackendDependencies = ["CWaylandCursor", "CWaylandEGL"]
@@ -206,15 +209,15 @@ var Exclusions: [String] = [
 
 if FlutterELinuxBackend != .wayland {
   Exclusions += ["wayland",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/elinux_window_wayland.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland_decoration.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_context.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_program.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_button.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_titlebar.cc",
-    "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decorations_wayland.cc"]
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/elinux_window_wayland.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/native_window_wayland_decoration.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_context.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/elinux_shader_program.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_button.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decoration_titlebar.cc",
+                 "flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/window/renderer/window_decorations_wayland.cc"]
 }
 
 if FlutterELinuxBackend != .drmEglStream {
@@ -298,6 +301,28 @@ products = [
   .executable(name: "Counter", targets: ["Counter"]),
 ]
 
+platformCxxSettings += [
+  .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+  .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+  .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src"),
+  .headerSearchPath(
+    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"
+  ),
+  .headerSearchPath(
+    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
+  ),
+  .headerSearchPath(
+    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
+  ),
+  .headerSearchPath(
+    "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
+  ),
+]
+
+platformSwiftSettings += [
+  .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+  .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+]
 #else
 
 targets = [
@@ -336,26 +361,8 @@ let package = Package(
       ],
       cSettings: [
       ],
-      cxxSettings: [
-        .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
-        .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
-        .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src"),
-        .headerSearchPath(
-          "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded"
-        ),
-        .headerSearchPath(
-          "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/linux_embedded/public"
-        ),
-        .headerSearchPath(
-          "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/public"
-        ),
-        .headerSearchPath(
-          "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
-        ),
-      ],
-      swiftSettings: [
-        .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
-        .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+      cxxSettings: platformCxxSettings,
+      swiftSettings: platformSwiftSettings + [
         .interoperabilityMode(.Cxx),
       ],
       linkerSettings: [
