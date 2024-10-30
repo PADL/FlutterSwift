@@ -43,9 +43,8 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   }
 
   private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
-    DispatchQueue.main.async { [self] in
-      platformBinaryMessenger.cleanUpConnection(connection)
-    }
+    precondition(Thread.isMainThread)
+    platformBinaryMessenger.cleanUpConnection(connection)
   }
 
   public func _send(
