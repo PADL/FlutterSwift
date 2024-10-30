@@ -38,13 +38,13 @@ public final class FlutterViewController {
     let scaleFactor: Double
     let enableVSync: Bool
 
-#if FLUTTER_TARGET_BACKEND_GBM || FLUTTER_TARGET_BACKEND_EGLSTREAM
+    #if FLUTTER_TARGET_BACKEND_GBM || FLUTTER_TARGET_BACKEND_EGLSTREAM
     public static let ViewModeDefault = ViewMode.kFullscreen
     public static let UseWindowDecorationDefault = false
-#else
+    #else
     public static let ViewModeDefault = ViewMode.kNormal
     public static let UseWindowDecorationDefault = true
-#endif
+    #endif
 
     public init(
       width: Int32,

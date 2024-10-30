@@ -12,7 +12,7 @@ public protocol FlutterPlatformView {
   var textureId: Int { get set }
   var isFocused: Bool { get set }
 
-  func dispose() -> ()
+  func dispose()
 }
 
 public protocol FlutterPlatformViewFactory {
