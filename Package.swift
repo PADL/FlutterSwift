@@ -348,6 +348,7 @@ let package = Package(
   ] + products,
   dependencies: [
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
+    .package(url: "https://github.com/apple/swift-atomics", from: "1.2.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
   ],
   targets: [
@@ -357,6 +358,7 @@ let package = Package(
         .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
         .target(name: "Flutter", condition: .when(platforms: [.iOS])),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+        .product(name: "Atomics", package: "swift-atomics"),
         "AsyncExtensions",
       ],
       cSettings: [
