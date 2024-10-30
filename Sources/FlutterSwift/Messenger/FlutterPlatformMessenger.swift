@@ -12,7 +12,7 @@ import AppKit
 import FlutterMacOS
 #endif
 
-public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
+public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   #if canImport(Flutter)
   public typealias PlatformFlutterBinaryMessenger = Flutter.FlutterBinaryMessenger
   public typealias PlatformFlutterBinaryMessageHandler = Flutter.FlutterBinaryMessageHandler
@@ -87,7 +87,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     on channel: String,
     handler: FlutterBinaryMessageHandler?,
     priority: TaskPriority?
-  ) async throws -> FlutterBinaryMessengerConnection {
+  ) throws -> FlutterBinaryMessengerConnection {
     guard let handler else {
       return _setMessageHandler(on: channel, nil)
     }
@@ -99,7 +99,7 @@ public actor FlutterPlatformMessenger: FlutterBinaryMessenger {
     }
   }
 
-  public func cleanUp(connection: FlutterBinaryMessengerConnection) async throws {
+  public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
     _cleanUp(connection: connection)
   }
 }

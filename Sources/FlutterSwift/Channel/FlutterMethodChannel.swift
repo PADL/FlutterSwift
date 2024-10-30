@@ -96,9 +96,7 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
   }
 
   deinit {
-    Task {
-      try? await removeMessageHandler()
-    }
+    try? removeMessageHandler()
   }
 
   public func invoke<Arguments: Codable>(method: String, arguments: Arguments?) async throws {

@@ -58,9 +58,7 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
   }
 
   deinit {
-    Task {
-      try? await removeMessageHandler()
-    }
+    try? removeMessageHandler()
   }
 
   public func send<Message: Encodable>(message: Message) async throws {

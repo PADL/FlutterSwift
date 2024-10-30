@@ -15,7 +15,7 @@ public typealias FlutterBinaryMessageHandler = (Data?) async throws -> Data?
 
 public typealias FlutterBinaryMessengerConnection = Int64
 
-public protocol FlutterBinaryMessenger: Actor {
+public protocol FlutterBinaryMessenger: Sendable {
   func send(on channel: String, message: Data?) async throws
   func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
 
@@ -23,9 +23,9 @@ public protocol FlutterBinaryMessenger: Actor {
     on channel: String,
     handler: FlutterBinaryMessageHandler?,
     priority: TaskPriority?
-  ) async throws -> FlutterBinaryMessengerConnection
+  ) throws -> FlutterBinaryMessengerConnection
 
-  func cleanUp(connection: FlutterBinaryMessengerConnection) async throws
+  func cleanUp(connection: FlutterBinaryMessengerConnection) throws
 }
 
 extension FlutterBinaryMessenger {
