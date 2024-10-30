@@ -199,33 +199,30 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
   }
 
-  private func removeMessengerHandler(for channel: String) throws {
-    _ = messengerHandlers.withCriticalRegion { messengerHandlers in
-      messengerHandlers.removeValue(forKey: channel)
-    }
-    try setCallbackBlock(on: channel, nil)
-  }
-
   public func setMessageHandler(
     on channel: String,
     handler: FlutterBinaryMessageHandler?,
     priority: TaskPriority?
   ) throws -> FlutterBinaryMessengerConnection {
-    guard let handler else {
-      try removeMessengerHandler(for: channel)
-      return 0
+    var connection: FlutterBinaryMessengerConnection = 0
+
+    try messengerHandlers.withCriticalRegion { messengerHandlers in
+      if let handler {
+        connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
+        let handlerInfo = FlutterEngineHandlerInfo(
+          connection: connection,
+          handler: handler,
+          priority: priority
+        )
+        messengerHandlers[channel] = handlerInfo
+        try setCallbackBlock(on: channel, onDesktopMessage)
+      } else {
+        connection = 0
+        messengerHandlers.removeValue(forKey: channel)
+        try setCallbackBlock(on: channel, nil)
+      }
     }
 
-    let connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
-    let handlerInfo = FlutterEngineHandlerInfo(
-      connection: connection,
-      handler: handler,
-      priority: priority
-    )
-    messengerHandlers.withCriticalRegion { messengerHandlers in
-      messengerHandlers[channel] = handlerInfo
-    }
-    try setCallbackBlock(on: channel, onDesktopMessage)
     return connection
   }
 
