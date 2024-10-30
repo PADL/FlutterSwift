@@ -36,7 +36,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
   ) -> FlutterBinaryMessengerConnection {
     precondition(Thread.isMainThread)
-    platformBinaryMessenger.setMessageHandlerOnChannel(
+    return platformBinaryMessenger.setMessageHandlerOnChannel(
       channel,
       binaryMessageHandler: binaryMessageHandler
     )
