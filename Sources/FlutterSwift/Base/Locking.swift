@@ -113,7 +113,8 @@ private struct Lock {
   }
 }
 
-package struct ManagedCriticalState<State> {
+@_spi(FlutterSwiftPrivate)
+public struct ManagedCriticalState<State> {
   private final class LockedBuffer: ManagedBuffer<State, Lock.Primitive> {
     deinit {
       withUnsafeMutablePointerToElements { Lock.deinitialize($0) }
