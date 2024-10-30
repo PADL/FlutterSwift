@@ -27,6 +27,10 @@ static void FlutterDesktopMessengerBinaryReplyThunk(const uint8_t *data,
                                                     void *user_data) {
     auto replyBlock = (FlutterDesktopBinaryReplyBlock)user_data;
     replyBlock(data, data_size);
+}
+
+static void FlutterDesktopMessengerBinaryCleanupThunk(void *captures_data) {
+    auto replyBlock = (FlutterDesktopBinaryReplyBlock)captures_data;
     _Block_release(replyBlock);
 }
 
@@ -39,7 +43,8 @@ bool FlutterDesktopMessengerSendWithReplyBlock(
     return FlutterDesktopMessengerSendWithReply(
         messenger, channel, message, message_size,
         replyBlock ? FlutterDesktopMessengerBinaryReplyThunk : nullptr,
-        replyBlock ? _Block_copy(replyBlock) : nullptr);
+        replyBlock ? _Block_copy(replyBlock) : nullptr,
+        replyBlock ? FlutterDesktopMessengerBinaryCleanupThunk : nullptr);
 }
 
 static std::map<std::string, const void *> flutterSwiftCallbacks{};
