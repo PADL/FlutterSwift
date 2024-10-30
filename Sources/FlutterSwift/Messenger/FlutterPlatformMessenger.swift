@@ -35,12 +35,11 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     on channel: String,
     _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
   ) -> FlutterBinaryMessengerConnection {
-    DispatchQueue.main.sync { [self] in
-      platformBinaryMessenger.setMessageHandlerOnChannel(
-        channel,
-        binaryMessageHandler: binaryMessageHandler
-      )
-    }
+    precondition(Thread.isMainThread)
+    platformBinaryMessenger.setMessageHandlerOnChannel(
+      channel,
+      binaryMessageHandler: binaryMessageHandler
+    )
   }
 
   private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
