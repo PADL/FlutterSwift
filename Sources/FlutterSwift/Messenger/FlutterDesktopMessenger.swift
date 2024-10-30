@@ -8,12 +8,6 @@ import Atomics
 import CxxFlutterSwift
 import Foundation
 
-struct FlutterEngineHandlerInfo {
-  let connection: FlutterBinaryMessengerConnection
-  let handler: FlutterBinaryMessageHandler
-  let priority: TaskPriority?
-}
-
 public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
   private final class ManagedReference: @unchecked Sendable {
     private let messenger: FlutterDesktopMessengerRef
@@ -47,7 +41,6 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
   }
 
-  private let messengerHandlers = ManagedCriticalState<[String: FlutterEngineHandlerInfo]>([:])
   private let currentMessengerConnection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
   private let messenger: ManagedReference
 
@@ -162,43 +155,6 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     try await send(on: channel, message: message, nil)
   }
 
-  @Sendable
-  private nonisolated func onDesktopMessage(
-    _ messenger: FlutterDesktopMessengerRef,
-    _ message: UnsafePointer<FlutterDesktopMessage>
-  ) {
-    let message = message.pointee
-    var messageData: Data?
-    let channel = String(cString: message.channel!)
-    if message.message_size > 0 {
-      let ptr = UnsafeRawPointer(message.message).bindMemory(
-        to: UInt8.self, capacity: message.message_size
-      )
-      messageData = Data(bytes: ptr, count: message.message_size)
-    }
-
-    let capturedMessageData = messageData
-    messengerHandlers.withCriticalRegion { messengerHandlers in
-      let handlerInfo = messengerHandlers[channel]
-      Task(priority: handlerInfo?.priority) {
-        if let handlerInfo {
-          let response = try await handlerInfo.handler(capturedMessageData)
-          try? sendResponse(
-            on: channel,
-            handle: message.response_handle,
-            response: response
-          )
-        } else {
-          try? sendResponse(
-            on: channel,
-            handle: message.response_handle,
-            response: nil
-          )
-        }
-      }
-    }
-  }
-
   public func setMessageHandler(
     on channel: String,
     handler: FlutterBinaryMessageHandler?,
@@ -206,32 +162,38 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
   ) throws -> FlutterBinaryMessengerConnection {
     var connection: FlutterBinaryMessengerConnection = 0
 
-    try messengerHandlers.withCriticalRegion { messengerHandlers in
-      if let handler {
-        connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
-        let handlerInfo = FlutterEngineHandlerInfo(
-          connection: connection,
-          handler: handler,
-          priority: priority
-        )
-        messengerHandlers[channel] = handlerInfo
-        try setCallbackBlock(on: channel, onDesktopMessage)
-      } else {
-        connection = 0
-        messengerHandlers.removeValue(forKey: channel)
-        try setCallbackBlock(on: channel, nil)
+    if let handler {
+      connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
+
+      try setCallbackBlock(on: channel) { [self] _, message in
+        let message = message.pointee
+        var messageData: Data?
+
+        if message.message_size > 0 {
+          let ptr = UnsafeRawPointer(message.message).bindMemory(
+            to: UInt8.self, capacity: message.message_size
+          )
+          messageData = Data(bytes: ptr, count: message.message_size)
+        }
+
+        Task(priority: priority) {
+          let response = try await handler(messageData)
+          try? sendResponse(
+            on: channel,
+            handle: message.response_handle,
+            response: response
+          )
+        }
       }
+
+    } else {
+      connection = 0
+      try setCallbackBlock(on: channel, nil)
     }
 
     return connection
   }
 
-  public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
-    messengerHandlers.withCriticalRegion { messengerHandlers in
-      guard let foundChannel = messengerHandlers.first(where: { $1.connection == connection })
-      else { return }
-      messengerHandlers.removeValue(forKey: foundChannel.key)
-    }
-  }
+  public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {}
 }
 #endif
