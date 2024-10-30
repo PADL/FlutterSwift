@@ -95,13 +95,12 @@ public extension FlutterChannel {
 }
 
 extension _FlutterBinaryMessengerConnectionRepresentable {
-  @MainActor
-  func removeMessageHandler() async throws {
+  func removeMessageHandler() throws {
     if connection > 0 {
-      try await binaryMessenger.cleanUp(connection: connection)
+      try? binaryMessenger.cleanUp(connection: connection)
       connection = 0
     } else {
-      _ = try await binaryMessenger.setMessageHandler(
+      _ = try? binaryMessenger.setMessageHandler(
         on: name,
         handler: nil,
         priority: priority
@@ -113,12 +112,12 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
   func setMessageHandler<Handler>(
     _ optionalHandler: Handler?,
     _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
-  ) async throws {
+  ) throws {
     guard let unwrappedHandler = optionalHandler else {
-      try await removeMessageHandler()
+      try removeMessageHandler()
       return
     }
-    connection = try await binaryMessenger.setMessageHandler(
+    connection = try binaryMessenger.setMessageHandler(
       on: name,
       handler: block(unwrappedHandler),
       priority: priority

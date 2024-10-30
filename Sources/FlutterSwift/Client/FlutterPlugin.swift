@@ -150,11 +150,9 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
   }
 
   deinit {
-    Task {
-      for (channel, detachFromEngine) in detachFromEngineCallbacks {
-        try await channel.removeMessageHandler()
-        detachFromEngine(self)
-      }
+    for (channel, detachFromEngine) in detachFromEngineCallbacks {
+      try? channel.removeMessageHandler()
+      detachFromEngine(self)
     }
   }
 

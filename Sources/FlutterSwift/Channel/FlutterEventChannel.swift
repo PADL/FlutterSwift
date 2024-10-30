@@ -76,9 +76,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     state.withCriticalRegion { state in
       state.tasks.values.forEach { $0.cancel() }
     }
-    Task {
-      try? await removeMessageHandler()
-    }
+    try? removeMessageHandler()
   }
 
   private func _removeTask(_ id: String) {
