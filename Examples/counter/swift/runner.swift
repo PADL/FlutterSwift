@@ -101,7 +101,7 @@ final class ChannelManager: @unchecked Sendable {
   }
 }
 
-#if os(Linux)
+#if os(Linux) && canImport(Glibc)
 extension ChannelManager {
   convenience init(viewController: FlutterViewController) {
     self.init(binaryMessenger: viewController.engine.binaryMessenger)
