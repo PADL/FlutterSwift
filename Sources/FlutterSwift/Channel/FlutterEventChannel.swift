@@ -96,7 +96,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     }
   }
 
-  private func onMethod<Event: Codable, Arguments: Codable>(
+  private func onMethod<Event: Codable, Arguments: Codable & Sendable>(
     call: FlutterMethodCall<Arguments>,
     onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
     onCancel: ((Arguments?) async throws -> ())?
@@ -164,7 +164,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
    *
    * @param handler The stream handler.
    */
-  public func setStreamHandler<Event: Codable, Arguments: Codable>(
+  public func setStreamHandler<Event: Codable, Arguments: Codable & Sendable>(
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?
   ) async throws {

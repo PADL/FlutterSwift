@@ -17,6 +17,9 @@ import Foundation
 public final class FlutterStandardMethodCodec: FlutterMethodCodec {
   public let shared: FlutterStandardMethodCodec = .init()
 
+  public init() {
+  }
+
   public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
     try FlutterStandardEncoder().encode(call)
   }

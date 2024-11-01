@@ -31,7 +31,7 @@ public protocol FlutterBinaryMessenger: Sendable {
 extension FlutterBinaryMessenger {
   func withPriority<Value: Sendable>(
     _ priority: TaskPriority?,
-    _ block: @escaping () async throws -> Value
+    _ block: @Sendable @escaping () async throws -> Value
   ) async throws -> Value {
     try await Task<Value, Error>(priority: priority) {
       try await block()

@@ -18,6 +18,9 @@ import Foundation
 public final class FlutterJSONMethodCodec: FlutterMethodCodec {
   public let shared: FlutterJSONMethodCodec = .init()
 
+  public init() {
+  }
+
   public func encode<T>(method call: FlutterMethodCall<T>) throws -> Data {
     try JSONEncoder().encode(call)
   }
