@@ -99,7 +99,10 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     try? removeMessageHandler()
   }
 
-  public func invoke<Arguments: Codable & Sendable>(method: String, arguments: Arguments?) async throws {
+  public func invoke<Arguments: Codable & Sendable>(
+    method: String,
+    arguments: Arguments?
+  ) async throws {
     let methodCall = FlutterMethodCall<Arguments>(method: method, arguments: arguments)
     try await binaryMessenger.send(on: name, message: codec.encode(methodCall))
   }
