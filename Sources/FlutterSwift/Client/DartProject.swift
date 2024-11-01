@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#if os(Linux)
+#if os(Linux) && canImport(Glibc)
 public struct DartProject: Sendable {
   let assetsPath: String
   let icuDataPath: String

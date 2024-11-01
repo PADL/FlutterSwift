@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#if os(Linux)
+#if os(Linux) && canImport(Glibc)
 import Atomics
 @_implementationOnly
 import CxxFlutterSwift

@@ -21,6 +21,8 @@ import Foundation
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
 final class ChannelManager: @unchecked Sendable {
+  fileprivate static var shared: ChannelManager!
+
   typealias Arguments = FlutterNull
   typealias Event = Int32
   typealias Stream = AsyncThrowingChannel<Event?, FlutterSwift.FlutterError>
@@ -47,7 +49,7 @@ final class ChannelManager: @unchecked Sendable {
 
   @Sendable
   private func onCancel(_ arguments: Arguments?) throws {
-    cancelTask()
+    stop()
   }
 
   private func methodCallHandler(
@@ -59,17 +61,16 @@ final class ChannelManager: @unchecked Sendable {
       throw FlutterError(code: "bad cookie")
     }
     if task == nil {
-      startTask()
+      run()
     } else {
-      cancelTask()
+      stop()
     }
 
     return task != nil
   }
 
-  func startTask() {
+  func run() {
     task = Task {
-      debugPrint("starting task...")
       repeat {
         counter += 1
         await flutterEventStream.send(counter)
@@ -80,7 +81,7 @@ final class ChannelManager: @unchecked Sendable {
     }
   }
 
-  func cancelTask() {
+  func stop() {
     if let task {
       debugPrint("cancelling task...")
       task.cancel()
@@ -102,18 +103,17 @@ final class ChannelManager: @unchecked Sendable {
       name: "com.padl.toggleCounter",
       binaryMessenger: binaryMessenger
     )
-
     Task {
       try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
       try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
       try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
 
-      startTask()
+      run()
     }
   }
 }
 
-#if os(Linux)
+#if os(Linux) && canImport(Glibc)
 extension ChannelManager {
   convenience init(viewController: FlutterViewController) {
     self.init(binaryMessenger: viewController.engine.binaryMessenger)
@@ -143,6 +143,37 @@ enum Counter {
       try await window.run()
     }
     RunLoop.main.run()
+  }
+}
+
+#elseif canImport(Android)
+import FlutterAndroid
+import JavaKit
+import JavaRuntime
+
+@JavaClass("com.padl.counter.ChannelManager")
+open class _ChannelManager: JavaObject {
+  @JavaField(isFinal: true)
+  public var binaryMessenger: FlutterAndroid.FlutterBinaryMessenger!
+
+  @JavaMethod
+  @_nonoverride
+  public convenience init(
+    _ binaryMessenger: FlutterAndroid.FlutterBinaryMessenger?,
+    environment: JNIEnvironment? = nil
+  )
+}
+
+protocol _ChannelManagerNativeMethods {
+  func initChannelManager()
+}
+
+@JavaImplementation("com.padl.counter.ChannelManager")
+extension _ChannelManager: _ChannelManagerNativeMethods {
+  @JavaMethod
+  public func initChannelManager() {
+    let wrappedMessenger = FlutterPlatformMessenger(wrapping: binaryMessenger!)
+    ChannelManager.shared = ChannelManager(binaryMessenger: wrappedMessenger)
   }
 }
 #endif
