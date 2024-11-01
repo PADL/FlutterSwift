@@ -21,12 +21,12 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   public typealias PlatformFlutterBinaryMessageHandler = FlutterMacOS.FlutterBinaryMessageHandler
   #endif
 
-  private let platformBinaryMessenger: PlatformFlutterBinaryMessenger
+  private let _wrappedMessenger: PlatformFlutterBinaryMessenger
 
   // MARK: - Initializers
 
-  public init(wrapping platformBinaryMessenger: PlatformFlutterBinaryMessenger) {
-    self.platformBinaryMessenger = platformBinaryMessenger
+  public init(wrapping _wrappedMessenger: PlatformFlutterBinaryMessenger) {
+    self._wrappedMessenger = _wrappedMessenger
   }
 
   // MARK: - FlutterDesktopMessenger wrappers
@@ -36,7 +36,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
   ) -> FlutterBinaryMessengerConnection {
     precondition(Thread.isMainThread)
-    return platformBinaryMessenger.setMessageHandlerOnChannel(
+    return _wrappedMessenger.setMessageHandlerOnChannel(
       channel,
       binaryMessageHandler: binaryMessageHandler
     )
@@ -44,7 +44,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
 
   private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
     precondition(Thread.isMainThread)
-    platformBinaryMessenger.cleanUpConnection(connection)
+    _wrappedMessenger.cleanUpConnection(connection)
   }
 
   public func _send(
@@ -53,7 +53,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _ binaryReply: FlutterBinaryReply?
   ) {
     DispatchQueue.main.async { [self] in
-      platformBinaryMessenger.send(
+      _wrappedMessenger.send(
         onChannel: channel,
         message: message,
         binaryReply: binaryReply
