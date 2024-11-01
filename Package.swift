@@ -3,6 +3,17 @@
 import Foundation
 import PackageDescription
 
+var targets: [Target] = []
+var products: [Product] = []
+
+var packageDependencies = [Package.Dependency]()
+var targetDependencies = [Target.Dependency]()
+var targetPluginUsages = [Target.PluginUsage]()
+
+var platformCxxSettings: [CXXSetting] = []
+var platformSwiftSettings: [SwiftSetting] = []
+var buildLoadableModule = false
+
 func tryGuessSwiftLibRoot() -> String {
   let task = Process()
   task.executableURL = URL(fileURLWithPath: "/bin/sh")
@@ -24,10 +35,10 @@ let SwiftLibRoot = tryGuessSwiftLibRoot()
 let FlutterRoot = "/opt/flutter"
 let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
 
-let FlutterPlatform = "darwin-x64"
+var FlutterPlatform = "darwin-x64"
 let FlutterFramework = "FlutterMacOS"
 let FlutterLibPath = "\(_FlutterLibPath)/\(FlutterPlatform)"
-let FlutterUnsafeLinkerFlags = [
+var FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
@@ -54,11 +65,123 @@ let FlutterUnsafeLinkerFlags: [String] = [
 ]
 #endif
 
-var targets: [Target] = []
-var products: [Product] = []
+let FlutterSwiftJVM: Bool
+let javaHome: String?
+let javaIncludePath: String?
+let javaPlatformIncludePath: String?
 
-var platformCxxSettings: [CXXSetting] = []
-var platformSwiftSettings: [SwiftSetting] = []
+if let value = ProcessInfo.processInfo.environment["FLUTTER_SWIFT_JVM"] {
+  FlutterSwiftJVM = Bool(value) ?? false
+} else {
+  FlutterSwiftJVM = false
+}
+
+// Note: the JAVA_HOME environment variable must be set to point to where
+// Java is installed, e.g.,
+//   Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home.
+func findJavaHome() -> String {
+  if let home = ProcessInfo.processInfo.environment["JAVA_HOME"] {
+    return home
+  }
+
+  // This is a workaround for envs (some IDEs) which have trouble with
+  // picking up env variables during the build process
+  let path = "\(FileManager.default.homeDirectoryForCurrentUser.path()).java_home"
+  if let home = try? String(contentsOfFile: path, encoding: .utf8) {
+    if let lastChar = home.last, lastChar.isNewline {
+      return String(home.dropLast())
+    }
+
+    return home
+  }
+
+  fatalError("Please set the JAVA_HOME environment variable to point to where Java is installed.")
+}
+
+if FlutterSwiftJVM {
+  javaHome = findJavaHome()
+
+  javaIncludePath = ProcessInfo.processInfo
+    .environment["JAVA_INCLUDE_PATH"] ?? "\(javaHome!)/include"
+  #if os(Linux)
+  javaPlatformIncludePath = "\(javaIncludePath!)/linux"
+  #elseif os(macOS)
+  javaPlatformIncludePath = "\(javaIncludePath!)/darwin"
+  #else
+  javaPlatformIncludePath = nil
+  #endif
+
+  // TODO: better distinguish between build and target host, support armv7
+  FlutterPlatform = "android-arm64"
+  FlutterUnsafeLinkerFlags = []
+
+  platformSwiftSettings += [.unsafeFlags([
+    "-I\(javaIncludePath!)",
+    "-I\(javaPlatformIncludePath!)",
+  ])]
+  packageDependencies += [.package(
+    url: "https://github.com/PADL/swift-java",
+    branch: "lhoward/android"
+  )]
+  targetPluginUsages += [
+    .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
+    .plugin(name: "Java2SwiftPlugin", package: "swift-java"),
+  ]
+
+  let javaKitDependencies: [Target.Dependency] = [
+    .product(name: "JavaKit", package: "swift-java"),
+    .product(name: "JavaKitFunction", package: "swift-java"),
+    .product(name: "JavaKitJar", package: "swift-java"),
+  ]
+  buildLoadableModule = true
+
+  products += [
+    .library(
+      name: "Counter",
+      type: .dynamic,
+      targets: ["Counter"]
+    ),
+/*
+    .library(
+      name: "AndroidFlutter",
+      targets: ["AndroidFlutter"]
+    ),
+    .library(
+      name: "AndroidFlutterShims",
+      targets: ["AndroidFlutterShims"]
+    ),
+*/
+  ]
+
+  targets += [
+    .target(
+      name: "AndroidFlutter",
+      dependencies: javaKitDependencies,
+      swiftSettings: platformSwiftSettings,
+      plugins: targetPluginUsages
+    ),
+/*
+    .target(
+      name: "AndroidFlutterShims",
+      dependencies: javaKitDependencies + ["AndroidFlutter"],
+      swiftSettings: platformSwiftSettings,
+      plugins: targetPluginUsages
+    ),
+*/
+    .target(
+      name: "Counter",
+      dependencies: [
+        .target(name: "FlutterSwift"),
+      ],
+      path: "Examples/counter/swift"
+    ),
+  ]
+
+  targetDependencies += javaKitDependencies + ["AndroidFlutter"]
+} else {
+  javaHome = nil
+  javaPlatformIncludePath = nil
+}
 
 #if os(Linux)
 enum FlutterELinuxBackendType {
@@ -105,7 +228,7 @@ enum FlutterELinuxBackendType {
 
 let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
 
-targets = [
+targets += [
   .binaryTarget(
     name: "CFlutterEngine",
     path: "flutter-engine.artifactbundle.zip"
@@ -322,10 +445,12 @@ platformCxxSettings += [
 platformSwiftSettings += [
   .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
   .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+  .interoperabilityMode(.Cxx),
 ]
+
 #else
 
-targets = [
+targets += [
   .target(
     name: "CxxFlutterSwift",
     exclude: [
@@ -344,13 +469,17 @@ let package = Package(
     .iOS(.v16),
   ],
   products: [
-    .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
+    .library(
+      name: "FlutterSwift",
+      type: buildLoadableModule ? .dynamic : .static,
+      targets: ["FlutterSwift"]
+    ),
   ] + products,
   dependencies: [
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
-  ],
+  ] + packageDependencies,
   targets: [
     .target(
       name: "FlutterSwift",
@@ -360,25 +489,18 @@ let package = Package(
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Atomics", package: "swift-atomics"),
         "AsyncExtensions",
-      ],
-      cSettings: [
-      ],
+      ] + targetDependencies,
       cxxSettings: platformCxxSettings,
-      swiftSettings: platformSwiftSettings + [
-        .interoperabilityMode(.Cxx),
-      ],
+      swiftSettings: platformSwiftSettings,
       linkerSettings: [
         .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
       ]
+//      plugins: targetPluginUsages
     ),
     .testTarget(
       name: "FlutterSwiftTests",
       dependencies: [
         .target(name: "FlutterSwift"),
-      ],
-      cSettings: [
-      ],
-      cxxSettings: [
       ],
       swiftSettings: [
         // FIXME: https://github.com/apple/swift-package-manager/issues/6661
