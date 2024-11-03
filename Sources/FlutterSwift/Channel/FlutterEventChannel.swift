@@ -5,7 +5,7 @@
 import AsyncAlgorithms
 @preconcurrency
 import AsyncExtensions
-import Foundation
+import FoundationEssentials
 
 /**
  * An asynchronous event stream.

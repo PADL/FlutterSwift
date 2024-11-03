@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import Foundation
+import FoundationEssentials
 
 /// A decoder that decodes Swift structures from a flat binary representation.
 public struct FlutterStandardDecoder {

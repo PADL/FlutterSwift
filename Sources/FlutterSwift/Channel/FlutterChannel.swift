@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import Foundation
+import FoundationEssentials
 
 /**
  * A facility for communicating with the Flutter side using asynchronous message
