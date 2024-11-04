@@ -20,7 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 struct FlutterStandardEncoder {
   public func encode<Value>(_ value: Value) throws -> Data where Value: Encodable {

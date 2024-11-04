@@ -14,7 +14,11 @@
 // limitations under the License.
 //
 
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 /**
  * A strategy for handling incoming messages from Flutter and to send

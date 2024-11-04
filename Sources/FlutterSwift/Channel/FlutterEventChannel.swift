@@ -17,7 +17,11 @@
 import AsyncAlgorithms
 @preconcurrency
 import AsyncExtensions
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 /**
  * An asynchronous event stream.

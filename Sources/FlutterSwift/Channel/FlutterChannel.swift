@@ -14,7 +14,11 @@
 // limitations under the License.
 //
 
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 /**
  * A facility for communicating with the Flutter side using asynchronous message

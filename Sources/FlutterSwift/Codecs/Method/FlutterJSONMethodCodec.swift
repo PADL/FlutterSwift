@@ -14,7 +14,11 @@
 // limitations under the License.
 //
 
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 /**
  * A `FlutterMethodCodec` using UTF-8 encoded JSON method calls and result

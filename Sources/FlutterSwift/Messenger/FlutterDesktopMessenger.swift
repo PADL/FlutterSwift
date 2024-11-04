@@ -18,7 +18,11 @@
 import Atomics
 @_implementationOnly
 import CxxFlutterSwift
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+import Foundation
+#endif
 
 public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
   private final class ManagedReference: @unchecked Sendable {
