@@ -22,11 +22,6 @@ import UIKit
 #elseif canImport(FlutterMacOS)
 import AppKit
 import FlutterMacOS
-#if canImport(FoundationEssentials)
-import FoundationEssentials
-#else
-import Foundation
-#endif
 #endif
 
 public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
