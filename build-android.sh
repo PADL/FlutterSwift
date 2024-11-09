@@ -38,7 +38,6 @@ PATH=$PATH:${FLUTTER_SDK}/bin
 export PATH
 
 export APP_PACKAGE_NAME=$(basename ${APP_PACKAGE_SOURCE})
-export SWIFT_PRODUCT_NAME=${APP_PACKAGE_NAME}
 
 # Build the compiler tools for the host platform
 
@@ -66,7 +65,7 @@ rm -f ${SWIFT_JAR}
 CLASSPATH="${CLASSPATH}:${SWIFT_JAR}"
 export CLASSPATH
 
-swift build --toolchain ${TOOLCHAINS} --swift-sdk ${TRIPLE} --product ${SWIFT_PRODUCT_NAME}
+swift build --toolchain ${TOOLCHAINS} --swift-sdk ${TRIPLE} --product ${APP_PACKAGE_NAME}
 
 cd ${APP_PACKAGE_SOURCE}
 
@@ -74,7 +73,7 @@ APP_LIBS=android/app/libs/arm64-v8a
 export JAVA_HOME=${TARGET_JAVA_HOME}
 
 mkdir -p ${APP_LIBS}
-cp ${pwd}/.build/${TRIPLE}/debug/lib${SWIFT_PRODUCT_NAME}.so ${APP_LIBS}
+cp ${pwd}/.build/${TRIPLE}/debug/lib${APP_PACKAGE_NAME}.so ${APP_LIBS}
 cp ${SWIFT_SDK_SYSROOT}/usr/lib/aarch64-linux-android/${NDK_VERS}/lib*.so ${APP_LIBS}
 rm -f ${APP_LIBS}/lib{c,dl,log,m,z}.so
 
