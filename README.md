@@ -32,15 +32,31 @@ Example Xcode projects are included in the standard places in the [Examples/coun
 
 ### Android
 
-First, install the [Swift Android SDK](https://github.com/finagolfin/swift-android-sdk). The Android example can be built with the  `./build-android.sh` shell script (this is still a work in progress). Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
+Android builds are currently only supported on macOS, and require the following dependencies to be installed:
+
+* The [Swift Android SDK](https://github.com/finagolfin/swift-android-sdk)
+* A [Swift toolchain](https://www.swift.org/install/macos/) that matches exactly the version of the Swift Android SDK
+* [Android Studio](https://developer.android.com/studio)
+* A [native JDK](https://www.oracle.com/au/java/technologies/downloads/)
+
+You'll then need to edit the [`build-android.sh`](build-android.sh) script and change, if necessary, the following environment variables:
+
+* `NDK_VERS`: the version of the Android NDK
+* `SWIFT_VERS`: the version of the Swift SDK and toolchain downloaded above
+* `HOST_JAVA_HOME`: the path to the JDK for the build (host) machine (typically within `/Library/Java/JavaVirtualMachines`)
+* `TARGET_JAVA_HOME`: the path to the JDK for the target machine (within the Android Studio app)
+
+Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
+
+That this build tooling is somewhat inconvenient is a known issue and we plan to improve it in the future.
 
 ### Embedded Linux
 
-Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object followed by the Swift runner.
+Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object, followed by the Swift runner.
 
 ## Usage
 
-This section provides a brief overview of API usage.
+This section provides a brief overview of the APIs provided by FlutterSwift.
 
 ### Initialization
 
@@ -51,10 +67,10 @@ import FlutterMacOS.FlutterBinaryMessenger
 import FlutterSwift
 
 override func awakeFromNib() {
-    let flutterViewController = FlutterViewController() // from ObjC implementation
-    let binaryMessenger = FlutterSwift
+  let flutterViewController = FlutterViewController() // from ObjC implementation
+  let binaryMessenger = FlutterSwift
         .FlutterPlatformMessenger(wrapping: flutterViewController.engine.binaryMessenger)
-    ...
+  ...
 }
 ```
 
@@ -121,27 +137,27 @@ On Linux, using the native Swift [client wrapper](Sources/FlutterSwift/Client/):
 ```swift
 @main
 enum SomeApp {
-    static func main() {
-        guard CommandLine.arguments.count > 1 else {
-            print("usage: SomeApp [flutter_path]")
-            exit(1)
-        }
-        let dartProject = DartProject(path: CommandLine.arguments[1])
-        let viewProperties = FlutterViewController.ViewProperties(
+  static func main() {
+    guard CommandLine.arguments.count > 1 else {
+      print("usage: SomeApp [flutter_path]")
+      exit(1)
+    }
+    let dartProject = DartProject(path: CommandLine.arguments[1])
+    let viewProperties = FlutterViewController.ViewProperties(
             width: 640,
             height: 480,
             title: "SomeApp",
             appId: "com.example.some-app"
-        )
-        let window = FlutterWindow(properties: viewProperties, project: dartProject)
-        guard let window else {
-            debugPrint("failed to initialize window!")
-            exit(2)
-        }
-        let binaryMessenger = viewController.engine.binaryMessenger
-        ...
-        window.run()
+    )
+    let window = FlutterWindow(properties: viewProperties, project: dartProject)
+    guard let window else {
+      debugPrint("failed to initialize window!")
+      exit(2)
     }
+    let binaryMessenger = viewController.engine.binaryMessenger
+    ...
+    window.run()
+  }
 }
 
 ```
@@ -154,22 +170,22 @@ This shows a basic message channel handler using the JSON message codec. On eLin
 
 ```swift
 private func messageHandler(_ arguments: String?) async -> Int? {
-    debugPrint("Received message \(arguments)")
-    return 12345
+  debugPrint("Received message \(arguments)")
+  return 12345
 }
 
 override func awakeFromNib() {
 ...
-    flutterBasicMessageChannel = FlutterBasicMessageChannel(
-        name: "com.padl.example",
-        binaryMessenger: binaryMessenger,
-        codec: FlutterJSONMessageCodec.shared
-    )
+  flutterBasicMessageChannel = FlutterBasicMessageChannel(
+    name: "com.padl.example",
+    binaryMessenger: binaryMessenger,
+    codec: FlutterJSONMessageCodec.shared
+  )
 
-    task = Task {
-        try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
-        ...
-    }
+  task = Task {
+    try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
+    ...
+  }
 }
 ```
 
@@ -179,23 +195,21 @@ override func awakeFromNib() {
 var isRunning = true
 
 private func methodCallHandler(
-    call: FlutterSwift
-        .FlutterMethodCall<Bool>
+  call: FlutterSwift.FlutterMethodCall<Bool>
 ) async throws -> Bool {
-    isRunning.toggle()
-    return isRunning
+  isRunning.toggle()
+  return isRunning
 }
 
 override func awakeFromNib() {
 ...
-
-    let flutterMethodChannel = FlutterMethodChannel(
-        name: "com.padl.toggleCounter",
+  let flutterMethodChannel = FlutterMethodChannel(
+    name: "com.padl.toggleCounter",
         binaryMessenger: binaryMessenger
     )
     task = Task {
-        try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
-    }
+      try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
+  }
 }
 
 ```
@@ -218,28 +232,28 @@ var task: Task<(), Error>?
 var counter: Event = 0
 
 private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
-    // a FlutterEventStream is an AsyncSequence
-    flutterEventStream.eraseToAnyAsyncSequence()
+  // a FlutterEventStream is an AsyncSequence
+  flutterEventStream.eraseToAnyAsyncSequence()
 }
 
 private func onCancel(_ arguments: Arguments?) throws {
-    task?.cancel()
-    task = nil
+  task?.cancel()
+  task = nil
 }
 
 override func awakeFromNib() {
 ...
-    let flutterEventChannel = FlutterEventChannel(
-        name: "com.padl.counter",
-        binaryMessenger: binaryMessenger
-    )
-    task = Task {
-        try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
-        repeat {
-            await flutterEventStream.send(counter)
-            count += 1
-            try await Task.sleep(nanoseconds: NSEC_PER_SEC)
-        } while !Task.isCancelled
-    }
+  let flutterEventChannel = FlutterEventChannel(
+    name: "com.padl.counter",
+    binaryMessenger: binaryMessenger
+  )
+  task = Task {
+    try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
+    repeat {
+      await flutterEventStream.send(counter)
+      count += 1
+      try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+    } while !Task.isCancelled
+  }
 }
 ```
