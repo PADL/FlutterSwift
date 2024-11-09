@@ -16,13 +16,13 @@ The following assumes a reasonable degree of familiarity both with Flutter (spec
 
 ### Mobile and desktop platforms
 
-On mobile and desktop platforms such as iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing binary messenger. This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
+On mobile and desktop platforms such as iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing [binary messenger](https://api.flutter.dev/flutter/services/BinaryMessenger-class.html). This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
 
-On Darwin platforms (that is, iOS and macOS), you should simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK.
+On Darwin platforms (that is, iOS and macOS), you should simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
 
 ### Embedded platforms
 
-The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself; this is included in the included artifact bundle.
+The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Wayland engine as a submodule, using the engine included in the artifact bundle in this repository.
 
 ## Examples
 
@@ -32,7 +32,7 @@ Example Xcode projects are included in the standard places in the [Examples/coun
 
 ### Android
 
-First, install the [Swift Android SDK](https://github.com/finagolfin/swift-android-sdk). The Android example can be build with the  `./build-android.sh` shell script (this is still a work in progress). Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
+First, install the [Swift Android SDK](https://github.com/finagolfin/swift-android-sdk). The Android example can be built with the  `./build-android.sh` shell script (this is still a work in progress). Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
 
 ### Embedded Linux
 
