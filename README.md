@@ -6,7 +6,7 @@ It consists of three components:
 
 * An idiomatic, asynchronous Swift implementation of Flutter [platform channels](https://docs.flutter.dev/platform-integration/platform-channels)
 * Wrappers to integrate with the Flutter embedding's runner
-* On [eLinux](https://github.com/sony/flutter-embedded-linux), a pure Swift runner that hosts your application.
+* On [eLinux](https://github.com/sony/flutter-embedded-linux), a pure Swift runner that hosts your application
 
 The end-goal is to allow Flutter to be used for the UI, and Swift the business logic, in a cross-platform manner. Currently supported targets are macOS, iOS, Android and eLinux.
 
@@ -48,7 +48,7 @@ You'll then need to edit the [`build-android.sh`](build-android.sh) script and c
 
 Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
 
-That this build tooling is somewhat inconvenient is a known issue and we plan to improve it in the future.
+That the tooling here is somewhat inconvenient is a known issue and we plan to improve it in the future.
 
 ### Embedded Linux
 
