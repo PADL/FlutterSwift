@@ -16,19 +16,19 @@ The following assumes a reasonable degree of familiarity both with Flutter (spec
 
 ### Mobile and desktop platforms
 
-On mobile and desktop platforms such as iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing [binary messenger](https://api.flutter.dev/flutter/services/BinaryMessenger-class.html). This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
+On mobile and desktop platforms such as macOS, iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing [binary messenger](https://api.flutter.dev/flutter/services/BinaryMessenger-class.html). This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
 
-On Darwin platforms (that is, iOS and macOS), you should simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
+On Darwin platforms (that is, iOS and macOS), you can simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
 
 ### Embedded platforms
 
-The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Wayland engine as a submodule, using the engine included in the artifact bundle in this repository.
+The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Flutter fork as a submodule, using the Flutter engine included in the artifact bundle in this repository.
 
 ## Examples
 
 ### iOS and macOS
 
-Example Xcode projects are included in the standard places in the [Examples/counter](Examples/counter) directory.
+Example Xcode projects are included in the standard places in the [Examples/counter](Examples/counter) directory. You may need to tweak the bundle identifier to match your developer ID.
 
 ### Android
 
@@ -43,16 +43,18 @@ You'll then need to edit the [`build-android.sh`](build-android.sh) script and c
 
 * `NDK_VERS`: the version of the Android NDK
 * `SWIFT_VERS`: the version of the Swift SDK and toolchain downloaded above
-* `HOST_JAVA_HOME`: the path to the JDK for the build (host) machine (typically within `/Library/Java/JavaVirtualMachines`)
 * `TARGET_JAVA_HOME`: the path to the JDK for the target machine (within the Android Studio app)
+* `HOST_JAVA_HOME`: the path to the JDK for the build (host) machine (typically within `/Library/Java/JavaVirtualMachines`)
 
-Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
+Android-specific source for the example is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
 
-That the tooling here is somewhat inconvenient is a known issue and we plan to improve it in the future.
+That the tooling here is somewhat inconvenient is a known issue and we plan to [improve it](https://github.com/PADL/FlutterSwift/issues/8) in the future.
 
 ### Embedded Linux
 
 Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object, followed by the Swift runner.
+
+The environment variable `FLUTTER_SWIFT_BACKEND` can be set to one of `gbm`, `eglstream`, or `wayland`, as appropriate. This should be set both for building and running.
 
 ## Usage
 
