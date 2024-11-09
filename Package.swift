@@ -1,7 +1,17 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 
 import Foundation
 import PackageDescription
+
+var targets: [Target] = []
+var products: [Product] = []
+
+var packageDependencies = [Package.Dependency]()
+var targetDependencies = [Target.Dependency]()
+var targetPluginUsages = [Target.PluginUsage]()
+
+var platformCxxSettings: [CXXSetting] = []
+var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5)]
 
 func tryGuessSwiftLibRoot() -> String {
   let task = Process()
@@ -19,15 +29,17 @@ func tryGuessSwiftLibRoot() -> String {
 }
 
 let SwiftLibRoot = tryGuessSwiftLibRoot()
+var FlutterPlatform: String
+var FlutterUnsafeLinkerFlags: [String] = []
 
 #if os(macOS) // Note: This is the _build_ platform
 let FlutterRoot = "/opt/flutter"
 let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
 
-let FlutterPlatform = "darwin-x64"
+FlutterPlatform = "darwin-x64"
 let FlutterFramework = "FlutterMacOS"
 let FlutterLibPath = "\(_FlutterLibPath)/\(FlutterPlatform)"
-let FlutterUnsafeLinkerFlags = [
+FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
@@ -42,10 +54,11 @@ let FlutterArch = "x64"
 #else
 #error("Unknown architecture")
 #endif
+FlutterPlatform = "elinux-\(FlutterArch)-debug"
 // FIXME: for release target
-let FlutterLibPath = "\(FlutterRoot)/elinux-\(FlutterArch)-debug"
+let FlutterLibPath = "\(FlutterRoot)/\(FlutterPlatform)"
 let FlutterAltLibPath = "/opt/flutter-elinux/lib"
-let FlutterUnsafeLinkerFlags: [String] = [
+FlutterUnsafeLinkerFlags = [
   "-Xlinker", "-L", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
   "-Xlinker", "-L", "-Xlinker", FlutterAltLibPath,
@@ -54,11 +67,122 @@ let FlutterUnsafeLinkerFlags: [String] = [
 ]
 #endif
 
-var targets: [Target] = []
-var products: [Product] = []
+let FlutterSwiftJVM: Bool
+let javaHome: String?
+let javaIncludePath: String?
+let javaPlatformIncludePath: String?
 
-var platformCxxSettings: [CXXSetting] = []
-var platformSwiftSettings: [SwiftSetting] = []
+if let value = ProcessInfo.processInfo.environment["FLUTTER_SWIFT_JVM"] {
+  FlutterSwiftJVM = Bool(value) ?? false
+} else {
+  FlutterSwiftJVM = false
+}
+
+// Note: the JAVA_HOME environment variable must be set to point to where
+// Java is installed, e.g.,
+//   Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home.
+func findJavaHome() -> String {
+  if let home = ProcessInfo.processInfo.environment["JAVA_HOME"] {
+    return home
+  }
+
+  // This is a workaround for envs (some IDEs) which have trouble with
+  // picking up env variables during the build process
+  let path = "\(FileManager.default.homeDirectoryForCurrentUser.path()).java_home"
+  if let home = try? String(contentsOfFile: path, encoding: .utf8) {
+    if let lastChar = home.last, lastChar.isNewline {
+      return String(home.dropLast())
+    }
+
+    return home
+  }
+
+  fatalError("Please set the JAVA_HOME environment variable to point to where Java is installed.")
+}
+
+if FlutterSwiftJVM {
+  javaHome = findJavaHome()
+
+  javaIncludePath = ProcessInfo.processInfo
+    .environment["JAVA_INCLUDE_PATH"] ?? "\(javaHome!)/include"
+  #if os(Linux)
+  javaPlatformIncludePath = "\(javaIncludePath!)/linux"
+  #elseif os(macOS)
+  javaPlatformIncludePath = "\(javaIncludePath!)/darwin"
+  #else
+  javaPlatformIncludePath = nil
+  #endif
+
+  // TODO: better distinguish between build and target host, support armv7
+  FlutterPlatform = "android-arm64"
+  FlutterUnsafeLinkerFlags = []
+
+  platformSwiftSettings += [
+    .unsafeFlags([
+      "-I\(javaIncludePath!)",
+      "-I\(javaPlatformIncludePath!)",
+    ]),
+  ]
+  packageDependencies += [
+    .package(
+      url: "https://github.com/PADL/swift-java",
+      branch: "lhoward/android"
+    ),
+    .package(
+      url: "https://github.com/PADL/AndroidLooper",
+      branch: "main"
+    ),
+    .package(
+      url: "https://github.com/PADL/AndroidLogging",
+      branch: "main"
+    ),
+  ]
+  targetPluginUsages += [
+    .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
+    .plugin(name: "Java2SwiftPlugin", package: "swift-java"),
+  ]
+
+  let javaKitDependencies: [Target.Dependency] = [
+    .product(name: "JavaKit", package: "swift-java"),
+    .product(name: "JavaKitFunction", package: "swift-java"),
+    .product(name: "JavaKitJar", package: "swift-java"),
+  ]
+
+  products += [
+    .library(
+      name: "counter",
+      type: .dynamic,
+      targets: ["counter"]
+    ),
+  ]
+
+  targets += [
+    .target(
+      name: "FlutterAndroid",
+      dependencies: javaKitDependencies + [
+        "AndroidLooper",
+        "AndroidLogging",
+        .product(name: "Atomics", package: "swift-atomics"),
+      ],
+      swiftSettings: platformSwiftSettings,
+      plugins: targetPluginUsages
+    ),
+    .target(
+      name: "counter",
+      dependencies: [
+        .target(name: "FlutterSwift"),
+      ],
+      path: "Examples/counter/swift",
+      swiftSettings: platformSwiftSettings,
+      plugins: targetPluginUsages
+    ),
+  ]
+
+  targetDependencies += javaKitDependencies + ["FlutterAndroid"]
+} else {
+  javaHome = nil
+  javaPlatformIncludePath = nil
+}
 
 #if os(Linux)
 enum FlutterELinuxBackendType {
@@ -105,7 +229,13 @@ enum FlutterELinuxBackendType {
 
 let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
 
-targets = [
+platformSwiftSettings += [
+  .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
+  .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
+  .interoperabilityMode(.Cxx),
+]
+
+targets += [
   .binaryTarget(
     name: "CFlutterEngine",
     path: "flutter-engine.artifactbundle.zip"
@@ -276,7 +406,7 @@ targets += [
     ]
   ),
   .executableTarget(
-    name: "Counter",
+    name: "counter",
     dependencies: [
       .target(name: "FlutterSwift"),
       "CFlutterEngine",
@@ -286,19 +416,12 @@ targets += [
     ],
     cxxSettings: [
     ],
-    swiftSettings: [
-      .interoperabilityMode(.Cxx),
-      // FIXME: https://github.com/apple/swift-package-manager/issues/6661
-      .unsafeFlags(["-cxx-interoperability-mode=default"]),
-    ],
-    linkerSettings: [
-      // .unsafeFlags(["-pthread"]),
-    ]
+    swiftSettings: platformSwiftSettings
   ),
 ]
 
 products = [
-  .executable(name: "Counter", targets: ["Counter"]),
+  .executable(name: "counter", targets: ["counter"]),
 ]
 
 platformCxxSettings += [
@@ -319,13 +442,9 @@ platformCxxSettings += [
   ),
 ]
 
-platformSwiftSettings += [
-  .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
-  .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
-]
 #else
 
-targets = [
+targets += [
   .target(
     name: "CxxFlutterSwift",
     exclude: [
@@ -344,13 +463,17 @@ let package = Package(
     .iOS(.v16),
   ],
   products: [
-    .library(name: "FlutterSwift", targets: ["FlutterSwift"]),
+    .library(
+      name: "FlutterSwift",
+      type: .static,
+      targets: ["FlutterSwift"]
+    ),
   ] + products,
   dependencies: [
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
-  ],
+  ] + packageDependencies,
   targets: [
     .target(
       name: "FlutterSwift",
@@ -360,13 +483,9 @@ let package = Package(
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Atomics", package: "swift-atomics"),
         "AsyncExtensions",
-      ],
-      cSettings: [
-      ],
+      ] + targetDependencies,
       cxxSettings: platformCxxSettings,
-      swiftSettings: platformSwiftSettings + [
-        .interoperabilityMode(.Cxx),
-      ],
+      swiftSettings: platformSwiftSettings,
       linkerSettings: [
         .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
       ]
@@ -376,15 +495,7 @@ let package = Package(
       dependencies: [
         .target(name: "FlutterSwift"),
       ],
-      cSettings: [
-      ],
-      cxxSettings: [
-      ],
-      swiftSettings: [
-        // FIXME: https://github.com/apple/swift-package-manager/issues/6661
-        .interoperabilityMode(.Cxx),
-        .unsafeFlags(["-cxx-interoperability-mode=default"]),
-      ],
+      swiftSettings: platformSwiftSettings,
       linkerSettings: [
         .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
       ]

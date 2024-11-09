@@ -1,28 +1,50 @@
-FlutterSwift
-============
+# FlutterSwift
 
-FlutterSwift is a native Swift Flutter client wrapper and platform channel implementation.
+FlutterSwift is designed to help you write your UI in Dart, and your business logic in Swift.
 
-The end-goal is to allow Flutter to be used for the UI, and Swift the business logic, in a cross-platform manner. Currently this is achieved for macOS, iOS and [embedded Linux](https://github.com/sony/flutter-embedded-linux), but Android is an obvious future target. It also provides a more idiomatic structured concurrency API which would not be possible in Objective-C.
+It consists of three components:
 
-Architecture
-------------
+* An idiomatic, asynchronous Swift implementation of Flutter [platform channels](https://docs.flutter.dev/platform-integration/platform-channels)
+* Wrappers to integrate with the Flutter embedding's runner
+* On [eLinux](https://github.com/sony/flutter-embedded-linux), a pure Swift runner that hosts your application.
 
-The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. To permit development on Darwin platforms, FlutterSwift also provides `FlutterPlatformMessenger` which wraps the existing platform binary messenger. Thus, you can develop on macOS and deploy on embedded Linux from a single codebase.
+The end-goal is to allow Flutter to be used for the UI, and Swift the business logic, in a cross-platform manner. Currently supported targets are macOS, iOS, Android and eLinux.
 
-This repository will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself: this is assumed to be in `/opt/flutter-elinux/lib` or a build artifact downloaded by [download-engine.sh](download-engine.sh).
+The following assumes a reasonable degree of familiarity both with Flutter (specifically platform channels) as well as the Swift language.
 
-Some examples follow.
+## Architecture
 
-Counter Demo
-------------
+### Mobile and desktop platforms
+
+On mobile and desktop platforms such as iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing binary messenger. This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
+
+On Darwin platforms (that is, iOS and macOS), you should simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK.
+
+### Embedded platforms
+
+The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Wayland engine as a submodule, but it doesn't at this time build the Flutter engine itself; this is included in the included artifact bundle.
+
+## Examples
+
+### iOS and macOS
+
+Example Xcode projects are included in the standard places in the [Examples/counter](Examples/counter) directory.
+
+### Android
+
+First, install the [Swift Android SDK](https://github.com/finagolfin/swift-android-sdk). The Android example can be build with the  `./build-android.sh` shell script (this is still a work in progress). Android-specific source is in [Examples/counter/android/app/src/main](Examples/counter/android/app/src/main).
+
+### Embedded Linux
 
 Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object followed by the Swift runner.
 
-Initialization
---------------
+## Usage
 
-macOS:
+This section provides a brief overview of API usage.
+
+### Initialization
+
+#### macOS
 
 ```swift
 import FlutterMacOS.FlutterBinaryMessenger
@@ -36,7 +58,65 @@ override func awakeFromNib() {
 }
 ```
 
-Linux, using the native Swift [client wrapper](Sources/FlutterSwift/Client/):
+#### Android
+
+Android requires that your application's `configureFlutterEngine()` method call a native function you define to initialize your platform channels, such as the following:
+
+```java
+package com.padl.counter;
+
+import io.flutter.plugin.common.BinaryMessenger;
+
+public final class ChannelManager {
+  public final BinaryMessenger binaryMessenger;
+
+  public ChannelManager(BinaryMessenger binaryMessenger) {
+    System.loadLibrary("counter");
+    System.out.println("loaded counter native library");
+    this.binaryMessenger = binaryMessenger;
+  }
+
+  public native void initChannelManager();
+}
+```
+
+The Swift impmlementation can then register your platform channel implementations:
+
+```swift
+import FlutterAndroid
+import JavaKit
+import JavaRuntime
+
+@JavaClass("com.padl.counter.ChannelManager")
+open class _ChannelManager: JavaObject {
+  @JavaField(isFinal: true)
+  public var binaryMessenger: FlutterAndroid.FlutterBinaryMessenger!
+
+  @JavaMethod
+  @_nonoverride
+  public convenience init(
+    _ binaryMessenger: FlutterAndroid.FlutterBinaryMessenger?,
+    environment: JNIEnvironment? = nil
+  )
+}
+
+protocol _ChannelManagerNativeMethods {
+  func initChannelManager()
+}
+
+@JavaImplementation("com.padl.counter.ChannelManager")
+extension _ChannelManager: _ChannelManagerNativeMethods {
+  @JavaMethod
+  public func initChannelManager() {
+    let wrappedMessenger = FlutterPlatformMessenger(wrapping: binaryMessenger!)
+    // initialize your channels, remembering to take a strong reference to them
+  }
+}
+```
+
+#### eLinux
+
+On Linux, using the native Swift [client wrapper](Sources/FlutterSwift/Client/):
 
 ```swift
 @main
@@ -66,16 +146,17 @@ enum SomeApp {
 
 ```
 
-Message channel
----------------
+### Channels
 
-This shows a basic message channel handler using the JSON message codec. Note that because the binary messenger is an actors, `setMessageHandler()` needs to be called in an asynchronous context. On eLinux, instead of registering the channels in `awakeFromNib()`, call this from the `main()` function (perhaps indirected by a manager class).
+#### Message channel
+
+This shows a basic message channel handler using the JSON message codec. On eLinux, instead of registering the channels in `awakeFromNib()`, call this from the `main()` function (perhaps indirected by a manager class).
 
 ```swift
 private func messageHandler(_ arguments: String?) async -> Int? {
     debugPrint("Received message \(arguments)")
     return 12345
-}       
+}
 
 override func awakeFromNib() {
 ...
@@ -92,8 +173,7 @@ override func awakeFromNib() {
 }
 ```
 
-Method channel
---------------
+#### Method channel
 
 ```swift
 var isRunning = true
@@ -119,8 +199,8 @@ override func awakeFromNib() {
 }
 
 ```
-Event channel
--------------
+
+#### Event channel
 
 ```swift
 import AsyncAlgorithms

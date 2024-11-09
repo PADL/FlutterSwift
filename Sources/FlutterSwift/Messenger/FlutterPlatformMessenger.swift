@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#if canImport(Flutter) || canImport(FlutterMacOS)
+#if canImport(Flutter) || canImport(FlutterMacOS) || canImport(FlutterAndroid)
 import AsyncAlgorithms
 #if canImport(Flutter)
 import Flutter
@@ -22,6 +22,14 @@ import UIKit
 #elseif canImport(FlutterMacOS)
 import AppKit
 import FlutterMacOS
+#elseif canImport(Android) || canImport(FlutterAndroid)
+import AndroidLooper
+import FlutterAndroid
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
 #endif
 
 public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
@@ -31,14 +39,17 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   #elseif canImport(FlutterMacOS)
   public typealias PlatformFlutterBinaryMessenger = FlutterMacOS.FlutterBinaryMessenger
   public typealias PlatformFlutterBinaryMessageHandler = FlutterMacOS.FlutterBinaryMessageHandler
+  #elseif canImport(Android)
+  public typealias PlatformFlutterBinaryMessenger = FlutterAndroid.FlutterBinaryMessenger
+  public typealias PlatformFlutterBinaryMessageHandler = FlutterAndroid.FlutterBinaryMessageHandler
   #endif
 
-  private let platformBinaryMessenger: PlatformFlutterBinaryMessenger
+  private let _wrappedMessenger: PlatformFlutterBinaryMessenger
 
   // MARK: - Initializers
 
-  public init(wrapping platformBinaryMessenger: PlatformFlutterBinaryMessenger) {
-    self.platformBinaryMessenger = platformBinaryMessenger
+  public init(wrapping _wrappedMessenger: PlatformFlutterBinaryMessenger) {
+    self._wrappedMessenger = _wrappedMessenger
   }
 
   // MARK: - FlutterDesktopMessenger wrappers
@@ -47,16 +58,20 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     on channel: String,
     _ binaryMessageHandler: PlatformFlutterBinaryMessageHandler?
   ) -> FlutterBinaryMessengerConnection {
+    #if !canImport(Android)
     precondition(Thread.isMainThread)
-    return platformBinaryMessenger.setMessageHandlerOnChannel(
+    #endif
+    return _wrappedMessenger.setMessageHandlerOnChannel(
       channel,
       binaryMessageHandler: binaryMessageHandler
     )
   }
 
   private func _cleanUp(connection: FlutterBinaryMessengerConnection) {
+    #if !canImport(Android)
     precondition(Thread.isMainThread)
-    platformBinaryMessenger.cleanUpConnection(connection)
+    #endif
+    _wrappedMessenger.cleanUpConnection(connection)
   }
 
   public func _send(
@@ -64,13 +79,23 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     message: Data?,
     _ binaryReply: FlutterBinaryReply?
   ) {
-    DispatchQueue.main.async { [self] in
-      platformBinaryMessenger.send(
+    #if canImport(Android)
+    Task { @UIThreadActor [self] in
+      _wrappedMessenger.send(
         onChannel: channel,
         message: message,
         binaryReply: binaryReply
       )
     }
+    #else
+    DispatchQueue.main.async { [self] in
+      _wrappedMessenger.send(
+        onChannel: channel,
+        message: message,
+        binaryReply: binaryReply
+      )
+    }
+    #endif
   }
 
   // MARK: - public API

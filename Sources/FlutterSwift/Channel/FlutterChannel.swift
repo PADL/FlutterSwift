@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#if canImport(Android)
+import AndroidLooper
+#endif
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
@@ -124,7 +127,11 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
     }
   }
 
+  #if canImport(Android)
+  @UIThreadActor
+  #else
   @MainActor
+  #endif
   func setMessageHandler<Handler>(
     _ optionalHandler: Handler?,
     _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
