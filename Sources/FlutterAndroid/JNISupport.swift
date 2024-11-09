@@ -23,6 +23,8 @@ import JavaKit
 import JavaRuntime
 import Logging
 
+var _javaNIOByteBufferClass: JavaClass<JavaNIOByteBuffer>!
+
 private var _flutterSwiftClassLoader: JavaClassLoader!
 private var _flutterClassLoader: JavaClassLoader!
 
@@ -48,6 +50,7 @@ public func JNI_OnLoad(
 
     _flutterSwiftClassLoader = try aClass.getClassLoader()
     _flutterClassLoader = try anInterface.getClassLoader()
+    _javaNIOByteBufferClass = try JavaClass<JavaNIOByteBuffer>()
 
     _logger.debug("JNI_OnLoad: registered class loaders")
     return JNI_VERSION_1_6
@@ -64,6 +67,7 @@ public func JNI_OnUnload(
 ) {
   _flutterSwiftClassLoader = nil
   _flutterClassLoader = nil
+  _javaNIOByteBufferClass = nil
 
   AndroidLooper_deinitialize(nil)
 

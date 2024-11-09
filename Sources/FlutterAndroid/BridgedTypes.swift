@@ -20,8 +20,7 @@ import JavaRuntime
 
 extension Data {
   func asJavaNIOByteBuffer() -> JavaNIOByteBuffer {
-    let byteBufferClass = try! JavaClass<JavaNIOByteBuffer>()
-    let byteBuffer = byteBufferClass.allocateDirect(Int32(count))!
+    let byteBuffer = _javaNIOByteBufferClass.allocateDirect(Int32(count))!
 
     return byteBuffer.put(map { Int8(bitPattern: $0) }, 0, Int32(count))
   }
