@@ -18,23 +18,25 @@ package com.padl.FlutterAndroid;
 
 import java.lang.ref.Cleaner;
 
-public class SwiftHeapObjectHolder implements AutoCloseable {
+class SwiftHeapObjectHolder implements AutoCloseable {
   private static final Cleaner cleaner = Cleaner.create();
 
   private final Cleaner.Cleanable _cleanable;
-  public long _swiftObject;
+  public long _swiftHeapObject;
 
-  public SwiftHeapObjectHolder(long swiftObject) {
-    final Runnable F = () -> SwiftHeapObjectHolder._releaseSwiftObject(swiftObject);
+  public SwiftHeapObjectHolder(long heapObjectInt64Ptr) {
+    final Runnable F = () -> SwiftHeapObjectHolder._releaseSwiftHeapObject(heapObjectInt64Ptr);
+    SwiftHeapObjectHolder._retainSwiftHeapObject(heapObjectInt64Ptr);
     _cleanable = cleaner.register(this, F);
-    _swiftObject = swiftObject;
+    _swiftHeapObject = heapObjectInt64Ptr;
   }
 
   @Override
   public void close() throws Exception {
-    _swiftObject = 0;
+    _swiftHeapObject = 0;
     _cleanable.clean();
   }
 
-  public static native void _releaseSwiftObject(long swiftObject);
+  static native void _retainSwiftHeapObject(long heapObjectInt64Ptr);
+  static native void _releaseSwiftHeapObject(long heapObjectInt64Ptr);
 }

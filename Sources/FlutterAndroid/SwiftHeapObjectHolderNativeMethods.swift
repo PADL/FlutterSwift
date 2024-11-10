@@ -23,16 +23,23 @@ import JavaKit
 import JavaRuntime
 
 public extension SwiftHeapObjectHolder {
+  fileprivate static func _getUnmanagedSwiftHeapObject(_ heapObjectInt64Ptr: Int64)
+    -> Unmanaged<AnyObject>?
+  {
+    guard heapObjectInt64Ptr != 0 else { return nil }
+    let heapObjectIntPtr = Int(heapObjectInt64Ptr)
+    return unsafeBitCast(Int(heapObjectIntPtr), to: Unmanaged<AnyObject>.self)
+  }
+
   convenience init(swiftObject: some AnyObject, environment: JNIEnvironment?) {
-    let swiftObject = Unmanaged.passRetained(swiftObject)
-    let swiftObjectIntPtr = unsafeBitCast(swiftObject, to: Int.self) // Int32 on 32-bit platforms
-    self.init(Int64(swiftObjectIntPtr), environment: environment)
+    let heapObjectIntPtr = unsafeBitCast(swiftObject, to: Int.self) // Int32 on 32-bit platforms
+    self.init(Int64(heapObjectIntPtr), environment: environment) // will call retain()
   }
 
   var swiftObject: AnyObject? {
-    guard _swiftObject != 0 else { return nil }
-    let unmanagedSwiftObject = unsafeBitCast(Int(_swiftObject), to: Unmanaged<AnyObject>.self)
-    return unmanagedSwiftObject.takeUnretainedValue()
+    let unmanagedSwiftHeapObject = SwiftHeapObjectHolder
+      ._getUnmanagedSwiftHeapObject(_swiftHeapObject)
+    return unmanagedSwiftHeapObject?.takeUnretainedValue()
   }
 }
 
@@ -43,11 +50,20 @@ extension SwiftHeapObjectHolder: CustomJavaClassLoader {
 }
 
 @JavaImplementation("com.padl.FlutterAndroid.SwiftHeapObjectHolder")
-extension JavaClass<SwiftHeapObjectHolder> {
+public extension JavaClass<SwiftHeapObjectHolder> {
   @JavaMethod
-  public static func _1releaseSwiftObject(_ swiftObject: Int64, environment: JNIEnvironment? = nil) {
-    guard swiftObject != 0 else { return }
-    let swiftObjectIntPtr = Int(swiftObject)
-    unsafeBitCast(Int(swiftObjectIntPtr), to: Unmanaged<AnyObject>.self).release()
+  static func _1retainSwiftHeapObject(
+    _ heapObjectInt64Ptr: Int64,
+    environment: JNIEnvironment? = nil
+  ) {
+    _ = SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.retain()
+  }
+
+  @JavaMethod
+  static func _1releaseSwiftHeapObject(
+    _ heapObjectInt64Ptr: Int64,
+    environment: JNIEnvironment? = nil
+  ) {
+    SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.release()
   }
 }
