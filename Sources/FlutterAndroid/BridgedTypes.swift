@@ -36,8 +36,7 @@ extension JavaNIOByteBuffer {
 
       array = Array(self.array()[offset..<(offset + limit)])
     } else {
-      array = try! JavaClass<ByteBufferHelper>(environment: javaEnvironment)
-        .getByteBufferContents(self)
+      array = _byteBufferHelperClass.getByteBufferContents(self)
     }
 
     return Data(array.map { UInt8(bitPattern: $0) })
