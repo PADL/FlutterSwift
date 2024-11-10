@@ -19,7 +19,7 @@ package com.padl.FlutterAndroid;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.nio.ByteBuffer;
 
-public final class FlutterSwiftBinaryMessageHandler extends SwiftObjectHolder implements BinaryMessenger.BinaryMessageHandler {
+public final class FlutterSwiftBinaryMessageHandler extends SwiftHeapObjectHolder implements BinaryMessenger.BinaryMessageHandler {
   public FlutterSwiftBinaryMessageHandler(long swiftObject) {
     super(swiftObject);
   }

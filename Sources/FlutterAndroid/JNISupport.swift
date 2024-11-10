@@ -46,7 +46,7 @@ public func JNI_OnLoad(
 
     _logger.debug("JNI_OnLoad: adopted JVM \(jvm) with environment \(environment)")
 
-    let aClass = try JavaClass<SwiftObjectHolder>(environment: environment)
+    let aClass = try JavaClass<SwiftHeapObjectHolder>(environment: environment)
     let anInterface = try JavaClass<FlutterBinaryMessenger>(environment: environment)
 
     _flutterSwiftClassLoader = try aClass.getClassLoader()

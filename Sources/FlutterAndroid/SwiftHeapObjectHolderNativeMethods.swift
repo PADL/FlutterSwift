@@ -22,33 +22,32 @@ import Foundation
 import JavaKit
 import JavaRuntime
 
-public extension SwiftObjectHolder {
+public extension SwiftHeapObjectHolder {
   convenience init(swiftObject: some AnyObject, environment: JNIEnvironment?) {
     let swiftObject = Unmanaged.passRetained(swiftObject)
     let swiftObjectIntPtr = unsafeBitCast(swiftObject, to: Int.self) // Int32 on 32-bit platforms
     self.init(Int64(swiftObjectIntPtr), environment: environment)
   }
 
-  var _unmanagedSwiftObject: Unmanaged<AnyObject>? {
-    guard _swiftObject != 0 else { return nil }
-    return unsafeBitCast(Int(_swiftObject), to: Unmanaged<AnyObject>.self)
-  }
-
   var swiftObject: AnyObject? {
-    _unmanagedSwiftObject?.takeUnretainedValue()
+    guard _swiftObject != 0 else { return nil }
+    let unmanagedSwiftObject = unsafeBitCast(Int(_swiftObject), to: Unmanaged<AnyObject>.self)
+    return unmanagedSwiftObject.takeUnretainedValue()
   }
 }
 
-extension SwiftObjectHolder: CustomJavaClassLoader {
+extension SwiftHeapObjectHolder: CustomJavaClassLoader {
   public static func getJavaClassLoader(in environment: JNIEnvironment) throws -> JavaClassLoader! {
     _getFlutterSwiftClassLoader()
   }
 }
 
-@JavaImplementation("com.padl.FlutterAndroid.SwiftObjectHolder")
-extension SwiftObjectHolder: SwiftObjectHolderNativeMethods {
+@JavaImplementation("com.padl.FlutterAndroid.SwiftHeapObjectHolder")
+extension JavaClass<SwiftHeapObjectHolder> {
   @JavaMethod
-  public func releaseSwiftObject() {
-    _unmanagedSwiftObject?.release()
+  public static func _1releaseSwiftObject(_ swiftObject: Int64, environment: JNIEnvironment? = nil) {
+    guard swiftObject != 0 else { return }
+    let swiftObjectIntPtr = Int(swiftObject)
+    unsafeBitCast(Int(swiftObjectIntPtr), to: Unmanaged<AnyObject>.self).release()
   }
 }

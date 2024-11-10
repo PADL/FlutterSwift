@@ -16,19 +16,25 @@
 
 package com.padl.FlutterAndroid;
 
-public class SwiftObjectHolder {
-  public final long _swiftObject;
+import java.lang.ref.Cleaner;
 
-  public SwiftObjectHolder(long swiftObject) {
+public class SwiftHeapObjectHolder implements AutoCloseable {
+  private static final Cleaner cleaner = Cleaner.create();
+
+  private final Cleaner.Cleanable _cleanable;
+  public long _swiftObject;
+
+  public SwiftHeapObjectHolder(long swiftObject) {
+    final Runnable F = () -> SwiftHeapObjectHolder._releaseSwiftObject(swiftObject);
+    _cleanable = cleaner.register(this, F);
     _swiftObject = swiftObject;
   }
 
-  native void releaseSwiftObject();
-
   @Override
-  public void finalize() {
-    if (_swiftObject != 0) {
-      releaseSwiftObject();
-    }
+  public void close() throws Exception {
+    _swiftObject = 0;
+    _cleanable.clean();
   }
+
+  public static native void _releaseSwiftObject(long swiftObject);
 }
