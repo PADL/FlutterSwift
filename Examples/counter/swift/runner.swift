@@ -17,6 +17,10 @@
 import AsyncAlgorithms
 import FlutterSwift
 import Foundation
+import Logging
+#if canImport(AndroidLogging)
+import AndroidLogging
+#endif
 
 private var NSEC_PER_SEC: UInt64 = 1_000_000_000
 
@@ -32,13 +36,14 @@ final class ChannelManager: @unchecked Sendable {
   var flutterMethodChannel: FlutterSwift.FlutterMethodChannel!
   var task: Task<(), Error>?
   var counter: Event = 0
+  var logger: Logger
 
   let magicCookie = 0xCAFE_BABE
 
   var flutterEventStream = Stream()
 
   private func messageHandler(_ arguments: String?) async -> Int? {
-    debugPrint("Received message \(String(describing: arguments))")
+    logger.debug("received message \(String(describing: arguments))")
     return magicCookie
   }
 
@@ -56,7 +61,7 @@ final class ChannelManager: @unchecked Sendable {
     call: FlutterSwift
       .FlutterMethodCall<Int>
   ) async throws -> Bool {
-    debugPrint("received method call \(call)")
+    logger.debug("received method call \(call)")
     guard call.arguments == magicCookie else {
       throw FlutterError(code: "bad cookie")
     }
@@ -74,22 +79,29 @@ final class ChannelManager: @unchecked Sendable {
       repeat {
         counter += 1
         await flutterEventStream.send(counter)
-        debugPrint("counter is now \(counter)")
+        logger.trace("counter is now \(counter)")
         try await Task.sleep(nanoseconds: NSEC_PER_SEC)
       } while !Task.isCancelled
-      debugPrint("task was cancelled")
+      logger.info("task was cancelled")
     }
   }
 
   func stop() {
     if let task {
-      debugPrint("cancelling task...")
+      logger.info("cancelling task...")
       task.cancel()
       self.task = nil
     }
   }
 
   init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) {
+    #if canImport(Android)
+    LoggingSystem.bootstrap(AndroidLogHandler.taggedBySource)
+    #else
+    LoggingSystem.bootstrap(StreamLogHandler.standardError)
+    #endif
+    logger = Logger(label: "com.example.counter")
+
     flutterBasicMessageChannel = FlutterBasicMessageChannel(
       name: "com.example.counter.basic",
       binaryMessenger: binaryMessenger,

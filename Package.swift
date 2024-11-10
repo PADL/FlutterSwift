@@ -171,6 +171,8 @@ if FlutterSwiftJVM {
       name: "counter",
       dependencies: [
         .target(name: "FlutterSwift"),
+        "AndroidLogging",
+        .product(name: "Logging", package: "swift-log"),
       ],
       path: "Examples/counter/swift",
       swiftSettings: platformSwiftSettings,
@@ -409,6 +411,7 @@ targets += [
     name: "counter",
     dependencies: [
       .target(name: "FlutterSwift"),
+      .product(name: "Logging", package: "swift-log"),
       "CFlutterEngine",
     ],
     path: "Examples/counter/swift",
@@ -473,6 +476,8 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", branch: "linux"),
+    // TODO: use a release when one made with Android support
+    .package(url: "https://github.com/apple/swift-log", branch: "main"),
   ] + packageDependencies,
   targets: [
     .target(
