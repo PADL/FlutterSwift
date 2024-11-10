@@ -58,7 +58,7 @@ Note that `@MainActor` is unavailable on Android; use `@UIThreadActor` instead.
 
 Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object, followed by the Swift runner.
 
-The environment variable `FLUTTER_SWIFT_BACKEND` can be set to one of `gbm`, `eglstream`, or `wayland`, as appropriate. This should be set both for building and running.
+The environment variable `FLUTTER_SWIFT_BACKEND` can be set to one of `gbm`, `eglstream`, or `wayland`, as appropriate. This should be set both for building and running. You will probably want to set it to `wayland` unless you are actually testing on an embedded system.
 
 ## Usage
 
