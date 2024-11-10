@@ -91,16 +91,16 @@ final class ChannelManager: @unchecked Sendable {
 
   init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) {
     flutterBasicMessageChannel = FlutterBasicMessageChannel(
-      name: "com.padl.example",
+      name: "com.example.counter.basic",
       binaryMessenger: binaryMessenger,
       codec: FlutterJSONMessageCodec.shared
     )
     flutterEventChannel = FlutterEventChannel(
-      name: "com.padl.counter",
+      name: "com.example.counter.events",
       binaryMessenger: binaryMessenger
     )
     flutterMethodChannel = FlutterMethodChannel(
-      name: "com.padl.toggleCounter",
+      name: "com.example.counter.toggle",
       binaryMessenger: binaryMessenger
     )
     Task {
@@ -132,7 +132,7 @@ enum Counter {
       width: 800,
       height: 480,
       title: "Counter",
-      appId: "com.padl.counter"
+      appId: "com.example.counter"
     )
     let window = FlutterWindow(properties: viewProperties, project: dartProject)
     guard let window else {
@@ -151,7 +151,7 @@ import FlutterAndroid
 import JavaKit
 import JavaRuntime
 
-@JavaClass("com.padl.counter.ChannelManager")
+@JavaClass("com.example.counter.ChannelManager")
 open class _ChannelManager: JavaObject {
   @JavaField(isFinal: true)
   public var binaryMessenger: FlutterAndroid.FlutterBinaryMessenger!
@@ -168,7 +168,7 @@ protocol _ChannelManagerNativeMethods {
   func initChannelManager()
 }
 
-@JavaImplementation("com.padl.counter.ChannelManager")
+@JavaImplementation("com.example.counter.ChannelManager")
 extension _ChannelManager: _ChannelManagerNativeMethods {
   @JavaMethod
   public func initChannelManager() {

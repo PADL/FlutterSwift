@@ -125,7 +125,7 @@ protocol _ChannelManagerNativeMethods {
   func initChannelManager()
 }
 
-@JavaImplementation("com.padl.counter.ChannelManager")
+@JavaImplementation("com.example.counter.ChannelManager")
 extension _ChannelManager: _ChannelManagerNativeMethods {
   @JavaMethod
   public func initChannelManager() {

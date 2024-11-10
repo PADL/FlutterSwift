@@ -42,9 +42,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const message = BasicMessageChannel<dynamic>('com.padl.example', JSONMessageCodec());
-  static const platform = MethodChannel('com.padl.toggleCounter');
-  static const stream = EventChannel('com.padl.counter');
+  static const message = BasicMessageChannel<dynamic>('com.example.counter.basic', JSONMessageCodec());
+  static const platform = MethodChannel('com.example.counter.toggle');
+  static const stream = EventChannel('com.example.counter.events');
   int counter = 0;
   late StreamSubscription _streamSubscription;
 

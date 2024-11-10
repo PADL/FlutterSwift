@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package com.padl.counter;
+package com.example.counter;
 
 import androidx.annotation.Keep;
 import io.flutter.plugin.common.BinaryMessenger;
