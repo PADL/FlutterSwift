@@ -4,7 +4,7 @@ FlutterSwift is designed to help you write your UI in Dart, and your business lo
 
 It consists of three components:
 
-* An idiomatic, asynchronous Swift implementation of Flutter [platform channels](https://docs.flutter.dev/platform-integration/platform-channels)
+* An idiomatic, [Codable](https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types), [asynchronous](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/) Swift implementation of Flutter [platform channels](https://docs.flutter.dev/platform-integration/platform-channels)
 * Wrappers to integrate with the Flutter embedding's runner
 * On [eLinux](https://github.com/sony/flutter-embedded-linux), a pure Swift runner that hosts your application
 
@@ -23,6 +23,8 @@ On Darwin platforms (that is, iOS and macOS), you can simply add FlutterSwift as
 ### Embedded platforms
 
 The `FlutterDesktopMessenger` actor wraps the API in `flutter_messenger.h`. This package will build the Sony eLinux Flutter fork as a submodule, using the Flutter engine included in the artifact bundle in this repository.
+
+Please note the distinction between Flutter _embeddings_ or _embedders_, which are the platform-specific integration of the Flutter framework with an application, and the _embedded_ use case.
 
 ## Examples
 
@@ -50,6 +52,8 @@ Android-specific source for the example is in [Examples/counter/android/app/src/
 
 That the tooling here is somewhat inconvenient is a known issue and we plan to [improve it](https://github.com/PADL/FlutterSwift/issues/8) in the future.
 
+Note that `@MainActor` is unavailable on Android; use `@UIThreadActor` instead.
+
 ### Embedded Linux
 
 Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object, followed by the Swift runner.
@@ -69,7 +73,7 @@ import FlutterMacOS.FlutterBinaryMessenger
 import FlutterSwift
 
 override func awakeFromNib() {
-  let flutterViewController = FlutterViewController() // from ObjC implementation
+  let flutterViewController = FlutterViewController() // from platform embedding
   let binaryMessenger = FlutterSwift
         .FlutterPlatformMessenger(wrapping: flutterViewController.engine.binaryMessenger)
   ...
@@ -81,7 +85,7 @@ override func awakeFromNib() {
 Android requires that your application's `configureFlutterEngine()` method call a native function you define to initialize your platform channels, such as the following:
 
 ```java
-package com.padl.counter;
+package com.example.counter;
 
 import io.flutter.plugin.common.BinaryMessenger;
 
@@ -90,7 +94,6 @@ public final class ChannelManager {
 
   public ChannelManager(BinaryMessenger binaryMessenger) {
     System.loadLibrary("counter");
-    System.out.println("loaded counter native library");
     this.binaryMessenger = binaryMessenger;
   }
 
@@ -98,14 +101,14 @@ public final class ChannelManager {
 }
 ```
 
-The Swift impmlementation can then register your platform channel implementations:
+In your Swift code (here, `initChannelManager()`), you can then register your platform channel implementations:
 
 ```swift
 import FlutterAndroid
 import JavaKit
 import JavaRuntime
 
-@JavaClass("com.padl.counter.ChannelManager")
+@JavaClass("com.example.counter.ChannelManager")
 open class _ChannelManager: JavaObject {
   @JavaField(isFinal: true)
   public var binaryMessenger: FlutterAndroid.FlutterBinaryMessenger!
@@ -149,7 +152,7 @@ enum SomeApp {
             width: 640,
             height: 480,
             title: "SomeApp",
-            appId: "com.example.some-app"
+            appId: "com.example.SomeApp"
     )
     let window = FlutterWindow(properties: viewProperties, project: dartProject)
     guard let window else {
@@ -161,7 +164,6 @@ enum SomeApp {
     window.run()
   }
 }
-
 ```
 
 ### Channels
@@ -172,14 +174,14 @@ This shows a basic message channel handler using the JSON message codec. On eLin
 
 ```swift
 private func messageHandler(_ arguments: String?) async -> Int? {
-  debugPrint("Received message \(arguments)")
-  return 12345
+  debugPrint("Received message \(String(describing: arguments))")
+  return 0xCAFE_BABE
 }
 
 override func awakeFromNib() {
 ...
   flutterBasicMessageChannel = FlutterBasicMessageChannel(
-    name: "com.padl.example",
+    name: "com.example.SomeApp.basic",
     binaryMessenger: binaryMessenger,
     codec: FlutterJSONMessageCodec.shared
   )
@@ -206,7 +208,7 @@ private func methodCallHandler(
 override func awakeFromNib() {
 ...
   let flutterMethodChannel = FlutterMethodChannel(
-    name: "com.padl.toggleCounter",
+    name: "com.example.SomeApp.toggle",
         binaryMessenger: binaryMessenger
     )
     task = Task {
@@ -218,13 +220,14 @@ override func awakeFromNib() {
 
 #### Event channel
 
+Here is an example of an event channel, lifted from the [counter](Examples/counter/swift/runner.swift) example.
+
 ```swift
 import AsyncAlgorithms
 import AsyncExtensions
 import FlutterSwift
 ...
 
-/// this should go inside MainFlutterWindow
 typealias Arguments = FlutterNull
 typealias Event = Int32
 typealias Stream = AsyncThrowingChannel<Event?, FlutterError>
@@ -234,7 +237,6 @@ var task: Task<(), Error>?
 var counter: Event = 0
 
 private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
-  // a FlutterEventStream is an AsyncSequence
   flutterEventStream.eraseToAnyAsyncSequence()
 }
 
@@ -246,7 +248,7 @@ private func onCancel(_ arguments: Arguments?) throws {
 override func awakeFromNib() {
 ...
   let flutterEventChannel = FlutterEventChannel(
-    name: "com.padl.counter",
+    name: "com.example.SomeApp.counterEvents",
     binaryMessenger: binaryMessenger
   )
   task = Task {
