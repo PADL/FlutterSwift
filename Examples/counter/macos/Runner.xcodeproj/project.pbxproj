@@ -27,6 +27,7 @@
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
+		D39114DE2CE16C0300C10972 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = D39114DD2CE16C0300C10972 /* Logging */; };
 		D3D9C3832BE8D26E0030D2B5 /* FlutterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D3D9C3822BE8D26E0030D2B5 /* FlutterSwift */; };
 		D3D9C38A2BE8D3790030D2B5 /* runner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D9C3862BE8D3790030D2B5 /* runner.swift */; };
 /* End PBXBuildFile section */
@@ -95,6 +96,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D39114DE2CE16C0300C10972 /* Logging in Frameworks */,
 				D3D9C3832BE8D26E0030D2B5 /* FlutterSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -232,6 +234,7 @@
 			name = Runner;
 			packageProductDependencies = (
 				D3D9C3822BE8D26E0030D2B5 /* FlutterSwift */,
+				D39114DD2CE16C0300C10972 /* Logging */,
 			);
 			productName = Runner;
 			productReference = 33CC10ED2044A3C60003C045 /* counter.app */;
@@ -279,6 +282,7 @@
 			mainGroup = 33CC10E42044A3C60003C045;
 			packageReferences = (
 				D3D9C3812BE8D1DE0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */,
+				D39114DC2CE16C0300C10972 /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
@@ -729,6 +733,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		D39114DC2CE16C0300C10972 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.1;
+			};
+		};
 		D3D9C3812BE8D1DE0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PADL/FlutterSwift";
@@ -740,6 +752,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D39114DD2CE16C0300C10972 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D39114DC2CE16C0300C10972 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
+		};
 		D3D9C3822BE8D26E0030D2B5 /* FlutterSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D3D9C3812BE8D1DE0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */;
