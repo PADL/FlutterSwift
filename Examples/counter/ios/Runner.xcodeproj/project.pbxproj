@@ -651,8 +651,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-log";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.1;
+				branch = main;
+				kind = branch;
 			};
 		};
 		D3D9C38B2BE8DB2B0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */ = {
