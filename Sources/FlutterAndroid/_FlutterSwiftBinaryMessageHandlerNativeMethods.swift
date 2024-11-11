@@ -38,12 +38,12 @@ extension _FlutterSwiftBinaryMessageHandler {
     ) {
       _callback(try! message?.asData()) { data in
         guard let binaryReply else { return }
-//        if let binaryReply = binaryReply.as(_FlutterSwiftBinaryReply.self) {
-//          // if binaryReply is native Swift, short-circuit to avoid redundant data conversion
-//          binaryReply.reply(data)
-//        } else {
-        binaryReply.reply(data?.asJavaNIOByteBuffer())
-//        }
+        if let binaryReply = binaryReply.as(_FlutterSwiftBinaryReply.self) {
+          // if binaryReply is native Swift, short-circuit to avoid redundant data conversion
+          binaryReply.reply(data)
+        } else {
+          binaryReply.reply(data?.asJavaNIOByteBuffer())
+        }
       }
     }
   }
