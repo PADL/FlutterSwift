@@ -141,9 +141,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
               on: name,
               message: codec.encode(envelope)
             )
-            if Task.isCancelled {
-              break
-            }
+            try Task.checkCancellation()
           }
           try await binaryMessenger.send(on: name, message: nil)
         } catch let error as FlutterError {
