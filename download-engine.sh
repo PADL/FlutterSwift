@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ENGINE_URL="https://github.com/sony/flutter-embedded-linux/releases/download/db49896cf2"
+ENGINE_REVISION="a18df97ca5"
+ENGINE_URL="https://github.com/sony/flutter-embedded-linux/releases/download/${ENGINE_REVISION}"
 
 tmp_dir=$(mktemp -d -t engine-XXXXXXXXXX)
 artifact_dir="$tmp_dir/flutter-engine.artifactbundle"
