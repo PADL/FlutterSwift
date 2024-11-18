@@ -107,9 +107,14 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   private func _addTask(_ id: String, _ task: EventStreamTask) {
+    var oldTask: EventStreamTask?
+
     state.withCriticalRegion { state in
+      oldTask = state.tasks[id]
       state.tasks[id] = task
     }
+
+    oldTask?.cancel()
   }
 
   private func onMethod<Event: Codable, Arguments: Codable & Sendable>(
