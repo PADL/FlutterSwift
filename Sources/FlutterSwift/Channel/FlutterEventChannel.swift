@@ -100,6 +100,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
     state.withCriticalRegion { state in
       task = state.tasks[id]
+      state.tasks.removeValue(forKey: id) // shouldn't be necessary
     }
 
     task?.cancel()
@@ -120,6 +121,30 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     }
 
     oldTask?.cancel()
+  }
+
+  private func _run<Event: Codable>(
+    for stream: FlutterEventStream<Event>,
+    name: String
+  ) async throws {
+    do {
+      for try await event in stream {
+        let envelope = FlutterEnvelope.success(event)
+        try await binaryMessenger.send(
+          on: name,
+          message: codec.encode(envelope)
+        )
+        try Task.checkCancellation()
+      }
+      try await binaryMessenger.send(on: name, message: nil)
+    } catch let error as FlutterError {
+      let envelope = FlutterEnvelope<Event>.failure(error)
+      try await binaryMessenger.send(on: name, message: codec.encode(envelope))
+    } catch is CancellationError {
+      try await binaryMessenger.send(on: name, message: nil)
+    } catch {
+      throw FlutterSwiftError.invalidEventError
+    }
   }
 
   private func onMethod<Event: Codable, Arguments: Codable & Sendable>(
@@ -143,28 +168,15 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
       let stream = try await onListen(call.arguments)
-      let task = EventStreamTask(priority: priority) { [self] in
+      let task = EventStreamTask(priority: priority) {
         do {
-          for try await event in stream {
-            let envelope = FlutterEnvelope.success(event)
-            try await binaryMessenger.send(
-              on: name,
-              message: codec.encode(envelope)
-            )
-            try Task.checkCancellation()
-          }
-          try await binaryMessenger.send(on: name, message: nil)
-        } catch let error as FlutterError {
-          let envelope = FlutterEnvelope<Event>.failure(error)
-          try await binaryMessenger.send(on: name, message: codec.encode(envelope))
-        } catch is CancellationError {
-          try await binaryMessenger.send(on: name, message: nil)
+          try await self._run(for: stream, name: name)
         } catch {
-          throw FlutterSwiftError.invalidEventError
+          // at this point the task either ended normally or was cancelled;
+          // remove it from the task dictionary so that we don't leak tasks
+          self._removeTask(id)
+          throw error
         }
-        // at this point the task either ended normally or was cancelled;
-        // remove it from the task dictionary so that we don't leak tasks
-        _removeTask(id)
       }
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
