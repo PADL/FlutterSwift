@@ -95,15 +95,20 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     try? removeMessageHandler()
   }
 
-  private func _removeTask(_ id: String) {
+  private func _cancelTask(_ id: String) {
     var task: EventStreamTask?
 
     state.withCriticalRegion { state in
       task = state.tasks[id]
-      state.tasks.removeValue(forKey: id)
     }
 
     task?.cancel()
+  }
+
+  private func _removeTask(_ id: String) {
+    state.withCriticalRegion { state in
+      state.tasks.removeValue(forKey: id)
+    }
   }
 
   private func _addTask(_ id: String, _ task: EventStreamTask) {
@@ -157,11 +162,14 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         } catch {
           throw FlutterSwiftError.invalidEventError
         }
+        // at this point the task either ended normally or was cancelled;
+        // remove it from the task dictionary so that we don't leak tasks
+        _removeTask(id)
       }
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
-      _removeTask(id)
+      _cancelTask(id)
       do {
         try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
