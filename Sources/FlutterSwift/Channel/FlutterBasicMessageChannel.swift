@@ -98,9 +98,13 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
     Message: Decodable,
     Reply: Encodable
   >(_ handler: FlutterMessageHandler<Message, Reply>?) async throws {
-    try await setMessageHandler(handler) { [self] unwrappedHandler in
+    try await setMessageHandler(handler) { [weak self] unwrappedHandler in
       { message in
         let decoded: Message?
+
+        guard let self else {
+          throw FlutterSwiftError.messengerNotAvailable
+        }
 
         if let message {
           decoded = try self.codec.decode(message)

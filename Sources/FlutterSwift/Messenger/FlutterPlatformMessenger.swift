@@ -80,16 +80,16 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _ binaryReply: FlutterBinaryReply?
   ) {
     #if canImport(Android)
-    Task { @UIThreadActor [self] in
-      _wrappedMessenger.send(
+    Task { @UIThreadActor [weak self] in
+      self?._wrappedMessenger.send(
         onChannel: channel,
         message: message,
         binaryReply: binaryReply
       )
     }
     #else
-    DispatchQueue.main.async { [self] in
-      _wrappedMessenger.send(
+    Task { @MainActor [weak self] in
+      self?._wrappedMessenger.send(
         onChannel: channel,
         message: message,
         binaryReply: binaryReply

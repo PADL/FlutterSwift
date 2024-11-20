@@ -181,9 +181,18 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     if let handler {
       connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
 
-      try setCallbackBlock(on: channel) { [self] _, message in
+      try setCallbackBlock(on: channel) { [weak self] _, message in
         let message = message.pointee
         var messageData: Data?
+
+        guard let self else {
+          try? sendResponse(
+            on: channel,
+            handle: message.response_handle,
+            response: nil
+          )
+          return
+        }
 
         if message.message_size > 0 {
           let ptr = UnsafeRawPointer(message.message).bindMemory(

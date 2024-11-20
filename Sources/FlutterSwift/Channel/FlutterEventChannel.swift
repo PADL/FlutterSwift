@@ -207,8 +207,11 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?
   ) async throws {
-    try await setMessageHandler(onListen) { [self] unwrappedHandler in
-      { [self] message in
+    try await setMessageHandler(onListen) { [weak self] unwrappedHandler in
+      { [weak self] message in
+        guard let self else {
+          throw FlutterSwiftError.messengerNotAvailable
+        }
         guard let message else {
           throw FlutterSwiftError.methodNotImplemented
         }

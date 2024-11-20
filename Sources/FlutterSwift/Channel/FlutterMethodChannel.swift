@@ -150,11 +150,15 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     Arguments: Codable & Sendable,
     Result: Codable
   >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
-    try await setMessageHandler(handler) { [self] unwrappedHandler in
+    try await setMessageHandler(handler) { [weak self] unwrappedHandler in
       { message in
+        guard let self else {
+          throw FlutterSwiftError.messengerNotAvailable
+        }
         guard let message else {
           throw FlutterSwiftError.methodNotImplemented
         }
+
         let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
         let envelope: FlutterEnvelope<Result>
         do {
