@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import Atomics
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
@@ -79,22 +80,14 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
   public let codec: FlutterMessageCodec
   public let priority: TaskPriority?
 
-  private struct State {
-    var connection: FlutterBinaryMessengerConnection = 0
-  }
-
-  private let state: ManagedCriticalState<State>
+  private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
 
   var connection: FlutterBinaryMessengerConnection {
     get {
-      state.withCriticalRegion { state in
-        state.connection
-      }
+      _connection.load(ordering: .acquiring)
     }
     set {
-      state.withCriticalRegion { state in
-        state.connection = newValue
-      }
+      _connection.store(newValue, ordering: .releasing)
     }
   }
 
@@ -104,7 +97,7 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
-    state = ManagedCriticalState(State())
+    _connection = ManagedAtomic(0)
     self.name = name
     self.binaryMessenger = binaryMessenger
     self.codec = codec

@@ -17,6 +17,7 @@
 import AsyncAlgorithms
 @preconcurrency
 import AsyncExtensions
+import Atomics
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
@@ -39,23 +40,15 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
   private typealias EventStreamTask = Task<(), Error>
 
-  private struct State {
-    var tasks = [String: EventStreamTask]()
-    var connection: FlutterBinaryMessengerConnection = 0
-  }
-
-  private let state: ManagedCriticalState<State>
+  private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
+  private let tasks: ManagedCriticalState<[String: EventStreamTask]>
 
   var connection: FlutterBinaryMessengerConnection {
     get {
-      state.withCriticalRegion { state in
-        state.connection
-      }
+      _connection.load(ordering: .acquiring)
     }
     set {
-      state.withCriticalRegion { state in
-        state.connection = newValue
-      }
+      _connection.store(newValue, ordering: .releasing)
     }
   }
 
@@ -81,7 +74,8 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
-    state = ManagedCriticalState(State())
+    _connection = ManagedAtomic(0)
+    tasks = ManagedCriticalState([:])
     self.name = name
     self.binaryMessenger = binaryMessenger
     self.codec = codec
@@ -89,8 +83,8 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   deinit {
-    state.withCriticalRegion { state in
-      state.tasks.values.forEach { $0.cancel() }
+    tasks.withCriticalRegion { tasks in
+      tasks.values.forEach { $0.cancel() }
     }
     try? removeMessageHandler()
   }
@@ -98,26 +92,26 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   private func _cancelTask(_ id: String) {
     var task: EventStreamTask?
 
-    state.withCriticalRegion { state in
-      task = state.tasks[id]
-      state.tasks.removeValue(forKey: id) // shouldn't be necessary
+    tasks.withCriticalRegion { tasks in
+      task = tasks[id]
+      tasks.removeValue(forKey: id) // shouldn't be necessary
     }
 
     task?.cancel()
   }
 
   private func _removeTask(_ id: String) {
-    state.withCriticalRegion { state in
-      state.tasks.removeValue(forKey: id)
+    tasks.withCriticalRegion { tasks in
+      tasks.removeValue(forKey: id)
     }
   }
 
   private func _addTask(_ id: String, _ task: EventStreamTask) {
     var oldTask: EventStreamTask?
 
-    state.withCriticalRegion { state in
-      oldTask = state.tasks[id]
-      state.tasks[id] = task
+    tasks.withCriticalRegion { tasks in
+      oldTask = tasks[id]
+      tasks[id] = task
     }
 
     oldTask?.cancel()
