@@ -186,11 +186,6 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
         var messageData: Data?
 
         guard let self else {
-          try? sendResponse(
-            on: channel,
-            handle: message.response_handle,
-            response: nil
-          )
           return
         }
 
@@ -203,7 +198,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
 
         Task(priority: priority) {
           let response = try await handler(messageData)
-          try? sendResponse(
+          try? self.sendResponse(
             on: channel,
             handle: message.response_handle,
             response: response
