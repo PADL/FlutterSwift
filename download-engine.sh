@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENGINE_REVISION="a18df97ca5"
+ENGINE_REVISION=$(cat .flutter-engine-revision)
 ENGINE_URL="https://github.com/sony/flutter-embedded-linux/releases/download/${ENGINE_REVISION}"
 
 tmp_dir=$(mktemp -d -t engine-XXXXXXXXXX)
