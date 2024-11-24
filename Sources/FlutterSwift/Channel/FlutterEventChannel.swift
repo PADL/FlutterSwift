@@ -221,4 +221,9 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       }
     }
   }
+
+  @_spi(FlutterSwiftPrivate)
+  public var tasksCount: Int {
+    tasks.withCriticalRegion { $0.count }
+  }
 }
