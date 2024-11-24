@@ -6,22 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
-#  darwin:
-#    runs-on: macos-15
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: 🔍 Xcode Select
-#        run: |
-#          XCODE_PATH=`mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode' && kMDItemVersion = '16.*'" -onlyin /Applications | head -1`
-#          echo "DEVELOPER_DIR=$XCODE_PATH/Contents/Developer" >> $GITHUB_ENV
-#      - name: Version
-#        run: swift --version
-#      - name: Build
-#        run: swift build
-#      - name: Test
-#        run: swift test
-#        timeout-minutes: 1
+  darwin:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: 🔍 Xcode Select
+        run: |
+          XCODE_PATH=`mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode' && kMDItemVersion = '16.*'" -onlyin /Applications | head -1`
+          echo "DEVELOPER_DIR=$XCODE_PATH/Contents/Developer" >> $GITHUB_ENV
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+      - name: Version
+        run: swift --version
+      - name: Build Flutter package
+        run: |
+          cd Examples/counter
+          flutter pub get
+          flutter build macos --release
 
   linux-wayland:
     runs-on: ubuntu-24.04
@@ -32,7 +37,7 @@ jobs:
       - name: Packages
         run: |
           apt-get update
-          apt-get install -y unzip curl cmake clang pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev
+          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev
       - name: Set paths
         run: echo "/opt/flutter-elinux/bin" >> $GITHUB_PATH
       - name: Checkout FlutterSwift
