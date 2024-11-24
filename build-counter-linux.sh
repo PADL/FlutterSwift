@@ -2,7 +2,7 @@
 
 set -Eeu
 
-pwd=`pwd`
+PWD=`pwd`
 
 # Path to Flutter SDK
 export FLUTTER_SDK=/opt/flutter-elinux/flutter
@@ -11,7 +11,17 @@ export PATH=$PATH:${FLUTTER_SDK}/bin
 
 # Package name of the build target Flutter app
 export APP_PACKAGE_NAME=counter
-export SOURCE_DIR=${pwd}/Examples/${APP_PACKAGE_NAME}
+export SOURCE_DIR=${PWD}/Examples/${APP_PACKAGE_NAME}
+
+ARCH=`arch`
+
+if [ "X${ARCH}" == "Xaarch64" ]; then
+	ARCH=arm64
+elif [ "X${ARCH}" == "Xx86_64" ]; then
+	ARCH=x64
+fi
+
+ARCH="linux-${ARCH}"
 
 # The build data.
 export RESULT_DIR=build/elinux/arm64
@@ -24,8 +34,8 @@ mkdir -p ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/
 mkdir -p ${RESULT_DIR}/${BUILD_MODE}/bundle/data/
 
 # Build Flutter assets.
-flutter-elinux build bundle --asset-dir=${RESULT_DIR}/${BUILD_MODE}/bundle/data/flutter_assets
-cp ${FLUTTER_SDK}/bin/cache/artifacts/engine/linux-arm64/icudtl.dat \
+${FLUTTER_SDK}/../bin/flutter-elinux build bundle --asset-dir=${RESULT_DIR}/${BUILD_MODE}/bundle/data/flutter_assets
+cp ${FLUTTER_SDK}/bin/cache/artifacts/engine/${ARCH}/icudtl.dat \
    ${RESULT_DIR}/${BUILD_MODE}/bundle/data/
 
 # Build kernel_snapshot.
@@ -47,7 +57,7 @@ ${FLUTTER_SDK}/bin/cache/dart-sdk/bin/dartaotruntime \
   package:${APP_PACKAGE_NAME}/main.dart
 
 # Build AOT image.
-${FLUTTER_SDK}/bin/cache/artifacts/engine/linux-arm64/gen_snapshot \
+${FLUTTER_SDK}/bin/cache/artifacts/engine/${ARCH}/gen_snapshot \
   --deterministic \
   --snapshot_kind=app-aot-elf \
   --elf=.dart_tool/flutter_build/flutter-embedded-linux/app.so \
