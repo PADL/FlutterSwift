@@ -38,7 +38,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   public let codec: FlutterMessageCodec
   public let priority: TaskPriority?
 
-  private typealias EventStreamTask = Task<(), Error>
+  private typealias EventStreamTask = Task<Void, Never>
 
   private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
   private let tasks: ManagedCriticalState<[String: EventStreamTask]>
@@ -163,14 +163,8 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     case "listen":
       let stream = try await onListen(call.arguments)
       let task = EventStreamTask(priority: priority) {
-        do {
-          try await self._run(for: stream, name: name)
-        } catch {
-          // at this point the task either ended normally or was cancelled;
-          // remove it from the task dictionary so that we don't leak tasks
-          self._removeTask(id)
-          throw error
-        }
+        try? await self._run(for: stream, name: name)
+        self._removeTask(id)
       }
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
