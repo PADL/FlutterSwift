@@ -64,3 +64,40 @@ jobs:
         run: swift test --skip-build
       - name: Build counter
         run: ./build-counter-linux.sh
+
+  linux-gbm:
+    runs-on: ubuntu-24.04
+    container: swift:6.0
+    env:
+      FLUTTER_SWIFT_BACKEND: gbm
+    steps:
+      - name: Packages
+        run: |
+          apt-get update
+          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev
+      - name: Set paths
+        run: echo "/opt/flutter-elinux/bin" >> $GITHUB_PATH
+      - name: Checkout FlutterSwift
+        uses: actions/checkout@v4
+      - name: Fix permissions
+        run: chown -R $(id -u):$(id -g) $PWD
+      - name: Fetch tags and checkout submodules
+        run: |
+          git fetch --prune --unshallow --tags
+          git submodule init
+          git submodule update
+      - name: Checkout Flutter
+        run: |
+          FLUTTER_REVISION=`git describe --tags --abbrev=0`
+          FLUTTER_ROOT=/opt/flutter-elinux
+          git clone --depth 1 --branch $FLUTTER_REVISION https://github.com/sony/flutter-elinux $FLUTTER_ROOT
+          (cd $FLUTTER_ROOT; git switch -c $FLUTTER_REVISION)
+          $FLUTTER_ROOT/bin/flutter-elinux 2>&1
+      - name: Version
+        run: swift --version
+      - name: Build FlutterSwift
+        run: swift build --build-tests
+      - name: Test FlutterSwift
+        run: swift test --skip-build
+      - name: Build counter
+        run: ./build-counter-linux.sh
