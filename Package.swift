@@ -500,6 +500,7 @@ let package = Package(
       dependencies: [
         .target(name: "FlutterSwift"),
       ],
+      cxxSettings: platformCxxSettings,
       swiftSettings: platformSwiftSettings,
       linkerSettings: [
         .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
