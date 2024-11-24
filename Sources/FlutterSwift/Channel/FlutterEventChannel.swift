@@ -132,11 +132,16 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       }
       try await binaryMessenger.send(on: name, message: nil)
     } catch let error as FlutterError {
+      debugPrint("*** got flutter error \(error)")
       let envelope = FlutterEnvelope<Event>.failure(error)
       try await binaryMessenger.send(on: name, message: codec.encode(envelope))
+      debugPrint("*** handled flutter error \(error)")
     } catch is CancellationError {
+      debugPrint("*** got cancellation error")
       try await binaryMessenger.send(on: name, message: nil)
+      debugPrint("*** handled cancellation error")
     } catch {
+      debugPrint("*** got invalid event error")
       throw FlutterSwiftError.invalidEventError
     }
   }
@@ -172,6 +177,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
           self._removeTask(id)
           throw error
         }
+        debugPrint("*** task finished of its own accord")
       }
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
