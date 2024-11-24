@@ -168,6 +168,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         } catch {
           // at this point the task either ended normally or was cancelled;
           // remove it from the task dictionary so that we don't leak tasks
+          debugPrint("*** removing task for \(id) after error \(error)")
           self._removeTask(id)
           throw error
         }
@@ -175,13 +176,14 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
-      _cancelTask(id)
       do {
         try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
       }
+      _cancelTask(id)
+      debugPrint("*** cancelled task for \(id)")
     default:
       envelope = nil
     }
