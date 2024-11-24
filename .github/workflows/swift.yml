@@ -54,8 +54,8 @@ jobs:
       - name: Version
         run: swift --version
       - name: Build FlutterSwift
-        run: swift build
+        run: swift build --build-tests
       - name: Test FlutterSwift
-        run: swift test
+        run: swift test --skip-build
       - name: Build counter
         run: ./build-counter-linux.sh
