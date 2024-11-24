@@ -22,7 +22,7 @@
 #include <flutter_messenger.h>
 #include <flutter_elinux.h>
 #include <flutter_plugin_registrar.h>
-#include <flutter_elinux_state.h>
+// #include <flutter_elinux_state.h>
 #include <flutter_platform_views.h>
 
 #ifdef __cplusplus
