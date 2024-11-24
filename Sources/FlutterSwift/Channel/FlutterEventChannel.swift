@@ -166,6 +166,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
+      debugPrint("*** listen name \(name) id \(id) args \(call.arguments)")
       let stream = try await onListen(call.arguments)
       let task = EventStreamTask(priority: priority) {
         do {
@@ -182,6 +183,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
+      debugPrint("*** cancel name \(name) id \(id) args \(call.arguments)")
       do {
         try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
