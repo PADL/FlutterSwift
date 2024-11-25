@@ -148,14 +148,14 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   ) async throws -> FlutterEnvelope<Arguments>? {
     let envelope: FlutterEnvelope<Arguments>?
     let method = call.method.split(separator: "#", maxSplits: 2)
-    let id: String, name: String
+    let invocationID: String, name: String
 
     if method.count > 1 {
-      id = String(method[1])
-      precondition(!id.isEmpty)
-      name = self.name + "#" + id
+      invocationID = String(method[1])
+      precondition(!invocationID.isEmpty)
+      name = self.name + "#" + invocationID
     } else {
-      id = ""
+      invocationID = ""
       name = self.name
     }
 
@@ -164,9 +164,9 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       let stream = try await onListen(call.arguments)
       let task = EventStreamTask(priority: priority) {
         try? await self._run(for: stream, name: name)
-        self._removeTask(id)
+        self._removeTask(invocationID)
       }
-      _addTask(id, task)
+      _addTask(invocationID, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
       do {
@@ -175,7 +175,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
       }
-      _cancelTask(id)
+      _cancelTask(invocationID)
     default:
       envelope = nil
     }
