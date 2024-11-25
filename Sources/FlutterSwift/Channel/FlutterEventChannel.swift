@@ -169,13 +169,13 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       _addTask(id, task)
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
-      _cancelTask(id)
       do {
         try await onCancel?(call.arguments)
         envelope = FlutterEnvelope.success(nil)
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
       }
+      _cancelTask(id)
     default:
       envelope = nil
     }
