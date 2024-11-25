@@ -127,6 +127,11 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
     }
   }
 
+  /// helper function to set the message handler for a channel.
+  /// `optionalHandler` is the handler function; if `nil`, then the message
+  /// handler will be removed (as if `removeMessageHandler()` was called`.
+  /// Otherwise, `block` is called to wrap the handler into a
+  /// `FlutterBinaryMessageHandler`.
   #if canImport(Android)
   @UIThreadActor
   #else
