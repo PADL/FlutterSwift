@@ -477,7 +477,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", from: "0.9.0"),
     // TODO: use a release when one made with Android support
-    .package(url: "https://github.com/apple/swift-log", branch: "main"),
+    .package(url: "https://github.com/apple/swift-log", from: "1.6.2"),
   ] + packageDependencies,
   targets: [
     .target(
