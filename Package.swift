@@ -130,11 +130,11 @@ if FlutterSwiftJVM {
     ),
     .package(
       url: "https://github.com/PADL/AndroidLooper",
-      branch: "main"
+      from: "0.0.1"
     ),
     .package(
       url: "https://github.com/PADL/AndroidLogging",
-      branch: "main"
+      from: "0.0.1"
     ),
   ]
   targetPluginUsages += [
