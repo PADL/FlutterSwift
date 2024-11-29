@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,8 +14,8 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		D324D9B32CFA543B00232790 /* FlutterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D324D9B22CFA543B00232790 /* FlutterSwift */; };
 		D39114E12CE16C5600C10972 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = D39114E02CE16C5600C10972 /* Logging */; };
-		D3D9C38D2BE8DB2B0030D2B5 /* FlutterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D3D9C38C2BE8DB2B0030D2B5 /* FlutterSwift */; };
 		D3D9C3902BE8DB400030D2B5 /* runner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D9C38E2BE8DB400030D2B5 /* runner.swift */; };
 /* End PBXBuildFile section */
 
@@ -67,7 +67,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D39114E12CE16C5600C10972 /* Logging in Frameworks */,
-				D3D9C38D2BE8DB2B0030D2B5 /* FlutterSwift in Frameworks */,
+				D324D9B32CFA543B00232790 /* FlutterSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,8 +174,8 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
-				D3D9C38C2BE8DB2B0030D2B5 /* FlutterSwift */,
 				D39114E02CE16C5600C10972 /* Logging */,
+				D324D9B22CFA543B00232790 /* FlutterSwift */,
 			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
@@ -211,8 +211,8 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				D3D9C38B2BE8DB2B0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */,
 				D39114DF2CE16C5600C10972 /* XCRemoteSwiftPackageReference "swift-log" */,
+				D324D9B12CFA543B00232790 /* XCLocalSwiftPackageReference "../../../../FlutterSwift" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -646,6 +646,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		D324D9B12CFA543B00232790 /* XCLocalSwiftPackageReference "../../../../FlutterSwift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../FlutterSwift;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		D39114DF2CE16C5600C10972 /* XCRemoteSwiftPackageReference "swift-log" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -655,26 +662,17 @@
 				kind = branch;
 			};
 		};
-		D3D9C38B2BE8DB2B0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/PADL/FlutterSwift";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D324D9B22CFA543B00232790 /* FlutterSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterSwift;
+		};
 		D39114E02CE16C5600C10972 /* Logging */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D39114DF2CE16C5600C10972 /* XCRemoteSwiftPackageReference "swift-log" */;
 			productName = Logging;
-		};
-		D3D9C38C2BE8DB2B0030D2B5 /* FlutterSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D3D9C38B2BE8DB2B0030D2B5 /* XCRemoteSwiftPackageReference "FlutterSwift" */;
-			productName = FlutterSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
