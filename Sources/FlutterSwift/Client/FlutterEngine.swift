@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #if os(Linux) && canImport(Glibc)
 @_implementationOnly
 import CxxFlutterSwift
+import CxxStdlib
 
 public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   var engine: FlutterDesktopEngineRef! // strong or weak ref
@@ -115,6 +116,22 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
 
   public func valuePublished(by pluginKey: String) -> Any? {
     pluginPublications[pluginKey]
+  }
+
+  private var _cxxEngine: flutter.FlutterELinuxEngine {
+    unsafeBitCast(engine, to: flutter.FlutterELinuxEngine.self)
+  }
+
+  public var isRunning: Bool {
+    _cxxEngine.running()
+  }
+
+  public var isImpellerEnabled: Bool {
+    _cxxEngine.IsImpellerEnabled()
+  }
+
+  public func setSystemSettings(textScalingFactor: Float, enableHighContrast: Bool) {
+    _cxxEngine.SetSystemSettings(textScalingFactor, enableHighContrast)
   }
 }
 #endif
