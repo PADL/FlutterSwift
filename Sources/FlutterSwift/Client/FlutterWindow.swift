@@ -39,25 +39,34 @@ public struct FlutterWindow {
     // caller should register plugins before calling run()
   }
 
-  @MainActor
-  public func run() async throws {
-    repeat {
-      var waitDurationNS = viewController.engine.processMessages()
-      if waitDurationNS == UInt64(Int64.max) {
-        waitDurationNS = UInt64(Float(NanosecondsPerSecond) / Float(viewController.view.frameRate))
-      }
+  private var _timer: Timer?
 
+  private func _allocTimer() -> Timer {
+    Timer(
+      timeInterval: TimeInterval(1.0) / TimeInterval(viewController.view.frameRate),
+      repeats: true
+    ) { [self] timer in
+      let waitDurationNS = viewController.engine.processMessages()
+      if waitDurationNS != Int64.max {
+        timer.fireDate = Date.now
+          .addingTimeInterval(TimeInterval(waitDurationNS) / TimeInterval(NanosecondsPerSecond))
+      }
       guard viewController.view.dispatchEvent() else {
-        break
+        timer.invalidate()
+        return
       }
-
-      try await Task.sleep(for: .nanoseconds(waitDurationNS))
-    } while !Task.isCancelled
+    }
   }
 
+  // run in an existing run loop, at expense of increased CPU overhead
+  public func schedule(in aRunLoop: RunLoop, forMode mode: RunLoop.Mode) {
+    aRunLoop.add(_allocTimer(), forMode: mode)
+  }
+
+  // poll at Flutter frame rate (typically 60Hz)
   public func run() {
-    Task { try await run() }
-    RunLoop.main.run()
+    viewController._run()
   }
 }
+
 #endif

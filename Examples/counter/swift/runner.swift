@@ -151,10 +151,7 @@ enum Counter {
       exit(2)
     }
     _ = ChannelManager(viewController: window.viewController)
-    Task { @MainActor in
-      try await window.run()
-    }
-    RunLoop.main.run()
+    window.run()
   }
 }
 

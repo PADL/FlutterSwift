@@ -157,5 +157,9 @@ public final class FlutterViewController {
     self.engine.viewController = nil
     FlutterDesktopViewControllerDestroy(controller)
   }
+
+  func _run() {
+    _FlutterSwiftRunLoopRun(engine.engine, view.view)
+  }
 }
 #endif
