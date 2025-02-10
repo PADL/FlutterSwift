@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -43,10 +43,8 @@ public struct FlutterWindow {
   public func run() async throws {
     repeat {
       var waitDurationNS = viewController.engine.processMessages()
-      let frameDurationNS = UInt64(Float(NanosecondsPerSecond) / Float(viewController.view.frameRate))
-
-      if frameDurationNS < waitDurationNS {
-        waitDurationNS = frameDurationNS
+      if waitDurationNS == UInt64(Int64.max) {
+        waitDurationNS = UInt64(Float(NanosecondsPerSecond) / Float(viewController.view.frameRate))
       }
 
       guard viewController.view.dispatchEvent() else {
