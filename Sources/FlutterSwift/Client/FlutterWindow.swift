@@ -39,8 +39,6 @@ public struct FlutterWindow {
     // caller should register plugins before calling run()
   }
 
-  private var _timer: Timer?
-
   private func _allocTimer() -> Timer {
     // note: frame rate is not in Hz, rather it's 1000*Hz (i.e. 60000 for 60Hz)
     Timer(
