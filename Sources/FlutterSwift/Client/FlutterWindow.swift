@@ -42,8 +42,9 @@ public struct FlutterWindow {
   private var _timer: Timer?
 
   private func _allocTimer() -> Timer {
+    // note: frame rate is not in Hz, rather it's 1000*Hz (i.e. 60000 for 60Hz)
     Timer(
-      timeInterval: TimeInterval(1.0) / TimeInterval(viewController.view.frameRate),
+      timeInterval: TimeInterval(1000.0) / TimeInterval(viewController.view.frameRate),
       repeats: true
     ) { [self] timer in
       let waitDurationNS = viewController.engine.processMessages()
@@ -58,14 +59,14 @@ public struct FlutterWindow {
     }
   }
 
-  // run in an existing run loop, at expense of increased CPU overhead
   public func schedule(in aRunLoop: RunLoop, forMode mode: RunLoop.Mode) {
     aRunLoop.add(_allocTimer(), forMode: mode)
   }
 
-  // poll at Flutter frame rate (typically 60Hz)
   public func run() {
-    viewController._run()
+    let runLoop = RunLoop.main
+    self.schedule(in: runLoop, forMode: .common)
+    runLoop.run()
   }
 }
 

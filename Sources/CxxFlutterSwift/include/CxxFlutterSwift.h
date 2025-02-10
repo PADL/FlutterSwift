@@ -65,10 +65,6 @@ FLUTTER_EXPORT void
 FlutterDesktopEngineSetView(_Nonnull FlutterDesktopEngineRef engineRef,
                             _Nonnull FlutterDesktopViewRef viewRef);
 
-FLUTTER_EXPORT void
-_FlutterSwiftRunLoopRun(_Nonnull FlutterDesktopEngineRef engineRef,
-                        _Nonnull FlutterDesktopViewRef viewRef);
-
 #ifdef __cplusplus
 }
 #endif
