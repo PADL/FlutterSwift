@@ -116,7 +116,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
   ) {
     self.engine = engine
     pluginKey = pluginName
-    registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
+    registrar = engine.getRegistrar(pluginName: pluginName)
     FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { _ in
       self.registrar = nil
     }
@@ -184,12 +184,16 @@ public struct FlutterDesktopTextureRegistrar {
   private let registrar: FlutterDesktopTextureRegistrarRef
 
   public init(engine: FlutterEngine) {
-    registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
+    registrar = engine.textureRegistrar
   }
 
   init?(plugin: FlutterDesktopPluginRegistrar) {
     guard let registrar = plugin.registrar else { return nil }
     self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
+  }
+
+  public func markExternalTextureFrameAvailable(textureID: Int64) {
+    FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(registrar, textureID)
   }
 }
 
