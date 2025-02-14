@@ -10,7 +10,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if os(Linux)
+#if os(Linux) && canImport(Glibc)
+
+@_implementationOnly
+import CxxFlutterSwift
+import CxxStdlib
+
 /// Compute the prefix sum of `seq`.
 func scan<
   S: Sequence, U
@@ -58,6 +63,18 @@ extension String {
   func withWideChars<Result>(_ body: (UnsafePointer<CWideChar>) -> Result) -> Result {
     let u32: [CWideChar] = unicodeScalars.map { CWideChar($0.value)! } + [CWideChar(0)]
     return u32.withUnsafeBufferPointer { body($0.baseAddress!) }
+  }
+}
+
+extension Array where Element == String {
+  var cxxVector: CxxVectorOfString {
+    var tmp = CxxVectorOfString()
+
+    for element in self {
+      tmp.push_back(std.string(element))
+    }
+
+    return tmp
   }
 }
 #endif
