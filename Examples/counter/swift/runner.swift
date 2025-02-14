@@ -144,7 +144,11 @@ enum Counter {
       title: "Counter",
       appId: "com.example.counter"
     )
-    let window = FlutterWindow(properties: viewProperties, project: dartProject)
+    let window = FlutterWindow(
+      properties: viewProperties,
+      project: dartProject,
+      enableImpeller: true
+    )
     guard let window else {
       exit(2)
     }

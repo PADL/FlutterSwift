@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -24,50 +24,37 @@ import FoundationEssentials
 import Foundation
 #endif
 
-public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
-  private final class ManagedReference: @unchecked Sendable {
-    private let messenger: FlutterDesktopMessengerRef
-
-    init(_ messenger: FlutterDesktopMessengerRef) {
-      self.messenger = messenger
-      FlutterDesktopMessengerAddRef(messenger)
-    }
-
-    deinit {
-      FlutterDesktopMessengerRelease(messenger)
-    }
-
-    private func withUnsafeRegion<T>(
-      _ block: (_: FlutterDesktopMessengerRef) throws
-        -> T
-    ) throws -> T {
-      guard FlutterDesktopMessengerIsAvailable(messenger) else {
-        throw FlutterSwiftError.messengerNotAvailable
-      }
-      return try block(messenger)
-    }
-
-    func withRegion<T>(
-      _ block: (_: FlutterDesktopMessengerRef) throws
-        -> T
-    ) throws -> T {
-      FlutterDesktopMessengerLock(messenger)
-      defer { FlutterDesktopMessengerUnlock(messenger) }
-      return try withUnsafeRegion(block)
-    }
-  }
-
+public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked Sendable {
   private let currentMessengerConnection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
-  private let messenger: ManagedReference
+  private let messenger: FlutterDesktopMessengerRef
 
   // : - Initializers
 
   init(messenger: FlutterDesktopMessengerRef) {
-    self.messenger = ManagedReference(messenger)
+    self.messenger = messenger
   }
 
-  init(engine: FlutterDesktopEngineRef) {
-    messenger = ManagedReference(FlutterDesktopEngineGetMessenger(engine))
+  convenience init(engine: flutter.FlutterELinuxEngine) {
+    self.init(messenger: engine.messenger())
+  }
+
+  private func withUnsafeMessenger<T>(
+    _ block: (_: FlutterDesktopMessengerRef) throws
+      -> T
+  ) throws -> T {
+    guard messenger.GetEngine() != nil else {
+      throw FlutterSwiftError.messengerNotAvailable
+    }
+    return try block(messenger)
+  }
+
+  private func withMessenger<T>(
+    _ block: (_: FlutterDesktopMessengerRef) throws
+      -> T
+  ) throws -> T {
+    FlutterDesktopMessengerLock(messenger)
+    defer { FlutterDesktopMessengerUnlock(messenger) }
+    return try withUnsafeMessenger(block)
   }
 
   // MARK: - FlutterDesktopMessenger wrappers
@@ -85,7 +72,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     _ block: FlutterDesktopBinaryReplyBlock?
   ) throws {
     guard try (message ?? Data()).withUnsafeBytes({ bytes in
-      try messenger.withRegion { messenger in
+      try withMessenger { messenger in
         FlutterDesktopMessengerSendWithReplyBlock(
           messenger,
           channel,
@@ -103,7 +90,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     on channel: String,
     _ block: FlutterDesktopMessageCallbackBlock?
   ) throws {
-    try messenger.withRegion { messenger in
+    try withMessenger { messenger in
       FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
     }
   }
@@ -122,7 +109,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger {
     }
 
     // FIXME: do we need to take a lock here? doesn't look like other platforms do
-    try messenger.withRegion { messenger in
+    try withMessenger { messenger in
       (response ?? Data()).withUnsafeBytes {
         FlutterDesktopMessengerSendResponse(
           messenger,

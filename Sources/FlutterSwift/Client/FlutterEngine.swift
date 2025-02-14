@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 #if os(Linux) && canImport(Glibc)
 @_implementationOnly
 import CxxFlutterSwift
+import CxxStdlib
 
 public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
-  var engine: FlutterDesktopEngineRef! // strong or weak ref
   var pluginPublications = [String: Any]()
   let project: DartProject
   weak var viewController: FlutterViewController?
+  private var engine: flutter.FlutterELinuxEngine! // strong or weak ref
   private var _binaryMessenger: FlutterDesktopMessenger!
   private var ownsEngine = true
   private var hasBeenRun = false
 
-  public init?(project: DartProject) {
+  public init?(project: DartProject, switches: [String: Any] = [:]) {
     var properties = FlutterDesktopEngineProperties()
 
     debugPrint("Initializing Flutter engine with \(project)")
@@ -48,7 +49,9 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
               )
             cStrings.withUnsafeMutableBufferPointer { pointer in
               properties.dart_entrypoint_argv = pointer.baseAddress
-              self.engine = FlutterDesktopEngineCreate(&properties)
+              let engine = FlutterDesktopEngineCreate(&properties)
+              self.engine = unsafeBitCast(engine, to: flutter.FlutterELinuxEngine.self)
+              setSwitches(switches.map { key, value in "--\(key)=\(String(describing: value))" })
               self._binaryMessenger = FlutterDesktopMessenger(engine: self.engine)
             }
           }
@@ -61,6 +64,10 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     shutDown()
   }
 
+  private var _handle: FlutterDesktopEngineRef {
+    unsafeBitCast(engine, to: FlutterDesktopEngineRef.self)
+  }
+
   // note we can't use public private(set) because we need the type to be FlutterDesktopMessenger!
   // in order for callbacks to work (otherwise self must be first initialized). But we want to
   // present a non-optional type to callers.
@@ -69,39 +76,31 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   }
 
   public func run(entryPoint: String? = nil) -> Bool {
-    if hasBeenRun {
-      debugPrint("Cannot run an engine more than once.")
-      return false
-    }
-    let runSucceeded = FlutterDesktopEngineRun(engine, entryPoint)
-    if !runSucceeded {
-      debugPrint("Failed to start engine.")
-    }
-    hasBeenRun = true
-    return runSucceeded
+    guard !hasBeenRun else { return false }
+    hasBeenRun = engine.RunWithEntrypoint(entryPoint)
+    return hasBeenRun
   }
 
   public func shutDown() {
     pluginPublications.removeAll()
-    if let engine, ownsEngine {
-      FlutterDesktopEngineDestroy(engine)
+    if engine != nil, ownsEngine {
+      FlutterDesktopEngineDestroy(_handle)
     }
     engine = nil
   }
 
   public func processMessages() -> UInt64 {
     precondition(engine != nil)
-    return FlutterDesktopEngineProcessMessages(engine)
+    return FlutterDesktopEngineProcessMessages(_handle)
   }
 
   public func reloadSystemFonts() {
-    precondition(engine != nil)
-    FlutterDesktopEngineReloadSystemFonts(engine)
+    engine.ReloadSystemFonts()
   }
 
   func relinquishEngine() -> FlutterDesktopEngineRef {
     ownsEngine = false
-    return engine
+    return _handle
   }
 
   public func registrar(for pluginKey: String) -> FlutterPluginRegistrar? {
@@ -116,5 +115,38 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   public func valuePublished(by pluginKey: String) -> Any? {
     pluginPublications[pluginKey]
   }
+
+  public var isRunning: Bool {
+    engine.running()
+  }
+
+  func onVsync(lastFrameTimeNS: UInt64, vsyncIntervalTimeNS: UInt64) {
+    engine.OnVsync(lastFrameTimeNS, vsyncIntervalTimeNS)
+  }
+
+  public var isImpellerEnabled: Bool {
+    engine.IsImpellerEnabled()
+  }
+
+  public func setSystemSettings(textScalingFactor: Float, enableHighContrast: Bool) {
+    engine.SetSystemSettings(textScalingFactor, enableHighContrast)
+  }
+
+  public func setView(_ view: FlutterView) {
+    engine.SetView(view.view)
+  }
+
+  public func setSwitches(_ switches: [String]) {
+    engine.SetSwitches(switches.cxxVector)
+  }
+
+  func getRegistrar(pluginName: String) -> FlutterDesktopPluginRegistrarRef? {
+    FlutterDesktopEngineGetPluginRegistrar(_handle, pluginName)
+  }
+
+  var textureRegistrar: flutter.FlutterELinuxTextureRegistrar! {
+    engine.texture_registrar()
+  }
 }
+
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,18 @@
 
 #include <flutter_messenger.h>
 #include <flutter_elinux.h>
+#include <flutter_elinux_engine.h>
+#include <flutter_elinux_state.h>
+#include <flutter_elinux_view.h>
 #include <flutter_plugin_registrar.h>
-// #include <flutter_elinux_state.h>
 #include <flutter_platform_views.h>
 
 #ifdef __cplusplus
+#include <vector>
+#include <string>
+
+using CxxVectorOfString = std::vector<std::string, std::allocator<std::string>>;
+
 extern "C" {
 #endif
 

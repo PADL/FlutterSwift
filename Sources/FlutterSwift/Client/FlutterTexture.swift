@@ -138,15 +138,23 @@ public enum FlutterTexture {
 }
 
 public struct FlutterDesktopTextureRegistrar {
-  private let registrar: FlutterDesktopTextureRegistrarRef
+  private let registrar: flutter.FlutterELinuxTextureRegistrar
+
+  private var _handle: FlutterDesktopTextureRegistrarRef {
+    unsafeBitCast(registrar, to: FlutterDesktopTextureRegistrarRef.self)
+  }
 
   public init(engine: FlutterEngine) {
-    registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
+    registrar = engine.textureRegistrar
   }
 
   init?(plugin: FlutterDesktopPluginRegistrar) {
     guard let registrar = plugin.registrar else { return nil }
-    self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
+    let textureRegistrarHandle = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
+    self.registrar = unsafeBitCast(
+      textureRegistrarHandle,
+      to: flutter.FlutterELinuxTextureRegistrar.self
+    )
   }
 
   public func registerExternalTexture(_ texture: FlutterTexture) -> Int64 {
@@ -166,7 +174,7 @@ public struct FlutterDesktopTextureRegistrar {
         user_data: Unmanaged.passUnretained(config).toOpaque()
       )
     }
-    return FlutterDesktopTextureRegistrarRegisterExternalTexture(registrar, &textureInfo)
+    return registrar.RegisterTexture(&textureInfo)
   }
 
   public func unregisterExternalTexture(texture: FlutterTexture, id textureID: Int64) {
@@ -177,8 +185,9 @@ public struct FlutterDesktopTextureRegistrar {
     case let .eglImageTexture(config): texturePtr = Unmanaged.passUnretained(config).toOpaque()
     }
 
+    // FIXME: use std::function
     FlutterDesktopTextureRegistrarUnregisterExternalTexture(
-      registrar,
+      _handle,
       textureID,
       _releaseAnyObject,
       texturePtr
@@ -186,7 +195,7 @@ public struct FlutterDesktopTextureRegistrar {
   }
 
   public func markExternalTextureFrameAvailable(textureID: Int64) {
-    FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(registrar, textureID)
+    registrar.MarkTextureFrameAvailable(textureID)
   }
 }
 
