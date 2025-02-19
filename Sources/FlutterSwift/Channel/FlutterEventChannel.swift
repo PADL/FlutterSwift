@@ -38,7 +38,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   public let codec: FlutterMessageCodec
   public let priority: TaskPriority?
 
-  private typealias EventStreamTask = Task<Void, Never>
+  private typealias EventStreamTask = Task<(), Never>
 
   private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
   private let tasks: ManagedCriticalState<[String: EventStreamTask]>

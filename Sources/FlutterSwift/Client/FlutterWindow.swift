@@ -63,7 +63,7 @@ public struct FlutterWindow {
 
   public func run() {
     let runLoop = RunLoop.main
-    self.schedule(in: runLoop, forMode: .common)
+    schedule(in: runLoop, forMode: .common)
     runLoop.run()
   }
 }
