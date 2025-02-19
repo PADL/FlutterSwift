@@ -30,11 +30,13 @@ final class FlutterStandardEncodingState {
     self.data = data
   }
 
-  func encodeStandardField(_ fieldType: FlutterStandardField) throws {
+  @_alwaysEmitIntoClient
+  private func encodeStandardField(_ fieldType: FlutterStandardField) throws {
     withUnsafeBytes(of: fieldType) { data += $0 }
   }
 
-  func encodeSize(_ size: Int) throws {
+  @_alwaysEmitIntoClient
+  private func encodeSize(_ size: Int) throws {
     if size < 254 {
       data += [UInt8(size)]
     } else if size <= UInt16.max {
@@ -48,6 +50,7 @@ final class FlutterStandardEncodingState {
     }
   }
 
+  @_alwaysEmitIntoClient
   private func encodeAlignment(_ alignment: Int) throws {
     let mod = data.count % alignment
     data += Data(repeating: 0, count: alignment - mod)
@@ -59,6 +62,7 @@ final class FlutterStandardEncodingState {
     data += data
   }
 
+  @_alwaysEmitIntoClient
   func encodeDiscriminant(_ value: UInt8) throws {
     data += [value]
   }
@@ -124,6 +128,7 @@ final class FlutterStandardEncodingState {
     }
   }
 
+  @_alwaysEmitIntoClient
   private func encodeInteger<Integer>(_ value: Integer) throws where Integer: FixedWidthInteger {
     withUnsafeBytes(of: value) {
       data += $0
