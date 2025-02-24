@@ -22,8 +22,6 @@ import Logging
 import AndroidLogging
 #endif
 
-private var NSEC_PER_SEC: UInt64 = 1_000_000_000
-
 final class ChannelManager: @unchecked Sendable {
   fileprivate static var shared: ChannelManager!
 
@@ -80,7 +78,7 @@ final class ChannelManager: @unchecked Sendable {
         counter += 1
         await flutterEventStream.send(counter)
         logger.trace("counter is now \(counter)")
-        try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+        try await Task.sleep(for: .seconds(1))
       } while !Task.isCancelled
       logger.info("task was cancelled")
     }
