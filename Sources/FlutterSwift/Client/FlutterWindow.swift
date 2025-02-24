@@ -39,6 +39,8 @@ public struct FlutterWindow {
     // caller should register plugins before calling run()
   }
 
+  // MARK: - CFRunLoop API
+
   private func _allocTimer() -> Timer {
     // note: frame rate is not in Hz, rather it's 1000*Hz (i.e. 60000 for 60Hz)
     Timer(
@@ -65,6 +67,27 @@ public struct FlutterWindow {
     let runLoop = RunLoop.main
     schedule(in: runLoop, forMode: .common)
     runLoop.run()
+  }
+
+  // MARK: - Async API
+
+  // note: this still needs to run within a CFRunLoop as it appears Dispatch
+  // does not guarantee @MainActor runs on the main thread otherwise.
+
+  @MainActor
+  public func run() async throws {
+    let framePeriodNS = Int(Double(NanosecondsPerSecond) / (Double(viewController.view.frameRate) / 1000.0))
+
+    repeat {
+      var deadline: ContinuousClock.Instant = .now
+      let waitDurationNS = viewController.engine.processMessages()
+      if waitDurationNS != Int64.max {
+        deadline += .nanoseconds(waitDurationNS)
+      } else {
+        deadline += .nanoseconds(framePeriodNS)
+      }
+      try await Task.sleep(until: deadline)
+    } while viewController.view.dispatchEvent()
   }
 }
 
