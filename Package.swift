@@ -229,7 +229,12 @@ enum FlutterELinuxBackendType {
   }
 }
 
+packageDependencies += [
+  .package(url: "https://github.com/xtremekforever/swift-systemd", branch: "main"),
+]
+
 let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
+let FlutterELinuxVulkanEnabled = true
 
 platformSwiftSettings += [
   .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
@@ -257,11 +262,6 @@ targets += [
 switch FlutterELinuxBackend {
 case .drmGbm:
   targets += [
-    .systemLibrary(
-      name: "CLibUV",
-      pkgConfig: "libuv",
-      providers: [.apt(["libuv1-dev"])]
-    ),
     .systemLibrary(
       name: "CLibInput",
       pkgConfig: "libinput",
@@ -322,7 +322,7 @@ let BackendDependencies: [Target.Dependency]
 
 switch FlutterELinuxBackend {
 case .drmGbm:
-  BackendDependencies = ["CLibUV", "CLibInput", "CLibDRM", "CLibUDev", "CGBM"]
+  BackendDependencies = ["CLibInput", "CLibDRM", "CLibUDev", "CGBM"]
   ExcludedSources = WaylandSources + DRMEGLSources
 case .drmEglStream:
   BackendDependencies = [] // TODO:
@@ -368,7 +368,11 @@ Exclusions += ExcludedSources
 targets += [
   .target(
     name: "CxxFlutterSwift",
-    dependencies: ["CEGL", "CXKBCommon"] + BackendDependencies,
+    dependencies: [
+      "CEGL",
+      "CXKBCommon",
+      .product(name: "Systemd", package: "swift-systemd", condition: .when(platforms: [.linux])),
+    ] + BackendDependencies,
     exclude: Exclusions,
     cSettings: [],
     cxxSettings: [
@@ -380,6 +384,7 @@ targets += [
       .define("ENABLE_EGL_ALPHA_COMPONENT_OF_COLOR_BUFFER"),
       // ENABLE_VSYNC OFF
       // .define("ENABLE_VSYNC"),
+      .define("USE_LIBSYSTEMD"),
       // ENABLE_ELINUX_EMBEDDER_LOG ON
       .define("ENABLE_ELINUX_EMBEDDER_LOG"),
       // .define("FLUTTER_RELEASE") // FIXME: for release
