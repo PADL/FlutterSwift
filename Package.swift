@@ -234,7 +234,6 @@ packageDependencies += [
 ]
 
 let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
-let FlutterELinuxVulkanEnabled = true
 
 platformSwiftSettings += [
   .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
@@ -382,8 +381,7 @@ targets += [
       // USE_DIRTY_REGION_MANAGEMENT OFF
       // .define("USE_GLES3"),
       .define("ENABLE_EGL_ALPHA_COMPONENT_OF_COLOR_BUFFER"),
-      // ENABLE_VSYNC OFF
-      // .define("ENABLE_VSYNC"),
+      .define("ENABLE_VSYNC"),
       .define("USE_LIBSYSTEMD"),
       // ENABLE_ELINUX_EMBEDDER_LOG ON
       .define("ENABLE_ELINUX_EMBEDDER_LOG"),
