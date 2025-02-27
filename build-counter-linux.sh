@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [ -z "$FLUTTER_SWIFT_BACKEND" ]; then
-  FLUTTER_SWIFT_BACKEND="wayland"
-fi
-
 set -Eeu
 
 # Path to Flutter SDK
@@ -85,4 +81,3 @@ fi
 
 echo "Copying Flutter engine to bundle lib directory..."
 cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${BUILD_MODE}/libflutter_engine.so ${BUNDLE_DIR}/lib/
-cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${BUILD_MODE}/libflutter_elinux_${FLUTTER_SWIFT_BACKEND}.so ${BUNDLE_DIR}/lib/
