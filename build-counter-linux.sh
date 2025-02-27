@@ -1,11 +1,16 @@
 #!/bin/bash
 
+if [ -z "$FLUTTER_SWIFT_BACKEND" ]; then
+  FLUTTER_SWIFT_BACKEND="wayland"
+fi
+
 set -Eeu
 
-PWD=`pwd`
-
 # Path to Flutter SDK
-export FLUTTER_SDK=/opt/flutter-elinux/flutter
+export FLUTTER_ROOT=/opt/flutter-elinux
+export FLUTTER_SDK=${FLUTTER_ROOT}/flutter
+export FLUTTER_CACHE_ENGINEDIR=${FLUTTER_SDK}/bin/cache/artifacts/engine
+export DART_CACHE_BINDIR=${FLUTTER_SDK}/bin/cache/dart-sdk/bin
 
 export PATH=$PATH:${FLUTTER_SDK}/bin
 
@@ -16,33 +21,35 @@ export SOURCE_DIR=${PWD}/Examples/${APP_PACKAGE_NAME}
 ARCH=`arch`
 
 if [ "X${ARCH}" == "Xaarch64" ]; then
-	ARCH=arm64
+  ARCH=arm64
 elif [ "X${ARCH}" == "Xx86_64" ]; then
-	ARCH=x64
+  ARCH=x64
 fi
 
-ARCH="linux-${ARCH}"
-
 # The build data.
-export RESULT_DIR=build/elinux/arm64
+export RESULT_DIR=build/elinux/${ARCH}
 export BUILD_MODE=debug
+export BUNDLE_DIR=${RESULT_DIR}/${BUILD_MODE}/bundle
 
 pushd ${SOURCE_DIR}
+rm -rf ${BUNDLE_DIR}
+mkdir -p ${BUNDLE_DIR}/lib/
+mkdir -p ${BUNDLE_DIR}/data/
 
 mkdir -p .dart_tool/flutter_build/flutter-embedded-linux
-mkdir -p ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/
-mkdir -p ${RESULT_DIR}/${BUILD_MODE}/bundle/data/
 
 # Build Flutter assets.
-${FLUTTER_SDK}/../bin/flutter-elinux build bundle --asset-dir=${RESULT_DIR}/${BUILD_MODE}/bundle/data/flutter_assets
-cp ${FLUTTER_SDK}/bin/cache/artifacts/engine/${ARCH}/icudtl.dat \
-   ${RESULT_DIR}/${BUILD_MODE}/bundle/data/
+echo "Building Flutter assets..."
+${FLUTTER_ROOT}/bin/flutter-elinux build bundle --asset-dir=${BUNDLE_DIR}/data/flutter_assets
+
+cp ${FLUTTER_CACHE_ENGINEDIR}/linux-${ARCH}/icudtl.dat ${BUNDLE_DIR}/data/
 
 # Build kernel_snapshot.
-${FLUTTER_SDK}/bin/cache/dart-sdk/bin/dartaotruntime \
+echo "Building kernel snapshot..."
+${DART_CACHE_BINDIR}/dartaotruntime \
   --verbose \
-  --disable-dart-dev ${FLUTTER_SDK}/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot \
-  --sdk-root ${FLUTTER_SDK}/bin/cache/artifacts/engine/common/flutter_patched_sdk_product/ \
+  --disable-dart-dev ${DART_CACHE_BINDIR}/snapshots/frontend_server_aot.dart.snapshot \
+  --sdk-root ${FLUTTER_CACHE_ENGINEDIR}/common/flutter_patched_sdk_product/ \
   --target=flutter \
   --no-print-incremental-dependencies \
   -Ddart.vm.profile=false \
@@ -57,16 +64,25 @@ ${FLUTTER_SDK}/bin/cache/dart-sdk/bin/dartaotruntime \
   package:${APP_PACKAGE_NAME}/main.dart
 
 # Build AOT image.
-${FLUTTER_SDK}/bin/cache/artifacts/engine/${ARCH}/gen_snapshot \
+echo "Building AOT image... "
+${FLUTTER_CACHE_ENGINEDIR}/linux-${ARCH}-release/gen_snapshot \
   --deterministic \
   --snapshot_kind=app-aot-elf \
   --elf=.dart_tool/flutter_build/flutter-embedded-linux/app.so \
   --strip \
   .dart_tool/flutter_build/flutter-embedded-linux/app.dill
 
-cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${RESULT_DIR}/${BUILD_MODE}/bundle/lib/libapp.so
+cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${BUNDLE_DIR}/lib/libapp.so
+ls -al ${BUNDLE_DIR}/lib/libapp.so
 
-popd
+# remove these artefacts to ensure we don't accidentally start in JIT mode
 
-swift build
+if [ "X${BUILD_MODE}" == "Xrelease" ]; then
+  rm -rf ${BUNDLE_DIR}/data/flutter_assets/kernel_blob.bin
+  rm -rf ${BUNDLE_DIR}/data/flutter_assets/isolate_snapshot_data
+  rm -rf ${BUNDLE_DIR}/data/flutter_assets/vm_snapshot_data
+fi
 
+echo "Copying Flutter engine to bundle lib directory..."
+cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${BUILD_MODE}/libflutter_engine.so ${BUNDLE_DIR}/lib/
+cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${BUILD_MODE}/libflutter_elinux_${FLUTTER_SWIFT_BACKEND}.so ${BUNDLE_DIR}/lib/
