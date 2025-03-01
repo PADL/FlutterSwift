@@ -76,7 +76,8 @@ public struct FlutterWindow {
 
   @MainActor
   public func run() async throws {
-    let framePeriodNS = Int(Double(NanosecondsPerSecond) / (Double(viewController.view.frameRate) / 1000.0))
+    let framePeriodNS =
+      Int(Double(NanosecondsPerSecond) / (Double(viewController.view.frameRate) / 1000.0))
 
     repeat {
       var deadline: ContinuousClock.Instant = .now
