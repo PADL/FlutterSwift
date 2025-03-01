@@ -37,7 +37,9 @@ final class FlutterStandardDecodingState {
     self.data = data
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   fileprivate func peekStandardField() throws -> FlutterStandardField {
     guard let byte = data.first else {
       throw FlutterSwiftError.eofTooEarly
@@ -48,7 +50,9 @@ final class FlutterStandardDecodingState {
     return fieldType
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   private func decodeStandardField() throws -> FlutterStandardField {
     guard let byte = data.popFirst() else {
       throw FlutterSwiftError.eofTooEarly
@@ -59,7 +63,9 @@ final class FlutterStandardDecodingState {
     return fieldType
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   func assertStandardField(_ assertedFieldType: FlutterStandardField) throws {
     let fieldType = try decodeStandardField()
     guard fieldType == assertedFieldType else {
@@ -67,7 +73,9 @@ final class FlutterStandardDecodingState {
     }
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   private func decodeSize() throws -> Int {
     guard let byte = data.popFirst() else {
       throw FlutterSwiftError.eofTooEarly
@@ -83,7 +91,9 @@ final class FlutterStandardDecodingState {
     }
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   private func assertAlignment(_ alignment: Int) throws {
     let mod = data.count % alignment
     guard data.count >= mod else {
@@ -103,7 +113,9 @@ final class FlutterStandardDecodingState {
     return Data(raw)
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   func decodeDiscriminant() throws -> UInt8 {
     guard let byte = data.popFirst() else {
       throw FlutterSwiftError.eofTooEarly
@@ -121,7 +133,9 @@ final class FlutterStandardDecodingState {
     }
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   private func decodeArray<Value>(
     _ fieldType: FlutterStandardField,
     _ block: () throws -> Value
@@ -200,7 +214,9 @@ final class FlutterStandardDecodingState {
     return values
   }
 
+  #if !canImport(Android)
   @_alwaysEmitIntoClient
+  #endif
   private func decodeInteger<Integer>(_ type: Integer.Type) throws -> Integer
     where Integer: FixedWidthInteger
   {
