@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -50,14 +50,16 @@ public func JNI_OnLoad(
     let anInterface = try JavaClass<FlutterBinaryMessenger>(environment: environment)
 
     _flutterSwiftClassLoader = aClass.getClassLoader()
+    precondition(_flutterSwiftClassLoader != nil)
     _flutterClassLoader = anInterface.getClassLoader()
+    precondition(_flutterClassLoader != nil)
     _javaNIOByteBufferClass = try JavaClass<JavaNIOByteBuffer>()
     _byteBufferHelperClass = try JavaClass<ByteBufferHelper>()
 
-    _logger.debug("JNI_OnLoad: registered class loaders")
+    _logger.info("JNI_OnLoad: registered class loaders")
     return JNI_VERSION_1_6
   } catch {
-    _logger.debug("JNI_OnLoad: exception raised: \(error)")
+    _logger.error("JNI_OnLoad: exception raised: \(error)")
     return JNI_ERR
   }
 }
