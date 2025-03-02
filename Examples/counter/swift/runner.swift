@@ -148,7 +148,7 @@ enum Counter {
     guard let window else {
       exit(2)
     }
-    _ = ChannelManager(viewController: window.viewController)
+    ChannelManager.shared = ChannelManager(viewController: window.viewController)
     window.run()
   }
 }
