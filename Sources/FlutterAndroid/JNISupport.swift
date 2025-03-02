@@ -49,8 +49,8 @@ public func JNI_OnLoad(
     let aClass = try JavaClass<SwiftHeapObjectHolder>(environment: environment)
     let anInterface = try JavaClass<FlutterBinaryMessenger>(environment: environment)
 
-    _flutterSwiftClassLoader = try aClass.getClassLoader()
-    _flutterClassLoader = try anInterface.getClassLoader()
+    _flutterSwiftClassLoader = aClass.getClassLoader()
+    _flutterClassLoader = anInterface.getClassLoader()
     _javaNIOByteBufferClass = try JavaClass<JavaNIOByteBuffer>()
     _byteBufferHelperClass = try JavaClass<ByteBufferHelper>()
 
