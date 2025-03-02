@@ -50,8 +50,10 @@ swift build -Xswiftc -Xfrontend -Xswiftc -disable-round-trip-debug-types --toolc
 export JAVA_HOME=${TARGET_JAVA_HOME}
 export JAVA_INCLUDE_PATH="${SWIFT_SDK_SYSROOT}/usr/include"
 
-CLASSPATH="${FLUTTER_SDK}/bin/cache/artifacts/engine/android-arm64/flutter.jar"
-export CLASSPATH
+FLUTTER_CLASSPATH="${FLUTTER_SDK}/bin/cache/artifacts/engine/android-arm64/flutter.jar"
+FLUTTER_CLASSPATH_REF=".build/plugins/outputs/flutterswift/FlutterAndroid/destination/Java2SwiftPlugin/Flutter.swift-java.classpath"
+echo -n ${FLUTTER_CLASSPATH} > ${FLUTTER_CLASSPATH_REF}
+export CLASSPATH=${FLUTTER_CLASSPATH}
 
 swift build -Xswiftc -Xfrontend -Xswiftc -disable-round-trip-debug-types --toolchain ${TOOLCHAINS} --swift-sdk ${TRIPLE} --product FlutterSwift
 
