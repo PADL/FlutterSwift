@@ -57,7 +57,8 @@ final class FlutterStandardDecodingState {
     return fieldType
   }
 
-  @inlinable func assertStandardField(_ assertedFieldType: FlutterStandardField) throws {
+  @inlinable
+  func assertStandardField(_ assertedFieldType: FlutterStandardField) throws {
     let fieldType = try decodeStandardField()
     guard fieldType == assertedFieldType else {
       throw FlutterSwiftError.unexpectedStandardFieldType(fieldType)
@@ -98,7 +99,8 @@ final class FlutterStandardDecodingState {
     return Data(raw)
   }
 
-  @inlinable func decodeDiscriminant() throws -> UInt8 {
+  @inlinable
+  func decodeDiscriminant() throws -> UInt8 {
     guard let byte = data.popFirst() else {
       throw FlutterSwiftError.eofTooEarly
     }

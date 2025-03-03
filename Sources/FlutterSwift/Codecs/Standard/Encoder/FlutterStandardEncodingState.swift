@@ -59,7 +59,8 @@ final class FlutterStandardEncodingState {
     data += data
   }
 
-  @inlinable func encodeDiscriminant(_ value: UInt8) throws {
+  @inlinable
+  func encodeDiscriminant(_ value: UInt8) throws {
     data += [value]
   }
 
