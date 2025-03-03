@@ -180,17 +180,4 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
   }
 }
 
-public struct FlutterDesktopTextureRegistrar {
-  private let registrar: FlutterDesktopTextureRegistrarRef
-
-  public init(engine: FlutterEngine) {
-    registrar = FlutterDesktopEngineGetTextureRegistrar(engine.engine)
-  }
-
-  init?(plugin: FlutterDesktopPluginRegistrar) {
-    guard let registrar = plugin.registrar else { return nil }
-    self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
-  }
-}
-
 #endif
