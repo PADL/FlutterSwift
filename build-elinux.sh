@@ -9,6 +9,8 @@ mkdir -p ${BUNDLE_DIR}/data/
 
 mkdir -p .dart_tool/flutter_build/flutter-embedded-linux
 
+echo "-- Starting ${FLUTTER_SWIFT_BUILD_CONFIG} mode build of ${APP_PACKAGE_NAME} --"
+
 # Build Flutter assets.
 echo "Building Flutter assets..."
 ${FLUTTER_ROOT}/bin/flutter-elinux build bundle --asset-dir=${BUNDLE_DIR}/data/flutter_assets
