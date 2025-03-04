@@ -38,7 +38,6 @@ export DART_CACHE_BINDIR=${FLUTTER_SDK}/bin/cache/dart-sdk/bin
 export PATH=$PATH:${FLUTTER_SDK}/bin
 
 # Package name of the build target Flutter app
-export APP_PACKAGE_NAME=counter
 export SOURCE_DIR=${pwd}/Examples/${APP_PACKAGE_NAME}
 
 # The build data.
