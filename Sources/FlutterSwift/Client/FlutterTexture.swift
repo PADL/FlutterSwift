@@ -19,6 +19,124 @@
 import CxxFlutterSwift
 import Foundation
 
+public enum FlutterPixelFormat {
+  case none
+  case rgba8888
+  case bgra8888
+
+  fileprivate var _desktopPixelFormat: FlutterDesktopPixelFormat {
+    switch self {
+    case .none: return kFlutterDesktopPixelFormatNone
+    case .rgba8888: return kFlutterDesktopPixelFormatRGBA8888
+    case .bgra8888: return kFlutterDesktopPixelFormatBGRA8888
+    }
+  }
+}
+
+@discardableResult
+private func _retainAnyObject<T: AnyObject>(_ anyObject: T) -> UnsafeMutableRawPointer {
+  Unmanaged.passRetained(anyObject).toOpaque()
+}
+
+private func _releaseAnyObject(_ anyObjectPtr: UnsafeMutableRawPointer?) {
+  Unmanaged<AnyObject>.fromOpaque(anyObjectPtr!).release()
+}
+
+public class FlutterPixelBuffer {
+  public var buffer: [UInt8]
+  public var width: Int
+  public var height: Int
+
+  private var _desktopPixelBuffer = FlutterDesktopPixelBuffer()
+
+  public init(width: Int, height: Int) {
+    buffer = [UInt8](repeating: 0, count: width * height)
+    self.width = width
+    self.height = height
+  }
+
+  fileprivate func getDesktopPixelBufferTextureConfig(
+    width: Int,
+    height: Int
+  ) -> UnsafePointer<FlutterDesktopPixelBuffer> {
+    buffer.withUnsafeBufferPointer { _desktopPixelBuffer.buffer = $0.baseAddress! }
+    _desktopPixelBuffer.width = self.width
+    _desktopPixelBuffer.height = self.height
+    _desktopPixelBuffer.release_context = _retainAnyObject(self)
+    _desktopPixelBuffer.release_callback = _releaseAnyObject
+    return withUnsafePointer(to: &_desktopPixelBuffer) { $0 }
+  }
+}
+
+private func _getDesktopPixelBufferTextureConfigThunk(
+  width: Int,
+  height: Int,
+  user_data: UnsafeMutableRawPointer?
+) -> UnsafePointer<FlutterDesktopPixelBuffer>? {
+  Unmanaged<FlutterPixelBuffer>.fromOpaque(user_data!).takeUnretainedValue()
+    .getDesktopPixelBufferTextureConfig(
+      width: width,
+      height: height
+    )
+}
+
+public class FlutterEGLImage {
+  public var eglImage: UnsafeRawPointer
+  public var width: Int
+  public var height: Int
+
+  private var _desktopEGLImage = FlutterDesktopEGLImage()
+
+  public init(eglImage: UnsafeRawPointer, width: Int = 0, height: Int = 0) {
+    self.eglImage = eglImage
+    self.width = width
+    self.height = height
+  }
+
+  fileprivate func getDesktopEGLImageTextureConfig(
+    width: Int,
+    height: Int,
+    eglDisplay: UnsafeMutableRawPointer!,
+    eglContext: UnsafeMutableRawPointer!
+  ) -> UnsafePointer<FlutterDesktopEGLImage> {
+    _desktopEGLImage.egl_image = eglImage
+    _desktopEGLImage.width = self.width
+    _desktopEGLImage.height = self.height
+    _desktopEGLImage.release_context = _retainAnyObject(self)
+    _desktopEGLImage.release_callback = _releaseAnyObject
+    return withUnsafePointer(to: &_desktopEGLImage) { $0 }
+  }
+}
+
+private func _getDesktopEGLImageTextureConfigThunk(
+  width: Int,
+  height: Int,
+  egl_display: UnsafeMutableRawPointer?,
+  egl_context: UnsafeMutableRawPointer?,
+  user_data: UnsafeMutableRawPointer?
+) -> UnsafePointer<FlutterDesktopEGLImage>? {
+  Unmanaged<FlutterEGLImage>.fromOpaque(user_data!).takeUnretainedValue()
+    .getDesktopEGLImageTextureConfig(
+      width: width,
+      height: height,
+      eglDisplay: egl_display!,
+      eglContext: egl_context!
+    )
+}
+
+public enum FlutterTexture {
+  case pixelBufferTexture(FlutterPixelBuffer)
+  /* case gpuSurfaceTexture */ /* not supported */
+  case eglImageTexture(FlutterEGLImage)
+
+  fileprivate var _desktopTextureType: FlutterDesktopTextureType {
+    switch self {
+    case .pixelBufferTexture: return kFlutterDesktopPixelBufferTexture
+    case .eglImageTexture: return kFlutterDesktopEGLImageTexture
+    }
+  }
+}
+
 public struct FlutterDesktopTextureRegistrar {
   private let registrar: FlutterDesktopTextureRegistrarRef
 
@@ -29,6 +147,42 @@ public struct FlutterDesktopTextureRegistrar {
   init?(plugin: FlutterDesktopPluginRegistrar) {
     guard let registrar = plugin.registrar else { return nil }
     self.registrar = FlutterDesktopRegistrarGetTextureRegistrar(registrar)
+  }
+
+  public func registerExternalTexture(_ texture: FlutterTexture) -> Int64 {
+    var textureInfo = FlutterDesktopTextureInfo()
+    textureInfo.type = texture._desktopTextureType
+    switch texture {
+    case let .pixelBufferTexture(config):
+      _retainAnyObject(config) // to be released by unregisterExternalTexture
+      textureInfo.pixel_buffer_config = FlutterDesktopPixelBufferTextureConfig(
+        callback: _getDesktopPixelBufferTextureConfigThunk,
+        user_data: Unmanaged.passUnretained(config).toOpaque()
+      )
+    case let .eglImageTexture(config):
+      _retainAnyObject(config) // to be released by unregisterExternalTexture
+      textureInfo.egl_image_config = FlutterDesktopEGLImageTextureConfig(
+        callback: _getDesktopEGLImageTextureConfigThunk,
+        user_data: Unmanaged.passUnretained(config).toOpaque()
+      )
+    }
+    return FlutterDesktopTextureRegistrarRegisterExternalTexture(registrar, &textureInfo)
+  }
+
+  public func unregisterExternalTexture(texture: FlutterTexture, id textureID: Int64) {
+    let texturePtr: UnsafeMutableRawPointer
+
+    switch texture {
+    case let .pixelBufferTexture(config): texturePtr = Unmanaged.passUnretained(config).toOpaque()
+    case let .eglImageTexture(config): texturePtr = Unmanaged.passUnretained(config).toOpaque()
+    }
+
+    FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+      registrar,
+      textureID,
+      _releaseAnyObject,
+      texturePtr
+    )
   }
 
   public func markExternalTextureFrameAvailable(textureID: Int64) {
