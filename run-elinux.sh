@@ -8,9 +8,4 @@ source build-defaults.inc
 export LD_LIBRARY_PATH="${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}"
 export LD_PRELOAD="${LD_LIBRARY_PATH}/libflutter_engine.so"
 
-if [ "x$FLUTTER_SWIFT_BACKEND" == "xwayland" ]; then
-  .build/$FLUTTER_SWIFT_BUILD_CONFIG/counter ${BUNDLE_DIR}
-else
-  export FLUTTER_DRM_DEVICE=/dev/dri/card0
-  sudo .build/$FLUTTER_SWIFT_BUILD_CONFIG/counter ${BUNDLE_DIR}
-fi
+.build/$FLUTTER_SWIFT_BUILD_CONFIG/counter ${BUNDLE_DIR}
