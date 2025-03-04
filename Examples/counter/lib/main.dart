@@ -46,8 +46,8 @@ class _MyHomePageState extends State<MyHomePage> {
   static const message = BasicMessageChannel<dynamic>('com.example.counter.basic', JSONMessageCodec());
   static const platform = MethodChannel('com.example.counter.toggle');
   static const stream = EventChannel('com.example.counter.events');
-  bool counterEnabled = true;
-  late StreamSubscription _streamSubscription;
+
+  bool counterEnabled = false;
 
   static Stream<int> get getCounterStream {
     return stream.receiveBroadcastStream().cast();
@@ -55,9 +55,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   toggleCounter() async {
     final dynamic reply = await message.send('Hello, world');
-    setState(() {
-      counterEnabled = !counterEnabled;
-    });
     try {
       await platform.invokeMethod('toggle', reply);
     } on PlatformException catch (e) {
@@ -77,6 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
           StreamBuilder<int>(
             stream: getCounterStream,
             builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+              counterEnabled = snapshot.hasData;
               if(snapshot.hasData) {
                 return Text("Current counter: ${snapshot.data}");
               } else {
