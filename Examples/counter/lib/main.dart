@@ -45,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const message = BasicMessageChannel<dynamic>('com.example.counter.basic', JSONMessageCodec());
   static const platform = MethodChannel('com.example.counter.toggle');
   static const stream = EventChannel('com.example.counter.events');
+  bool counterEnabled = true;
   int counter = 0;
   late StreamSubscription _streamSubscription;
 
@@ -54,6 +55,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   toggleCounter() async {
     final dynamic reply = await message.send('Hello, world');
+    setState(() {
+      counterEnabled = !counterEnabled;
+    });
     try {
       await platform.invokeMethod('toggle', reply);
     } on PlatformException catch (e) {
@@ -80,13 +84,9 @@ class _MyHomePageState extends State<MyHomePage> {
               }
             },
           ),
+          if (counterEnabled) Text('') else CircularProgressIndicator()
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
