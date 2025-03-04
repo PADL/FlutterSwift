@@ -146,8 +146,7 @@ enum Counter {
     )
     let window = FlutterWindow(
       properties: viewProperties,
-      project: dartProject,
-      enableImpeller: true
+      project: dartProject
     )
     guard let window else {
       exit(2)
