@@ -34,7 +34,6 @@ export FLUTTER_ROOT=/opt/flutter-elinux
 export FLUTTER_SDK=${FLUTTER_ROOT}/flutter
 export FLUTTER_CACHE_ENGINEDIR=${FLUTTER_SDK}/bin/cache/artifacts/engine
 export DART_CACHE_BINDIR=${FLUTTER_SDK}/bin/cache/dart-sdk/bin
-
 export PATH=$PATH:${FLUTTER_SDK}/bin
 
 # Package name of the build target Flutter app
@@ -43,3 +42,7 @@ export SOURCE_DIR=${pwd}/Examples/${APP_PACKAGE_NAME}
 # The build data.
 export RESULT_DIR=${pwd}/build/elinux/${ARCH}
 export BUNDLE_DIR=${RESULT_DIR}/${FLUTTER_SWIFT_BUILD_CONFIG}/bundle
+
+if [ ! -d "${FLUTTER_CACHE_ENGINEDIR}" ]; then
+  flutter-elinux precache
+fi
