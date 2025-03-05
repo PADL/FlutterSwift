@@ -465,7 +465,7 @@ targets += [
 let package = Package(
   name: "FlutterSwift",
   platforms: [
-    .macOS(.v10_15),
+    .macOS(.v13),
     .iOS(.v16),
   ],
   products: [
