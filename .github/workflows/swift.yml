@@ -37,7 +37,7 @@ jobs:
       - name: Packages
         run: |
           apt-get update
-          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev
+          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev libsystemd-dev
       - name: Set paths
         run: echo "/opt/flutter-elinux/bin" >> $GITHUB_PATH
       - name: Checkout FlutterSwift
@@ -74,7 +74,7 @@ jobs:
       - name: Packages
         run: |
           apt-get update
-          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev
+          apt-get install -y unzip curl cmake pkg-config liburing-dev libavahi-compat-libdnssd-dev libavahi-client-dev libwayland-dev wayland-protocols libegl1-mesa-dev libgles2-mesa-dev libxkbcommon-dev libuv1-dev libinput-dev libdrm-dev libudev-dev libgbm-dev libsystemd-dev
       - name: Set paths
         run: echo "/opt/flutter-elinux/bin" >> $GITHUB_PATH
       - name: Checkout FlutterSwift
