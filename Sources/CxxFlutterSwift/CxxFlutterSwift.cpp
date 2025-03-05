@@ -77,13 +77,14 @@ void FlutterDesktopMessengerSetCallbackBlock(
   std::lock_guard<std::mutex> guard(flutterSwiftCallbacksMutex);
   if (callbackBlock != nullptr) {
     flutterSwiftCallbacks[channel] = _Block_copy(callbackBlock);
-    FlutterDesktopMessengerSetCallback(
-        messenger, channel, FlutterDesktopMessageCallbackThunk, callbackBlock);
+    messenger->GetEngine()->message_dispatcher()->SetMessageCallback(
+        channel, FlutterDesktopMessageCallbackThunk, callbackBlock);
   } else {
     auto savedCallbackBlock = flutterSwiftCallbacks[channel];
     flutterSwiftCallbacks.erase(channel);
     _Block_release(savedCallbackBlock);
-    FlutterDesktopMessengerSetCallback(messenger, channel, nullptr, nullptr);
+    messenger->GetEngine()->message_dispatcher()->SetMessageCallback(
+        channel, nullptr, nullptr);
   }
 }
 
@@ -106,8 +107,8 @@ void FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(
     FlutterDesktopOnPluginRegistrarDestroyedBlock callbackBlock) {
   std::lock_guard<std::mutex> guard(flutterSwiftRegistrarCallbacksMutex);
   flutterSwiftRegistrarCallbacks[registrar] = _Block_copy(callbackBlock);
-  FlutterDesktopPluginRegistrarSetDestructionHandler(
-      registrar, FlutterDesktopOnPluginRegistrarDestroyedBlockThunk);
+  registrar->engine->SetPluginRegistrarDestructionCallback(
+      FlutterDesktopOnPluginRegistrarDestroyedBlockThunk);
 }
 
 void FlutterDesktopEngineSetView(FlutterDesktopEngineRef engineRef,
