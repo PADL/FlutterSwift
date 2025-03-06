@@ -43,23 +43,28 @@ private func _releaseAnyObject(_ anyObjectPtr: UnsafeMutableRawPointer?) {
 }
 
 public class FlutterPixelBuffer {
-  public var buffer: [UInt8]
+  public var buffer: UnsafeMutablePointer<UInt8>
   public var width: Int
   public var height: Int
 
   private var _desktopPixelBuffer = FlutterDesktopPixelBuffer()
 
   public init(width: Int, height: Int) {
-    buffer = [UInt8](repeating: 0, count: width * height)
+    buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height)
+    buffer.initialize(repeating: 0, count: width * height)
     self.width = width
     self.height = height
+  }
+
+  deinit {
+    buffer.deallocate()
   }
 
   fileprivate func getDesktopPixelBufferTextureConfig(
     width: Int,
     height: Int
   ) -> UnsafePointer<FlutterDesktopPixelBuffer> {
-    buffer.withUnsafeBufferPointer { _desktopPixelBuffer.buffer = $0.baseAddress! }
+    _desktopPixelBuffer.buffer = UnsafePointer(buffer)
     _desktopPixelBuffer.width = self.width
     _desktopPixelBuffer.height = self.height
     _desktopPixelBuffer.release_context = _retainAnyObject(self)
