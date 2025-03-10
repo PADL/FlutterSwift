@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import CxxFlutterSwift
 let kChannelName = "flutter/platform_views"
 
 public struct FlutterView {
-  let view: FlutterDesktopViewRef
+  let view: flutter.FlutterELinuxView
   var platformViewsPluginRegistrar: FlutterPluginRegistrar?
   var platformViewsHandler: FlutterPlatformViewsPlugin?
   var viewController: FlutterViewController? {
@@ -38,16 +38,20 @@ public struct FlutterView {
     }
   }
 
-  init(_ view: FlutterDesktopViewRef) {
+  init(_ view: flutter.FlutterELinuxView) {
     self.view = view
   }
 
+  init(_ view: FlutterDesktopViewRef) {
+    self.init(unsafeBitCast(view, to: flutter.FlutterELinuxView.self))
+  }
+
   public func dispatchEvent() -> Bool {
-    FlutterDesktopViewDispatchEvent(view)
+    view.DispatchEvent()
   }
 
   public var frameRate: Int32 {
-    FlutterDesktopViewGetFrameRate(view)
+    view.GetFrameRate()
   }
 }
 #endif

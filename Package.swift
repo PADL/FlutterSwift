@@ -13,7 +13,7 @@ var targetPluginUsages = [Target.PluginUsage]()
 var platformCxxSettings: [CXXSetting] = []
 var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5)]
 
-func tryGuessSwiftLibRoot() -> String {
+func tryGuessSwiftRoot() -> String {
   let task = Process()
   task.executableURL = URL(fileURLWithPath: "/bin/sh")
   task.arguments = ["-c", "which swift"]
@@ -22,13 +22,14 @@ func tryGuessSwiftLibRoot() -> String {
     try task.run()
     let outputData = (task.standardOutput as! Pipe).fileHandleForReading.readDataToEndOfFile()
     let path = URL(fileURLWithPath: String(decoding: outputData, as: UTF8.self))
-    return path.deletingLastPathComponent().path + "/../lib/swift"
+    return path.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+      .path
   } catch {
-    return "/usr/lib/swift"
+    return ""
   }
 }
 
-let SwiftLibRoot = tryGuessSwiftLibRoot()
+let SwiftRoot = tryGuessSwiftRoot()
 var FlutterPlatform: String
 var FlutterUnsafeLinkerFlags: [String] = []
 
@@ -235,10 +236,19 @@ packageDependencies += [
 
 let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
 
+let CxxIncludeDirs: [String] = [
+  "\(SwiftRoot)/usr/include",
+  "\(SwiftRoot)/usr/lib/swift",
+  "/usr/include/drm",
+]
+
+let CxxIncludeFlags = CxxIncludeDirs.flatMap { ["-I", $0] }
+
 platformSwiftSettings += [
   .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
   .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
   .interoperabilityMode(.Cxx),
+  .unsafeFlags(CxxIncludeFlags),
 ]
 
 targets += [
@@ -404,7 +414,7 @@ targets += [
       .headerSearchPath("flutter-embedded-linux/src/third_party/rapidjson/include"),
       // FIXME: .cxxLanguageStandard breaks Foundation compile
       // FIXME: include path for swift/bridging.h
-      .unsafeFlags(["-pthread", "-I", SwiftLibRoot, "-I", "/usr/include/drm", "-std=c++17"]),
+      .unsafeFlags(["-pthread", "-std=c++17"] + CxxIncludeFlags),
     ],
     linkerSettings: [
       // .unsafeFlags(["-pthread"]),
@@ -446,6 +456,8 @@ platformCxxSettings += [
   .headerSearchPath(
     "../CxxFlutterSwift/flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/include"
   ),
+  .headerSearchPath("../CxxFlutterSwift/flutter-embedded-linux/src/third_party/rapidjson/include"),
+  .unsafeFlags(CxxIncludeFlags),
 ]
 
 #else
