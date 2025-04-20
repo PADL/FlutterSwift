@@ -91,11 +91,16 @@ public final class FlutterViewController {
     }
   }
 
-  public init?(properties viewProperties: ViewProperties, project: DartProject) {
+  public init?(
+    properties viewProperties: ViewProperties,
+    project: DartProject,
+    switches: [String: Any] = [:]
+  ) {
     var cViewProperties = FlutterDesktopViewProperties()
     var controller: FlutterDesktopViewControllerRef?
 
-    guard let engine = FlutterEngine(project: project) else { return nil }
+    guard let engine = FlutterEngine(project: project, switches: switches)
+    else { return nil }
     self.engine = engine
 
     cViewProperties.width = viewProperties.width
@@ -145,7 +150,7 @@ public final class FlutterViewController {
 
   public var view: FlutterView {
     didSet {
-      FlutterDesktopEngineSetView(engine.engine, view.view)
+      engine.setView(view)
     }
   }
 

@@ -27,11 +27,17 @@ public struct FlutterWindow {
 
   public init?(
     properties viewProperties: FlutterViewController.ViewProperties,
-    project: DartProject
+    project: DartProject,
+    enableImpeller: Bool = false
   ) {
+    var switches = [String: Any]()
+    if enableImpeller {
+      switches["enable-impeller"] = true
+    }
     guard let viewController = FlutterViewController(
       properties: viewProperties,
-      project: project
+      project: project,
+      switches: switches
     ) else {
       return nil
     }

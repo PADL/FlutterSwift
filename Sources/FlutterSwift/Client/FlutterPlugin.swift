@@ -116,22 +116,25 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
   ) {
     self.engine = engine
     pluginKey = pluginName
-    registrar = FlutterDesktopEngineGetPluginRegistrar(engine.engine, pluginName)
-    FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { _ in
-      self.registrar = nil
+    registrar = engine.getRegistrar(pluginName: pluginName)
+    // FIXME: use std::function
+    FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [self] _ in
+      for (channel, detachFromEngine) in detachFromEngineCallbacks {
+        try? channel.removeMessageHandler()
+        detachFromEngine(self)
+      }
+      registrar = nil
     }
   }
 
   public var binaryMessenger: FlutterBinaryMessenger? {
     guard let registrar else { return nil }
-    return FlutterDesktopMessenger(
-      messenger: FlutterDesktopPluginRegistrarGetMessenger(registrar)
-    )
+    return FlutterDesktopMessenger(messenger: registrar.pointee.engine.messenger())
   }
 
   public var view: FlutterView? {
     guard let registrar else { return nil }
-    let view = FlutterDesktopPluginRegistrarGetView(registrar)!
+    let view = registrar.pointee.engine.view()!
     return FlutterView(view)
   }
 
@@ -158,13 +161,6 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         try delegate.handleMethod(call: call)
       }
       detachFromEngineCallbacks[channel] = delegate._detachFromEngine
-    }
-  }
-
-  deinit {
-    for (channel, detachFromEngine) in detachFromEngineCallbacks {
-      try? channel.removeMessageHandler()
-      detachFromEngine(self)
     }
   }
 
