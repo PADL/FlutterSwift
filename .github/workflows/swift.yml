@@ -63,7 +63,7 @@ jobs:
       - name: Test FlutterSwift
         run: swift test --skip-build
       - name: Build counter
-        run: ./build-counter-linux.sh
+        run: ./build-elinux.sh
 
   linux-gbm:
     runs-on: ubuntu-24.04
