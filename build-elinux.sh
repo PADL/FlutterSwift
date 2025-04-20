@@ -56,11 +56,15 @@ if [ "X${FLUTTER_SWIFT_BUILD_CONFIG}" == "Xrelease" ]; then
   rm -rf ${BUNDLE_DIR}/data/flutter_assets/vm_snapshot_data
 fi
 
-echo "Copying Flutter engine to bundle lib directory..."
-cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ${BUNDLE_DIR}/lib/
-
 echo "Building Swift component..."
 popd
 swift build --configuration ${FLUTTER_SWIFT_BUILD_CONFIG}
+
+echo "Copying Flutter engine to bundle lib directory..."
+if [ -f ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ]; then
+  cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ${BUNDLE_DIR}/lib/
+else
+  cp .build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ${BUNDLE_DIR}/lib/
+fi
 
 echo "Done!"
