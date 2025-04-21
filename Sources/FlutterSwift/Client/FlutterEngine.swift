@@ -142,11 +142,17 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     engine.SetView(view.view)
   }
 
+  public var view: FlutterView? {
+    guard let view = engine.view() else { return nil }
+    return FlutterView(view)
+  }
+
   public func setSwitches(_ switches: [String]) {
     engine.SetSwitches(switches.cxxVector)
   }
 
   func getRegistrar(pluginName: String) -> FlutterDesktopPluginRegistrarRef? {
+    // FIXME: use GetRegistrar()
     FlutterDesktopEngineGetPluginRegistrar(_handle, pluginName)
   }
 
