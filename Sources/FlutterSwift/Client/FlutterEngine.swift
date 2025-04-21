@@ -126,10 +126,6 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     pluginPublications[pluginKey]
   }
 
-  func onVsync(lastFrameTimeNS: UInt64, vsyncIntervalTimeNS: UInt64) {
-    engine.OnVsync(lastFrameTimeNS, vsyncIntervalTimeNS)
-  }
-
   public var isImpellerEnabled: Bool {
     engine.IsImpellerEnabled()
   }
@@ -162,6 +158,45 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
 
   var messenger: FlutterDesktopMessengerRef! {
     engine.messenger()
+  }
+
+  func sendWindowMetricsEvent(_ event: FlutterWindowMetricsEvent) {
+    engine.SendWindowMetricsEvent(event)
+  }
+
+  func sendPointerEvent(_ event: FlutterPointerEvent) {
+    engine.SendPointerEvent(event)
+  }
+
+  func sendPlatformMessageResponse(handle: OpaquePointer, data: [UInt8]) {
+    engine.SendPlatformMessageResponse(handle, data, data.count)
+  }
+
+  func registerExternalTexture(id textureID: Int64) -> Bool {
+    engine.RegisterExternalTexture(textureID)
+  }
+
+  func unregisterExternalTexture(id textureID: Int64) -> Bool {
+    engine.UnregisterExternalTexture(textureID)
+  }
+
+  func markExternalTextureFrameAvailable(id textureID: Int64) -> Bool {
+    engine.MarkExternalTextureFrameAvailable(textureID)
+  }
+
+  func onVsync(lastFrameTimeNS: UInt64, vsyncIntervalTimeNS: UInt64) {
+    engine.OnVsync(lastFrameTimeNS, vsyncIntervalTimeNS)
+  }
+
+  func updateAccessibilityFeatures(flags: FlutterAccessibilityFeature) {
+    engine.UpdateAccessibilityFeatures(flags)
+  }
+
+  func updateDisplayInfo(
+    updateType: FlutterEngineDisplaysUpdateType,
+    displays: [FlutterEngineDisplay]
+  ) {
+    engine.UpdateDisplayInfo(updateType, displays, displays.count)
   }
 }
 
