@@ -159,6 +159,10 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   var textureRegistrar: flutter.FlutterELinuxTextureRegistrar! {
     engine.texture_registrar()
   }
+
+  var messenger: FlutterDesktopMessengerRef! {
+    engine.messenger()
+  }
 }
 
 #endif
