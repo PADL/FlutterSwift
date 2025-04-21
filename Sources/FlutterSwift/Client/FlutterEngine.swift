@@ -81,6 +81,16 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     return hasBeenRun
   }
 
+  public var isRunning: Bool {
+    engine.running()
+  }
+
+  public func stop() -> Bool {
+    guard hasBeenRun else { return false }
+    defer { hasBeenRun = false }
+    return engine.Stop()
+  }
+
   public func shutDown() {
     pluginPublications.removeAll()
     if engine != nil, ownsEngine {
@@ -114,10 +124,6 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
 
   public func valuePublished(by pluginKey: String) -> Any? {
     pluginPublications[pluginKey]
-  }
-
-  public var isRunning: Bool {
-    engine.running()
   }
 
   func onVsync(lastFrameTimeNS: UInt64, vsyncIntervalTimeNS: UInt64) {
