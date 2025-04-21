@@ -53,5 +53,136 @@ public struct FlutterView {
   public var frameRate: Int32 {
     view.GetFrameRate()
   }
+
+  func createRenderSurface() -> Bool {
+    view.CreateRenderSurface()
+  }
+
+  func destroyRenderSurface() {
+    view.DestroyRenderSurface()
+  }
+
+  var rootSurfaceTransformation: FlutterTransformation {
+    view.GetRootSurfaceTransformation()
+  }
+
+  func makeCurrent() -> Bool {
+    view.MakeCurrent()
+  }
+
+  func clearCurrent() -> Bool {
+    view.ClearCurrent()
+  }
+
+  func present() -> Bool {
+    view.Present()
+  }
+
+  func presentWithInfo(_ info: UnsafePointer<FlutterPresentInfo>) -> Bool {
+    view.PresentWithInfo(info)
+  }
+
+  func populateExistingDamage(fboID: Int, existingDamage: UnsafeMutablePointer<FlutterDamage>) {
+    view.PopulateExistingDamage(fboID, existingDamage)
+  }
+
+  func getOnscreenFBO() -> UInt32 {
+    view.GetOnscreenFBO()
+  }
+
+  func makeResourceCurrent() -> Bool {
+    view.MakeResourceCurrent()
+  }
+
+  func sendInitialBounds() {
+    view.SendInitialBounds()
+  }
+
+  func onWindowSizeChanged(widthPx: Int, heightPx: Int) {
+    view.OnWindowSizeChanged(widthPx, heightPx)
+  }
+
+  func onPointerMove(xPx: Double, yPx: Double) {
+    view.OnPointerMove(xPx, yPx)
+  }
+
+  func onPointerDown(xPx: Double, yPx: Double, button: FlutterPointerMouseButtons) {
+    view.OnPointerDown(xPx, yPx, button)
+  }
+
+  func onPointerUp(xPx: Double, yPx: Double, button: FlutterPointerMouseButtons) {
+    view.OnPointerUp(xPx, yPx, button)
+  }
+
+  func onPointerLeave() {
+    view.OnPointerLeave()
+  }
+
+  func onTouchDown(time: UInt32, id: Int32, x: Double, y: Double) {
+    view.OnTouchDown(time, id, x, y)
+  }
+
+  func onTouchUp(time: UInt32, id: Int32) {
+    view.OnTouchUp(time, id)
+  }
+
+  func onTouchMotion(time: UInt32, id: Int32, x: Double, y: Double) {
+    view.OnTouchMotion(time, id, x, y)
+  }
+
+  func onTouchCancel() {
+    view.OnTouchCancel()
+  }
+
+  func onKeyMap(format: UInt32, fd: CInt, size: UInt32) {
+    view.OnKeyMap(format, fd, size)
+  }
+
+  func onKeyModifiers(
+    modsDepressed: UInt32,
+    modsLatched: UInt32,
+    modsLocked: UInt32,
+    group: UInt32
+  ) {
+    view.OnKeyModifiers(modsDepressed, modsLatched, modsLocked, group)
+  }
+
+  func onKey(key: UInt32, pressed: Bool) {
+    view.OnKey(key, pressed)
+  }
+
+  func onVirtualKey(codePoint: UInt32) {
+    view.OnVirtualKey(codePoint)
+  }
+
+  func onVirtualSpecialKey(keyCode: UInt32) {
+    view.OnVirtualSpecialKey(keyCode)
+  }
+
+  func onScroll(
+    x: Double,
+    y: Double,
+    deltaX: Double,
+    deltaY: Double,
+    scrollOffsetMultiplier: CInt
+  ) {
+    view.OnScroll(x, y, deltaX, deltaY, scrollOffsetMultiplier)
+  }
+
+  func onVsync(lastFrameTimeNS: UInt64, vsyncIntervalTimeNS: UInt64) {
+    view.OnVsync(lastFrameTimeNS, vsyncIntervalTimeNS)
+  }
+
+  func updateHighContrastEnabled(_ enabled: Bool) {
+    view.UpdateHighContrastEnabled(enabled)
+  }
+
+  func updateTextScaleFactor(_ factor: Float) {
+    view.UpdateTextScaleFactor(factor)
+  }
+
+  func updateDisplayInfo(refreshRate: Double, widthPx: Int, heightPx: Int, pixelRatio: Double) {
+    view.UpdateDisplayInfo(refreshRate, widthPx, heightPx, pixelRatio)
+  }
 }
 #endif
