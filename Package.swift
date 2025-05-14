@@ -13,7 +13,7 @@ var targetPluginUsages = [Target.PluginUsage]()
 var platformCxxSettings: [CXXSetting] = []
 var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5)]
 
-let YoctoSysRoot = ProcessInfo.processInfo.environment["RECIPE_SYSROOT"]
+let EnvSysRoot = ProcessInfo.processInfo.environment["SYSROOT"]
 
 func tryGuessSwiftRoot() -> String {
   let task = Process()
@@ -31,7 +31,7 @@ func tryGuessSwiftRoot() -> String {
   }
 }
 
-let SwiftRoot = YoctoSysRoot ?? tryGuessSwiftRoot()
+let SwiftRoot = EnvSysRoot ?? tryGuessSwiftRoot()
 var FlutterPlatform: String
 var FlutterUnsafeLinkerFlags: [String] = []
 
@@ -241,7 +241,7 @@ let FlutterELinuxBackend = FlutterELinuxBackendType.defaultBackend
 let CxxIncludeDirs: [String] = [
   "\(SwiftRoot)/usr/include",
   "\(SwiftRoot)/usr/lib/swift",
-  "\(YoctoSysRoot ?? "")/usr/include/drm",
+  "\(EnvSysRoot ?? "")/usr/include/drm",
 ]
 
 let CxxIncludeFlags = CxxIncludeDirs.flatMap { ["-I", $0] }
