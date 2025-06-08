@@ -32,6 +32,7 @@ func tryGuessSwiftRoot() -> String {
 }
 
 let SwiftRoot = EnvSysRoot ?? tryGuessSwiftRoot()
+
 var FlutterPlatform: String
 var FlutterUnsafeLinkerFlags: [String] = []
 
@@ -245,6 +246,7 @@ let CxxIncludeDirs: [String] = [
 ]
 
 let CxxIncludeFlags = CxxIncludeDirs.flatMap { ["-I", $0] }
+debugPrint("Swift Root is \(SwiftRoot) Flags \(CxxIncludeFlags)")
 
 platformSwiftSettings += [
   .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
