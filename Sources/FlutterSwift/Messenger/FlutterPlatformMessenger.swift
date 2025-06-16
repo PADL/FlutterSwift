@@ -110,7 +110,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     priority: TaskPriority?
   ) async throws -> Data? {
     try await withPriority(priority) {
-      await withCheckedContinuation { continuation in
+      await withUnsafeContinuation { continuation in
         self._send(on: channel, message: message) { binaryReply in
           continuation.resume(returning: binaryReply)
         }

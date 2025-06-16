@@ -129,7 +129,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
     priority: TaskPriority?
   ) async throws -> Data? {
     try await withPriority(priority) {
-      await withCheckedContinuation { continuation in
+      await withUnsafeContinuation { continuation in
         let replyThunk: FlutterDesktopBinaryReplyBlock?
 
         replyThunk = { bytes, count in
