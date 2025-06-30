@@ -142,7 +142,7 @@ if FlutterSwiftJVM {
   ]
   targetPluginUsages += [
     .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
-    .plugin(name: "Java2SwiftPlugin", package: "swift-java"),
+    .plugin(name: "SwiftJavaPlugin", package: "swift-java"),
   ]
 
   let javaKitDependencies: [Target.Dependency] = [
@@ -479,7 +479,7 @@ targets += [
 let package = Package(
   name: "FlutterSwift",
   platforms: [
-    .macOS(.v13),
+    .macOS(.v15),
     .iOS(.v16),
   ],
   products: [

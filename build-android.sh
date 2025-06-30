@@ -15,11 +15,11 @@ unset JAVA_INCLUDE_PATH
 FLUTTER_SWIFT_JVM=true
 export FLUTTER_SWIFT_JVM
 
-NDK_VERS=24
+NDK_VERS=31
 
-SWIFT_VERS=6.0.3
+SWIFT_VERS=6.1.2
 SWIFT_SDK="$(swift sdk list|grep android|tail -1)"
-SWIFT_SDK_SYSROOT="${HOME}/.swiftpm/swift-sdks/${SWIFT_SDK}.artifactbundle/swift-${SWIFT_VERS}-release-android-${NDK_VERS}-sdk/android-27c-sysroot"
+SWIFT_SDK_SYSROOT="${HOME}/.swiftpm/swift-sdks/${SWIFT_SDK}.artifactbundle/swift-${SWIFT_VERS}-release-android-24-sdk/android-27c-sysroot"
 
 HOST_JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home"
 TARGET_JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
@@ -44,14 +44,14 @@ export APP_PACKAGE_NAME=$(basename ${APP_PACKAGE_SOURCE})
 export JAVA_HOME=${HOST_JAVA_HOME}
 export JAVA_INCLUDE_PATH=${HOST_JAVA_HOME}/include
 
-swift build -Xswiftc -Xfrontend -Xswiftc -disable-round-trip-debug-types --toolchain ${TOOLCHAINS} --product Java2Swift
+swift build -Xswiftc -Xfrontend -Xswiftc -disable-round-trip-debug-types --toolchain ${TOOLCHAINS} --product SwiftJavaTool
 swift build -Xswiftc -Xfrontend -Xswiftc -disable-round-trip-debug-types --toolchain ${TOOLCHAINS} --product JavaCompilerPlugin
 
 export JAVA_HOME=${TARGET_JAVA_HOME}
 export JAVA_INCLUDE_PATH="${SWIFT_SDK_SYSROOT}/usr/include"
 
 FLUTTER_CLASSPATH="${FLUTTER_SDK}/bin/cache/artifacts/engine/android-arm64/flutter.jar"
-FLUTTER_CLASSPATH_REF=".build/plugins/outputs/flutterswift/FlutterAndroid/destination/Java2SwiftPlugin/Flutter.swift-java.classpath"
+FLUTTER_CLASSPATH_REF=".build/plugins/outputs/flutterswift/FlutterAndroid/destination/SwiftJavaPlugin/Flutter.swift-java.classpath"
 echo -n ${FLUTTER_CLASSPATH} > ${FLUTTER_CLASSPATH_REF}
 export CLASSPATH=${FLUTTER_CLASSPATH}
 
