@@ -26,7 +26,7 @@ class MainFlutterWindow: NSWindow {
 
 extension ChannelManager {
   convenience init(viewController: FlutterViewController) async throws {
-    try await self
+    await self
       .init(binaryMessenger: FlutterPlatformMessenger(
         wrapping: viewController.engine
           .binaryMessenger
