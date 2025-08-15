@@ -64,7 +64,8 @@ echo "Copying Flutter engine to bundle lib directory..."
 if [ -f ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ]; then
   cp ${FLUTTER_CACHE_ENGINEDIR}/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ${BUNDLE_DIR}/lib/
 else
-  cp .build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle/elinux-${ARCH}-${FLUTTER_SWIFT_BUILD_CONFIG}/libflutter_engine.so ${BUNDLE_DIR}/lib/
+  # not we are no longer hosting debug artifacts as they exceed the GitHub limit
+  cp .build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle/elinux-${ARCH}-release/libflutter_engine.so ${BUNDLE_DIR}/lib/
 fi
 
 echo "Done!"
