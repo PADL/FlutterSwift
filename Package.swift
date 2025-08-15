@@ -57,8 +57,7 @@ let FlutterArch = "x64"
 #else
 #error("Unknown architecture")
 #endif
-FlutterPlatform = "elinux-\(FlutterArch)-debug"
-// FIXME: for release target
+FlutterPlatform = "elinux-\(FlutterArch)-release"
 let FlutterLibPath = "\(FlutterRoot)/\(FlutterPlatform)"
 let FlutterAltLibPath = "/opt/flutter-elinux/lib"
 FlutterUnsafeLinkerFlags = [

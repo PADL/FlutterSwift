@@ -10,7 +10,7 @@ mkdir -p "$artifact_dir"
 cp info.json.in "$artifact_dir/info.json"
 pushd "$artifact_dir/" >/dev/null
 
-for platform in arm64-debug x64-debug
+for platform in arm64-release x64-release
 do
     mkdir "elinux-$platform"
     cd "elinux-$platform"
