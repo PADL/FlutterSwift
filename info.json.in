@@ -6,11 +6,11 @@
             "version": "3.13.1",
             "variants": [
                {
-                    "path": "elinux-arm64-debug/libflutter_engine.so",
+                    "path": "elinux-arm64-release/libflutter_engine.so",
                     "supportedTriples": ["aarch64-unknown-linux-gnu"]
                },
                {
-                    "path": "elinux-x64-debug/libflutter_engine.so",
+                    "path": "elinux-x64-release/libflutter_engine.so",
                     "supportedTriples": ["x86_64-unknown-linux-gnu"]
                }
             ]
