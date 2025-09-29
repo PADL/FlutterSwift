@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -39,6 +39,9 @@ public protocol FlutterChannel: AnyObject, Hashable, Equatable {
   var binaryMessenger: FlutterBinaryMessenger { get }
   var codec: FlutterMessageCodec { get }
   var priority: TaskPriority? { get }
+
+  func resizeChannelBuffer(_ newSize: Int) async throws
+  func allowChannelBufferOverflow(_ allowed: Bool) async throws
 }
 
 protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
@@ -92,24 +95,28 @@ func _allowChannelBufferOverflow(
 }
 
 public extension FlutterChannel {
-  func resizeChannelBuffer(_ newSize: Int) async throws {
-    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
-  }
-
-  func allowChannelBufferOverflow(_ allowed: Bool) async throws {
-    try await _allowChannelBufferOverflow(
-      binaryMessenger: binaryMessenger,
-      on: name,
-      allowed: allowed
-    )
-  }
-
   static func == (lhs: Self, rhs: Self) -> Bool {
     lhs.name == rhs.name
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine(name)
+  }
+}
+
+protocol _FlutterChannelDefaultBufferControl: FlutterChannel {}
+
+extension _FlutterChannelDefaultBufferControl {
+  public func resizeChannelBuffer(_ newSize: Int) async throws {
+    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  }
+
+  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
+    try await _allowChannelBufferOverflow(
+      binaryMessenger: binaryMessenger,
+      on: name,
+      allowed: allowed
+    )
   }
 }
 

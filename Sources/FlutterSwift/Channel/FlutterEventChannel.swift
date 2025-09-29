@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2024 PADL Software Pty Ltd
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,9 @@ public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionRepresentable, Sendable {
+public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionRepresentable,
+  Sendable
+{
   public let name: String
   public let binaryMessenger: FlutterBinaryMessenger
   public let codec: FlutterMessageCodec
@@ -42,6 +44,10 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
   private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
   private let tasks: ManagedCriticalState<[String: EventStreamTask]>
+
+  // store these to propagate to separate channel invocations
+  private var channelBufferSize = 1
+  private var allowChannelBufferOverflow = false
 
   var connection: FlutterBinaryMessengerConnection {
     get {
@@ -161,6 +167,19 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
+      if !invocationID.isEmpty {
+        try await _resizeChannelBuffer(
+          binaryMessenger: binaryMessenger,
+          on: name,
+          newSize: channelBufferSize
+        )
+        try await _allowChannelBufferOverflow(
+          binaryMessenger: binaryMessenger,
+          on: name,
+          allowed: allowChannelBufferOverflow
+        )
+      }
+
       let stream = try await onListen(call.arguments)
       let task = EventStreamTask(priority: priority) {
         try? await self._run(for: stream, name: name)
@@ -219,5 +238,19 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   @_spi(FlutterSwiftPrivate)
   public var tasksCount: Int {
     tasks.withCriticalRegion { $0.count }
+  }
+
+  public func resizeChannelBuffer(_ newSize: Int) async throws {
+    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+    channelBufferSize = newSize
+  }
+
+  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
+    try await _allowChannelBufferOverflow(
+      binaryMessenger: binaryMessenger,
+      on: name,
+      allowed: allowed
+    )
+    allowChannelBufferOverflow = allowed
   }
 }

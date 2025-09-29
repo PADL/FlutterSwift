@@ -74,7 +74,9 @@ extension FlutterMethodCall: Hashable where Arguments: Codable & Hashable {
  * A channel for communicating with the Flutter side using invocation of
  * asynchronous methods.
  */
-public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepresentable, Sendable {
+public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepresentable,
+  _FlutterChannelDefaultBufferControl, Sendable
+{
   public let name: String
   public let binaryMessenger: FlutterBinaryMessenger
   public let codec: FlutterMessageCodec
