@@ -48,16 +48,23 @@ public struct FlutterWindow {
   // MARK: - CFRunLoop API
 
   private func _allocTimer() -> Timer {
+    precondition(viewController.view.frameRate != 0)
     // note: frame rate is not in Hz, rather it's 1000*Hz (i.e. 60000 for 60Hz)
-    Timer(
-      timeInterval: TimeInterval(1000.0) / TimeInterval(viewController.view.frameRate),
+    let framePeriod = TimeInterval(1000.0) / TimeInterval(viewController.view.frameRate)
+
+    return Timer(
+      timeInterval: framePeriod,
       repeats: true
     ) { [self] timer in
       let waitDurationNS = viewController.engine.processMessages()
-      if waitDurationNS != Int64.max {
+
+      if waitDurationNS > UInt64(framePeriod * TimeInterval(NanosecondsPerSecond)) &&
+        waitDurationNS < Int64.max
+      {
         timer.fireDate = Date.now
           .addingTimeInterval(TimeInterval(waitDurationNS) / TimeInterval(NanosecondsPerSecond))
       }
+
       guard viewController.view.dispatchEvent() else {
         timer.invalidate()
         return
@@ -82,17 +89,20 @@ public struct FlutterWindow {
 
   @MainActor
   public func run() async throws {
+    precondition(viewController.view.frameRate != 0)
     let framePeriodNS =
       Int(Double(NanosecondsPerSecond) / (Double(viewController.view.frameRate) / 1000.0))
 
     repeat {
       var deadline: ContinuousClock.Instant = .now
       let waitDurationNS = viewController.engine.processMessages()
-      if waitDurationNS != Int64.max {
+
+      if waitDurationNS > framePeriodNS && waitDurationNS < Int64.max {
         deadline += .nanoseconds(waitDurationNS)
       } else {
         deadline += .nanoseconds(framePeriodNS)
       }
+
       try await Task.sleep(until: deadline)
     } while viewController.view.dispatchEvent()
   }
