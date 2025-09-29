@@ -45,7 +45,7 @@ protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
   var connection: FlutterBinaryMessengerConnection { get set }
 }
 
-private let kFlutterChannelBuffersChannel = "dev.flutter/channel-buffers"
+private let kControlChannelName = "dev.flutter/channel-buffers"
 
 public extension FlutterChannel {
   private static func _controlChannelBuffers(
@@ -61,7 +61,7 @@ public extension FlutterChannel {
       arguments: arguments
     )
     try await binaryMessenger.send(
-      on: kFlutterChannelBuffersChannel,
+      on: kControlChannelName,
       message: codec.encode(methodCall)
     )
   }
