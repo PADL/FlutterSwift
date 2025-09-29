@@ -47,57 +47,57 @@ protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
 
 private let kControlChannelName = "dev.flutter/channel-buffers"
 
+private func _controlChannelBuffers(
+  binaryMessenger: FlutterBinaryMessenger,
+  on channel: String,
+  method: String,
+  _ arg: AnyFlutterStandardCodable
+) async throws {
+  let codec = FlutterStandardMessageCodec.shared
+  let arguments: [AnyFlutterStandardCodable] = [AnyFlutterStandardCodable.string(channel), arg]
+  let methodCall = FlutterMethodCall<[AnyFlutterStandardCodable]>(
+    method: method,
+    arguments: arguments
+  )
+  try await binaryMessenger.send(
+    on: kControlChannelName,
+    message: codec.encode(methodCall)
+  )
+}
+
+func _resizeChannelBuffer(
+  binaryMessenger: FlutterBinaryMessenger,
+  on channel: String,
+  newSize: Int
+) async throws {
+  try await _controlChannelBuffers(
+    binaryMessenger: binaryMessenger,
+    on: channel,
+    method: "resize",
+    AnyFlutterStandardCodable.int32(Int32(newSize))
+  )
+}
+
+func _allowChannelBufferOverflow(
+  binaryMessenger: FlutterBinaryMessenger,
+  on channel: String,
+  allowed: Bool
+) async throws {
+  try await _controlChannelBuffers(
+    binaryMessenger: binaryMessenger,
+    on: channel,
+    method: "overflow",
+    allowed ? AnyFlutterStandardCodable.true : AnyFlutterStandardCodable.false
+  )
+}
+
 public extension FlutterChannel {
-  private static func _controlChannelBuffers(
-    binaryMessenger: FlutterBinaryMessenger,
-    on channel: String,
-    method: String,
-    _ arg: AnyFlutterStandardCodable
-  ) async throws {
-    let codec = FlutterStandardMessageCodec.shared
-    let arguments: [AnyFlutterStandardCodable] = [AnyFlutterStandardCodable.string(channel), arg]
-    let methodCall = FlutterMethodCall<[AnyFlutterStandardCodable]>(
-      method: method,
-      arguments: arguments
-    )
-    try await binaryMessenger.send(
-      on: kControlChannelName,
-      message: codec.encode(methodCall)
-    )
-  }
-
-  private static func resizeChannelBuffer(
-    binaryMessenger: FlutterBinaryMessenger,
-    on channel: String,
-    newSize: Int
-  ) async throws {
-    try await _controlChannelBuffers(
-      binaryMessenger: binaryMessenger,
-      on: channel,
-      method: "resize",
-      AnyFlutterStandardCodable.int32(Int32(newSize))
-    )
-  }
-
   func resizeChannelBuffer(_ newSize: Int) async throws {
-    try await Self.resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
-  }
-
-  private static func allowChannelBufferOverflow(
-    binaryMessenger: FlutterBinaryMessenger,
-    on channel: String,
-    allowed: Bool
-  ) async throws {
-    try await _controlChannelBuffers(
-      binaryMessenger: binaryMessenger,
-      on: channel,
-      method: "overflow",
-      allowed ? AnyFlutterStandardCodable.true : AnyFlutterStandardCodable.false
-    )
+    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
   }
 
   func allowChannelBufferOverflow(_ allowed: Bool) async throws {
-    try await Self.allowChannelBufferOverflow(
+    try await _allowChannelBufferOverflow(
       binaryMessenger: binaryMessenger,
       on: name,
       allowed: allowed
