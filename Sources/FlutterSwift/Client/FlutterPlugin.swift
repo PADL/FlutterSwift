@@ -64,7 +64,7 @@ struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendabl
   let _detachFromEngine: @Sendable (FlutterPluginRegistrar)
     -> ()
 
-  public init() {
+  init() {
     _handleMethod = { _ in fatalError() }
     _detachFromEngine = { _ in }
   }
@@ -74,11 +74,11 @@ struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendabl
     _detachFromEngine = { plugin.detachFromEngine(for: $0) }
   }
 
-  public func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result {
+  func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result {
     try _handleMethod(call)
   }
 
-  public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+  func detachFromEngine(for registrar: FlutterPluginRegistrar) {
     _detachFromEngine(registrar)
   }
 }

@@ -35,7 +35,7 @@ public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> = (
  * message passing.
  */
 public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnectionRepresentable,
-  Sendable
+  _FlutterChannelDefaultBufferControl, Sendable
 {
   public let name: String
   public let binaryMessenger: FlutterBinaryMessenger

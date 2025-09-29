@@ -27,7 +27,7 @@ import Foundation
 #endif
 
 struct FlutterStandardEncoder {
-  public func encode<Value>(_ value: Value) throws -> Data where Value: Encodable {
+  func encode<Value>(_ value: Value) throws -> Data where Value: Encodable {
     let state = FlutterStandardEncodingState()
     try state.encode(value, codingPath: [])
     return state.data
