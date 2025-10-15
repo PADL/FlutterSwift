@@ -71,8 +71,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
    * @param name The channel name.
    * @param binaryMessenger The binary messenger.
    * @param codec The method codec.
-   * @param taskQueue The FlutterTaskQueue that executes the handler (see
-   -[FlutterBinaryMessenger makeBackgroundTaskQueue]).
+   * @param taskQueue The FlutterTaskQueue that executes the handler
    */
   public init(
     name: String,
