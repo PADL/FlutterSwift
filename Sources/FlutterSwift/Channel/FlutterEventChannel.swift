@@ -123,7 +123,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   private func _removeTask(_ id: String) {
-    tasks.withLock { tasks in
+    _ = tasks.withLock { tasks in
       tasks.removeValue(forKey: id)
     }
   }
