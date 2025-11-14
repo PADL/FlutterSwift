@@ -43,12 +43,11 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
   private typealias EventStreamTask = Task<(), Never>
 
-  private let _connection: ManagedAtomic<FlutterBinaryMessengerConnection>
-  private let tasks: Mutex<[String: EventStreamTask]>
+  private let _connection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
+  private let _channelBufferSize = ManagedAtomic<Int>(1)
+  private let _channelBufferOverflowAllowed = ManagedAtomic<Bool>(false)
 
-  // store these to propagate to separate channel invocations
-  private var channelBufferSize = 1
-  private var allowChannelBufferOverflow = false
+  private let tasks: Mutex<[String: EventStreamTask]>
 
   var connection: FlutterBinaryMessengerConnection {
     get {
@@ -56,6 +55,24 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     }
     set {
       _connection.store(newValue, ordering: .releasing)
+    }
+  }
+
+  private var channelBufferSize: Int {
+    get {
+      _channelBufferSize.load(ordering: .acquiring)
+    }
+    set {
+      _channelBufferSize.store(newValue, ordering: .releasing)
+    }
+  }
+
+  private var channelBufferOverflowAllowed: Bool {
+    get {
+      _channelBufferOverflowAllowed.load(ordering: .acquiring)
+    }
+    set {
+      _channelBufferOverflowAllowed.store(newValue, ordering: .releasing)
     }
   }
 
@@ -80,7 +97,6 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
-    _connection = ManagedAtomic(0)
     tasks = Mutex([:])
     self.name = name
     self.binaryMessenger = binaryMessenger
@@ -176,7 +192,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         try await _allowChannelBufferOverflow(
           binaryMessenger: binaryMessenger,
           on: name,
-          allowed: allowChannelBufferOverflow
+          allowed: channelBufferOverflowAllowed
         )
       }
 
@@ -251,6 +267,6 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       on: name,
       allowed: allowed
     )
-    allowChannelBufferOverflow = allowed
+    channelBufferOverflowAllowed = allowed
   }
 }
