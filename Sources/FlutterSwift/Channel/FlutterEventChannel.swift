@@ -23,7 +23,6 @@ import FoundationEssentials
 #else
 import Foundation
 #endif
-import Synchronization
 
 /**
  * An asynchronous event stream.
@@ -46,8 +45,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   private let _connection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
   private let _channelBufferSize = ManagedAtomic<Int>(1)
   private let _channelBufferOverflowAllowed = ManagedAtomic<Bool>(false)
-
-  private let tasks: Mutex<[String: EventStreamTask]>
+  private let tasks: ManagedCriticalState<[String: EventStreamTask]>
 
   var connection: FlutterBinaryMessengerConnection {
     get {
@@ -97,7 +95,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     codec: FlutterMessageCodec = FlutterStandardMessageCodec.shared,
     priority: TaskPriority? = nil
   ) {
-    tasks = Mutex([:])
+    tasks = ManagedCriticalState([:])
     self.name = name
     self.binaryMessenger = binaryMessenger
     self.codec = codec
@@ -105,7 +103,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   deinit {
-    tasks.withLock { tasks in
+    tasks.withCriticalRegion { tasks in
       tasks.values.forEach { $0.cancel() }
     }
     try? removeMessageHandler()
@@ -114,7 +112,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   private func _cancelTask(_ id: String) {
     var task: EventStreamTask?
 
-    tasks.withLock { tasks in
+    tasks.withCriticalRegion { tasks in
       task = tasks[id]
       tasks.removeValue(forKey: id) // shouldn't be necessary
     }
@@ -123,7 +121,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   private func _removeTask(_ id: String) {
-    _ = tasks.withLock { tasks in
+    _ = tasks.withCriticalRegion { tasks in
       tasks.removeValue(forKey: id)
     }
   }
@@ -131,7 +129,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   private func _addTask(_ id: String, _ task: EventStreamTask) {
     var oldTask: EventStreamTask?
 
-    tasks.withLock { tasks in
+    tasks.withCriticalRegion { tasks in
       oldTask = tasks[id]
       tasks[id] = task
     }
@@ -253,7 +251,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
   @_spi(FlutterSwiftPrivate)
   public var tasksCount: Int {
-    tasks.withLock { $0.count }
+    tasks.withCriticalRegion { $0.count }
   }
 
   public func resizeChannelBuffer(_ newSize: Int) async throws {
