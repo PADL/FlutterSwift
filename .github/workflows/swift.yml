@@ -58,8 +58,7 @@ jobs:
       - name: Checkout Flutter
         run: |
           FLUTTER_ROOT=/opt/flutter-elinux
-          git clone --depth 1 --branch main $FLUTTER_REPOSITORY $FLUTTER_ROOT
-          git checkout $FLUTTER_REVISION
+          git clone --depth 1 $FLUTTER_REPOSITORY $FLUTTER_ROOT
           (cd $FLUTTER_ROOT; git switch -c $FLUTTER_REVISION)
           $FLUTTER_ROOT/bin/flutter-elinux 2>&1
       - name: Version
@@ -94,8 +93,7 @@ jobs:
           git submodule update
       - name: Checkout Flutter
         run: |
-          git clone --depth 1 --branch main $FLUTTER_REPOSITORY $FLUTTER_ROOT
-          git checkout $FLUTTER_REVISION
+          git clone --depth 1 $FLUTTER_REPOSITORY $FLUTTER_ROOT
           (cd $FLUTTER_ROOT; git switch -c $FLUTTER_REVISION)
           $FLUTTER_ROOT/bin/flutter-elinux 2>&1
       - name: Version
