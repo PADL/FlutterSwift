@@ -11,7 +11,7 @@ var targetDependencies = [Target.Dependency]()
 var targetPluginUsages = [Target.PluginUsage]()
 
 var platformCxxSettings: [CXXSetting] = []
-var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5)]
+var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5, .when(platforms: [.macOS, .iOS]))]
 
 let EnvSysRoot = ProcessInfo.processInfo.environment["SYSROOT"]
 
