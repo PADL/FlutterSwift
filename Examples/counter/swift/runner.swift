@@ -23,7 +23,7 @@ import AndroidLogging
 #endif
 
 final class ChannelManager: @unchecked Sendable {
-  fileprivate static var shared: ChannelManager!
+  fileprivate nonisolated(unsafe) static var shared: ChannelManager!
 
   typealias Arguments = FlutterNull
   typealias Event = Int32

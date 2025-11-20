@@ -183,11 +183,12 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
           messageData = Data(bytes: ptr, count: message.message_size)
         }
 
-        Task(priority: priority) {
+        nonisolated(unsafe) let responseHandle = message.response_handle
+        let _ = Task(priority: priority) { @Sendable [self, handler, channel, messageData] in
           let response = try await handler(messageData)
           try? self.sendResponse(
             on: channel,
-            handle: message.response_handle,
+            handle: responseHandle,
             response: response
           )
         }

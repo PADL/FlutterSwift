@@ -35,7 +35,7 @@ public typealias FlutterMethodCallHandler<
   Arguments: Codable & Sendable,
   Result: Codable & Sendable
 > =
-  (FlutterMethodCall<Arguments>) async throws -> Result?
+  @Sendable (FlutterMethodCall<Arguments>) async throws -> Result?
 
 /**
  * Creates a method call for invoking the specified named method with the
@@ -145,23 +145,20 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     Arguments: Codable & Sendable,
     Result: Codable
   >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
-    try await setMessageHandler(handler) { [weak self] unwrappedHandler in
+    try await setMessageHandler(handler) { [codec] unwrappedHandler in
       { message in
-        guard let self else {
-          throw FlutterSwiftError.messengerNotAvailable
-        }
         guard let message else {
           throw FlutterSwiftError.methodNotImplemented
         }
 
-        let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
+        let call: FlutterMethodCall<Arguments> = try codec.decode(message)
         let envelope: FlutterEnvelope<Result>
         do {
           envelope = try await .success(unwrappedHandler(call))
         } catch let error as FlutterError {
           envelope = .failure(error)
         }
-        return try self.codec.encode(envelope)
+        return try codec.encode(envelope)
       }
     }
   }

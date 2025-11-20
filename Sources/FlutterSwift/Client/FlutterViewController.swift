@@ -18,23 +18,23 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public final class FlutterViewController {
+public final class FlutterViewController: @unchecked Sendable {
   private let controller: FlutterDesktopViewControllerRef
   public let engine: FlutterEngine
 
-  public enum ViewMode: Int {
+  public enum ViewMode: Int, Sendable {
     case kNormal = 0
     case kFullscreen = 1
   }
 
-  public enum ViewRotation: Int {
+  public enum ViewRotation: Int, Sendable {
     case kRotation_0 = 0
     case kRotation_90 = 1
     case kRotation_180 = 2
     case kRotation_270 = 3
   }
 
-  public struct ViewProperties {
+  public struct ViewProperties: Sendable {
     let width: Int32
     let height: Int32
     let viewRotation: ViewRotation

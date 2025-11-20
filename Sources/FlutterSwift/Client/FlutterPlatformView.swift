@@ -55,7 +55,7 @@ enum FlutterPlatformViewKey: String, CaseIterable {
   case params
 }
 
-public final class FlutterPlatformViewsPlugin: FlutterPlugin {
+public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendable {
   var viewFactories = [String: FlutterPlatformViewFactory]()
   var platformViews = [Int: FlutterPlatformView]()
   var currentViewId: Int = -1
