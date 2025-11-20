@@ -36,7 +36,7 @@ var FlutterPlatform: String
 var FlutterUnsafeLinkerFlags: [String] = []
 
 #if os(macOS) // Note: This is the _build_ platform
-platformSwiftSettings += [.swiftLanguageMode(.v5)]
+platformSwiftSettings += [.swiftLanguageMode(.v5, .when(platforms: [.macOS, .iOS]))]
 
 let FlutterRoot = "/opt/flutter"
 let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
