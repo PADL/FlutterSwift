@@ -1,4 +1,4 @@
-// swift-tools-version:6.0
+// swift-tools-version:6.2
 
 import Foundation
 import PackageDescription
@@ -11,7 +11,7 @@ var targetDependencies = [Target.Dependency]()
 var targetPluginUsages = [Target.PluginUsage]()
 
 var platformCxxSettings: [CXXSetting] = []
-var platformSwiftSettings: [SwiftSetting] = [.swiftLanguageMode(.v5)]
+var platformSwiftSettings: [SwiftSetting] = []
 
 let EnvSysRoot = ProcessInfo.processInfo.environment["SYSROOT"]
 
@@ -36,6 +36,8 @@ var FlutterPlatform: String
 var FlutterUnsafeLinkerFlags: [String] = []
 
 #if os(macOS) // Note: This is the _build_ platform
+platformSwiftSettings += [.swiftLanguageMode(.v5)]
+
 let FlutterRoot = "/opt/flutter"
 let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
 
