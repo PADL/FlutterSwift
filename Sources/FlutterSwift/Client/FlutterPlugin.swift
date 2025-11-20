@@ -19,7 +19,7 @@
 import CxxFlutterSwift
 import Foundation
 
-public protocol FlutterPlugin {
+public protocol FlutterPlugin: Sendable {
   associatedtype Arguments: Codable & Sendable
   associatedtype Result: Codable & Sendable
 
@@ -156,12 +156,13 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     _ delegate: AnyFlutterPlugin<Arguments, Result>,
     on channel: FlutterMethodChannel
   ) throws {
-    Task {
+    let detachCallback = delegate._detachFromEngine
+    Task { [delegate, channel] in
       try await channel.setMethodCallHandler { call in
         try delegate.handleMethod(call: call)
       }
-      detachFromEngineCallbacks[channel] = delegate._detachFromEngine
     }
+    detachFromEngineCallbacks[channel] = detachCallback
   }
 
   public func lookupKey(for asset: String) -> String? {

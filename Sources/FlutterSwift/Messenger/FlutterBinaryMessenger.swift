@@ -27,7 +27,7 @@ import Foundation
  * @param message The message.
  * @result reply A callback for submitting an asynchronous reply to the sender.
  */
-public typealias FlutterBinaryMessageHandler = (Data?) async throws -> Data?
+public typealias FlutterBinaryMessageHandler = @Sendable (Data?) async throws -> Data?
 
 public typealias FlutterBinaryMessengerConnection = Int64
 

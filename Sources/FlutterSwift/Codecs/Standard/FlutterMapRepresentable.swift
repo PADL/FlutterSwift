@@ -20,9 +20,7 @@ import FoundationEssentials
 import Foundation
 #endif
 
-struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Codable,
-  Hashable, Sendable
-{
+struct KeyValuePair<Key: Hashable & Codable, Value: Codable>: Codable, Hashable {
   static func == (lhs: KeyValuePair<Key, Value>, rhs: KeyValuePair<Key, Value>) -> Bool {
     guard lhs.key == rhs.key else {
       return false
@@ -39,7 +37,9 @@ struct KeyValuePair<Key: Hashable & Codable & Sendable, Value: Codable & Sendabl
   var value: Value
 }
 
-protocol FlutterMapRepresentable<Key, Value>: Collection, Sendable {
+extension KeyValuePair: Sendable where Key: Sendable, Value: Sendable {}
+
+protocol FlutterMapRepresentable<Key, Value>: Collection {
   associatedtype Key: Codable & Hashable & Sendable
   associatedtype Value: Codable & Sendable
 

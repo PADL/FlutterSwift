@@ -27,8 +27,9 @@ import Foundation
  *
  * @param message The message.
  */
-public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> = (Message?) async
-  -> Reply?
+public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> =
+  @Sendable (Message?) async
+    -> Reply?
 
 /**
  * A channel for communicating with the Flutter side using basic, asynchronous
@@ -91,21 +92,17 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
     Message: Decodable,
     Reply: Encodable
   >(_ handler: FlutterMessageHandler<Message, Reply>?) async throws {
-    try await setMessageHandler(handler) { [weak self] unwrappedHandler in
+    try await setMessageHandler(handler) { [codec] unwrappedHandler in
       { message in
         let decoded: Message?
 
-        guard let self else {
-          throw FlutterSwiftError.messengerNotAvailable
-        }
-
         if let message {
-          decoded = try self.codec.decode(message)
+          decoded = try codec.decode(message)
         } else {
           decoded = nil
         }
         let reply = await unwrappedHandler(decoded)
-        return try self.codec.encode(reply)
+        return try codec.encode(reply)
       }
     }
   }

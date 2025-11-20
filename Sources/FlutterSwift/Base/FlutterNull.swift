@@ -14,6 +14,6 @@
 // limitations under the License.
 //
 
-public struct FlutterNull: Codable, Equatable {
+public struct FlutterNull: Codable, Equatable, Sendable {
   public init() {}
 }
