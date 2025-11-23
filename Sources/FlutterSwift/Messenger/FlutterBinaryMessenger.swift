@@ -45,7 +45,7 @@ public typealias FlutterPlatformThreadActor = MainActor
 //
 // Hence the send() methods in the protocol are annotated with
 // @FlutterPlatformThreadActor which will ensure they run on @MainActor on
-// Darwin, and @UIThreadActor on Android. This/ annotation ensures that the
+// Darwin, and @UIThreadActor on Android. This annotation ensures that the
 // caller doesn't need to be aware of the platform thread requirement.
 //
 // setMessageHandler() and cleanUp() are not annotated as such as they need
