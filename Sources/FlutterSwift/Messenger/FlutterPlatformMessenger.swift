@@ -74,34 +74,27 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _wrappedMessenger.cleanUpConnection(connection)
   }
 
-  public func _send(
+  #if canImport(Android)
+  @UIThreadActor
+  #else
+  @MainActor
+  #endif
+  private func _send(
     on channel: String,
     message: Data?,
     _ binaryReply: FlutterBinaryReply?
-  ) {
-    #if canImport(Android)
-    Task { @UIThreadActor [weak self] in
-      self?._wrappedMessenger.send(
-        onChannel: channel,
-        message: message,
-        binaryReply: binaryReply
-      )
-    }
-    #else
-    Task { @MainActor [weak self] in
-      self?._wrappedMessenger.send(
-        onChannel: channel,
-        message: message,
-        binaryReply: binaryReply
-      )
-    }
-    #endif
+  ) async throws {
+    _wrappedMessenger.send(
+      onChannel: channel,
+      message: message,
+      binaryReply: binaryReply
+    )
   }
 
   // MARK: - public API
 
   public func send(on channel: String, message: Data?) async throws {
-    _send(on: channel, message: message, nil)
+    try await _send(on: channel, message: message, nil)
   }
 
   public func send(
@@ -111,8 +104,10 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   ) async throws -> Data? {
     try await withPriority(priority) {
       await withUnsafeContinuation { continuation in
-        self._send(on: channel, message: message) { binaryReply in
-          continuation.resume(returning: binaryReply)
+        Task {
+          try await self._send(on: channel, message: message) { binaryReply in
+            continuation.resume(returning: binaryReply)
+          }
         }
       }
     }
