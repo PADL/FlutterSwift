@@ -11,12 +11,10 @@ class MainFlutterWindow: NSWindow {
     contentViewController = flutterViewController
     setFrame(windowFrame, display: true)
 
-    Task { @MainActor in
-      do {
-        runner = try await ChannelManager(viewController: flutterViewController)
-      } catch {
-        NSApp.terminate(self)
-      }
+    do {
+      runner = try ChannelManager(viewController: flutterViewController)
+    } catch {
+      NSApp.terminate(self)
     }
 
     RegisterGeneratedPlugins(registry: flutterViewController)
@@ -25,8 +23,8 @@ class MainFlutterWindow: NSWindow {
 }
 
 extension ChannelManager {
-  convenience init(viewController: FlutterViewController) async throws {
-    await self
+  convenience init(viewController: FlutterViewController) throws {
+    self
       .init(binaryMessenger: FlutterPlatformMessenger(
         wrapping: viewController.engine
           .binaryMessenger
