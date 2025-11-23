@@ -27,7 +27,7 @@ import Foundation
  *
  * @param message The message.
  */
-public typealias FlutterMessageHandler<Message: Decodable, Reply: Encodable> =
+public typealias FlutterMessageHandler<Message: Decodable & Sendable, Reply: Encodable & Sendable> =
   @Sendable (Message?) async
     -> Reply?
 
@@ -75,7 +75,7 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
     try await binaryMessenger.send(on: name, message: codec.encode(message))
   }
 
-  public func send<Message: Encodable, Reply: Decodable>(
+  public func send<Message: Encodable & Sendable, Reply: Decodable & Sendable>(
     message: Message,
     reply type: Reply.Type
   ) async throws -> Reply? {
@@ -89,8 +89,8 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
   }
 
   public func setMessageHandler<
-    Message: Decodable,
-    Reply: Encodable
+    Message: Decodable & Sendable,
+    Reply: Encodable & Sendable
   >(_ handler: FlutterMessageHandler<Message, Reply>?) async throws {
     try await setMessageHandler(handler) { [codec] unwrappedHandler in
       { message in

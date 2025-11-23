@@ -27,7 +27,7 @@ import Foundation
 /**
  * An asynchronous event stream.
  */
-public typealias FlutterEventStream<Event: Codable> = AnyAsyncSequence<Event?>
+public typealias FlutterEventStream<Event: Codable & Sendable> = AnyAsyncSequence<Event?>
 
 /**
  * A channel for communicating with the Flutter side using event streams.
@@ -137,7 +137,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     oldTask?.cancel()
   }
 
-  private func _run<Event: Codable>(
+  private func _run<Event: Codable & Sendable>(
     for stream: FlutterEventStream<Event>,
     name: String
   ) async throws {
@@ -161,7 +161,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     }
   }
 
-  private func onMethod<Event: Codable, Arguments: Codable & Sendable>(
+  private func onMethod<Event: Codable & Sendable, Arguments: Codable & Sendable>(
     call: FlutterMethodCall<Arguments>,
     onListen: @escaping ((Arguments?) async throws -> FlutterEventStream<Event>),
     onCancel: ((Arguments?) async throws -> ())?
@@ -224,7 +224,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
    *
    * @param handler The stream handler.
    */
-  public func setStreamHandler<Event: Codable, Arguments: Codable & Sendable>(
+  public func setStreamHandler<Event: Codable & Sendable, Arguments: Codable & Sendable>(
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?
   ) async throws {
