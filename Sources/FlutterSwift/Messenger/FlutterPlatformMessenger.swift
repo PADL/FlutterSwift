@@ -100,7 +100,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
 
   // MARK: - public API
 
-  public func send(on channel: String, message: Data?) async throws {
+  public func send(on channel: String, message: Data?) throws {
     _send(on: channel, message: message, nil)
   }
 

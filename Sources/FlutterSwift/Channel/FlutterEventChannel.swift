@@ -144,18 +144,18 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     do {
       for try await event in stream {
         let envelope = FlutterEnvelope.success(event)
-        try await binaryMessenger.send(
+        try binaryMessenger.send(
           on: name,
           message: codec.encode(envelope)
         )
         try Task.checkCancellation()
       }
-      try await binaryMessenger.send(on: name, message: nil)
+      try binaryMessenger.send(on: name, message: nil)
     } catch let error as FlutterError {
       let envelope = FlutterEnvelope<Event>.failure(error)
-      try await binaryMessenger.send(on: name, message: codec.encode(envelope))
+      try binaryMessenger.send(on: name, message: codec.encode(envelope))
     } catch is CancellationError {
-      try await binaryMessenger.send(on: name, message: nil)
+      try binaryMessenger.send(on: name, message: nil)
     } catch {
       throw FlutterSwiftError.invalidEventError
     }
@@ -182,12 +182,12 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
       if !invocationID.isEmpty {
-        try await _resizeChannelBuffer(
+        try _resizeChannelBuffer(
           binaryMessenger: binaryMessenger,
           on: name,
           newSize: channelBufferSize
         )
-        try await _allowChannelBufferOverflow(
+        try _allowChannelBufferOverflow(
           binaryMessenger: binaryMessenger,
           on: name,
           allowed: channelBufferOverflowAllowed
@@ -259,13 +259,13 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     tasks.withCriticalRegion { $0.count }
   }
 
-  public func resizeChannelBuffer(_ newSize: Int) async throws {
-    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  public func resizeChannelBuffer(_ newSize: Int) throws {
+    try _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
     channelBufferSize = newSize
   }
 
-  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
-    try await _allowChannelBufferOverflow(
+  public func allowChannelBufferOverflow(_ allowed: Bool) throws {
+    try _allowChannelBufferOverflow(
       binaryMessenger: binaryMessenger,
       on: name,
       allowed: allowed
