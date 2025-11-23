@@ -139,8 +139,9 @@ final class ChannelManager: @unchecked Sendable {
 
 #if os(Linux) && canImport(Glibc)
 extension ChannelManager {
-  convenience init(viewController: FlutterViewController) {
-    self.init(binaryMessenger: viewController.engine.binaryMessenger)
+  @MainActor
+  convenience init(viewController: FlutterViewController) throws {
+    try self.init(binaryMessenger: viewController.engine.binaryMessenger)
   }
 }
 
@@ -165,7 +166,7 @@ enum Counter {
     guard let window else {
       exit(2)
     }
-    ChannelManager.shared = ChannelManager(viewController: window.viewController)
+    ChannelManager.shared = try! ChannelManager(viewController: window.viewController)
     window.run()
   }
 }
