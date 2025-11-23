@@ -237,14 +237,14 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
           throw FlutterSwiftError.methodNotImplemented
         }
 
-        let call: FlutterMethodCall<Arguments> = try codec.decode(message)
-        let envelope: FlutterEnvelope<Arguments>? = try await onMethod(
+        let call: FlutterMethodCall<Arguments> = try self.codec.decode(message)
+        let envelope: FlutterEnvelope<Arguments>? = try await self.onMethod(
           call: call,
           onListen: unwrappedHandler,
           onCancel: onCancel
         )
         guard let envelope else { return nil }
-        return try codec.encode(envelope)
+        return try self.codec.encode(envelope)
       }
     }
   }
