@@ -46,11 +46,37 @@ class _MyHomePageState extends State<MyHomePage> {
   static const message = BasicMessageChannel<dynamic>('com.example.counter.basic', JSONMessageCodec());
   static const platform = MethodChannel('com.example.counter.toggle');
   static const stream = EventChannel('com.example.counter.events');
+  static const initChannel = MethodChannel('com.example.counter.init');
 
   bool counterEnabled = false;
+  bool nativeInitialized = false;
+  int currentCounter = 0;
 
-  static Stream<int> get getCounterStream {
-    return stream.receiveBroadcastStream().cast();
+  @override
+  void initState() {
+    super.initState();
+    _setupInitializationHandler();
+  }
+
+  void _setupInitializationHandler() {
+    print('Setting up initialization handler for com.example.counter.init');
+    initChannel.setMethodCallHandler((call) async {
+      print('Received method call: ${call.method} with arguments: ${call.arguments}');
+      if (call.method == 'nativeInitialized') {
+        print('Native side initialized, updating state');
+        setState(() {
+          nativeInitialized = true;
+        });
+        // Native side is ready, StreamBuilder can now safely subscribe
+      }
+    });
+  }
+
+  Stream<int> get getCounterStream {
+    if (!nativeInitialized) {
+      return Stream.empty();
+    }
+    return stream.receiveBroadcastStream().cast<int>();
   }
 
   toggleCounter() async {
@@ -70,19 +96,26 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
+          Text('Native initialized: $nativeInitialized'),
           ElevatedButton(onPressed: toggleCounter, child: const Text('Start/Stop')),
-          StreamBuilder<int>(
-            stream: getCounterStream,
-            builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-              counterEnabled = snapshot.hasData;
-              if(snapshot.hasData) {
-                return Text("Current counter: ${snapshot.data}");
-              } else {
-                return Text("Waiting for new random number...");
-              }
-            },
-          ),
-          if (counterEnabled) Text('') else CircularProgressIndicator()
+          if (nativeInitialized)
+            StreamBuilder<int>(
+              stream: getCounterStream,
+              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                if(snapshot.hasData) {
+                  counterEnabled = snapshot.hasData;
+                  currentCounter = snapshot.data!;
+                  return Text("Current counter: ${snapshot.data}");
+                } else if (snapshot.hasError) {
+                  return Text("Stream error: ${snapshot.error}");
+                } else {
+                  return Text("Press button to start counter");
+                }
+              },
+            )
+          else
+            Text("Waiting for native initialization..."),
+          if (counterEnabled) Text('Counter active') else CircularProgressIndicator()
         ],
       ),
     );
