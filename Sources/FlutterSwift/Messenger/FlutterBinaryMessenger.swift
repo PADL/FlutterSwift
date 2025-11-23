@@ -32,7 +32,7 @@ public typealias FlutterBinaryMessageHandler = @Sendable (Data?) async throws ->
 public typealias FlutterBinaryMessengerConnection = Int64
 
 public protocol FlutterBinaryMessenger: Sendable {
-  func send(on channel: String, message: Data?) throws
+  func send(on channel: String, message: Data?) async throws
   func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
 
   func setMessageHandler(

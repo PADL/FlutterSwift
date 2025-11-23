@@ -55,14 +55,14 @@ private func _controlChannelBuffers(
   on channel: String,
   method: String,
   _ arg: AnyFlutterStandardCodable
-) throws {
+) async throws {
   let codec = FlutterStandardMessageCodec.shared
   let arguments: [AnyFlutterStandardCodable] = [AnyFlutterStandardCodable.string(channel), arg]
   let methodCall = FlutterMethodCall<[AnyFlutterStandardCodable]>(
     method: method,
     arguments: arguments
   )
-  try binaryMessenger.send(
+  try await binaryMessenger.send(
     on: kControlChannelName,
     message: codec.encode(methodCall)
   )
@@ -72,8 +72,8 @@ func _resizeChannelBuffer(
   binaryMessenger: FlutterBinaryMessenger,
   on channel: String,
   newSize: Int
-) throws {
-  try _controlChannelBuffers(
+) async throws {
+  try await _controlChannelBuffers(
     binaryMessenger: binaryMessenger,
     on: channel,
     method: "resize",
@@ -85,8 +85,8 @@ func _allowChannelBufferOverflow(
   binaryMessenger: FlutterBinaryMessenger,
   on channel: String,
   allowed: Bool
-) throws {
-  try _controlChannelBuffers(
+) async throws {
+  try await _controlChannelBuffers(
     binaryMessenger: binaryMessenger,
     on: channel,
     method: "overflow",
@@ -107,12 +107,12 @@ public extension FlutterChannel {
 protocol _FlutterChannelDefaultBufferControl: FlutterChannel {}
 
 extension _FlutterChannelDefaultBufferControl {
-  public func resizeChannelBuffer(_ newSize: Int) throws {
-    try _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  public func resizeChannelBuffer(_ newSize: Int) async throws {
+    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
   }
 
-  public func allowChannelBufferOverflow(_ allowed: Bool) throws {
-    try _allowChannelBufferOverflow(
+  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
+    try await _allowChannelBufferOverflow(
       binaryMessenger: binaryMessenger,
       on: name,
       allowed: allowed
