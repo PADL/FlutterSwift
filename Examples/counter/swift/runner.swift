@@ -32,7 +32,6 @@ final class ChannelManager: @unchecked Sendable {
   var flutterBasicMessageChannel: FlutterSwift.FlutterBasicMessageChannel!
   var flutterEventChannel: FlutterSwift.FlutterEventChannel!
   var flutterMethodChannel: FlutterSwift.FlutterMethodChannel!
-  var flutterInitChannel: FlutterSwift.FlutterMethodChannel!
   var task: Task<(), Error>?
   var counter: Event = 0
   var logger: Logger
@@ -111,29 +110,18 @@ final class ChannelManager: @unchecked Sendable {
       binaryMessenger: binaryMessenger,
       codec: FlutterJSONMessageCodec.shared
     )
-    flutterMethodChannel = FlutterMethodChannel(
-      name: "com.example.counter.toggle",
-      binaryMessenger: binaryMessenger
-    )
     flutterEventChannel = FlutterEventChannel(
       name: "com.example.counter.events",
       binaryMessenger: binaryMessenger
     )
-    flutterInitChannel = FlutterMethodChannel(
-      name: "com.example.counter.init",
+    flutterMethodChannel = FlutterMethodChannel(
+      name: "com.example.counter.toggle",
       binaryMessenger: binaryMessenger
     )
 
     try flutterBasicMessageChannel.setMessageHandler(messageHandler)
     try flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
     try flutterMethodChannel.setMethodCallHandler(methodCallHandler)
-
-    Task {
-      logger.info("Native channels initialized, notifying Dart side")
-      try await flutterInitChannel.invoke(method: "nativeInitialized", arguments: "ready")
-    }
-
-    // Don't auto-start counter - wait for toggle button press
   }
 }
 
