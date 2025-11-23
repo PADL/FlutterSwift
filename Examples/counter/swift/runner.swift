@@ -95,11 +95,14 @@ final class ChannelManager: @unchecked Sendable {
     }
   }
 
-  init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) {
+  @MainActor
+  init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) throws {
     #if canImport(Android)
     LoggingSystem.bootstrap(AndroidLogHandler.taggedBySource)
     #else
-    LoggingSystem.bootstrap(StreamLogHandler.standardError)
+    LoggingSystem.bootstrap { @Sendable label in
+      return StreamLogHandler.standardError(label: label)
+    }
     #endif
     logger = Logger(label: "com.example.counter")
 
@@ -121,16 +124,16 @@ final class ChannelManager: @unchecked Sendable {
       binaryMessenger: binaryMessenger
     )
 
-    Task {
-      try! await flutterBasicMessageChannel.setMessageHandler(messageHandler)
-      try! await flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
-      try! await flutterMethodChannel.setMethodCallHandler(methodCallHandler)
+    try flutterBasicMessageChannel.setMessageHandler(messageHandler)
+    try flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
+    try flutterMethodChannel.setMethodCallHandler(methodCallHandler)
 
+    Task {
       logger.info("Native channels initialized, notifying Dart side")
-      try! await flutterInitChannel.invoke(method: "nativeInitialized", arguments: "ready")
-      
-      // Don't auto-start counter - wait for toggle button press
+      try await flutterInitChannel.invoke(method: "nativeInitialized", arguments: "ready")
     }
+
+    // Don't auto-start counter - wait for toggle button press
   }
 }
 

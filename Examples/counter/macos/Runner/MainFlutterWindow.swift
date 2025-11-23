@@ -23,8 +23,9 @@ class MainFlutterWindow: NSWindow {
 }
 
 extension ChannelManager {
+  @MainActor
   convenience init(viewController: FlutterViewController) throws {
-    self
+    try self
       .init(binaryMessenger: FlutterPlatformMessenger(
         wrapping: viewController.engine
           .binaryMessenger
