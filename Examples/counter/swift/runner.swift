@@ -40,6 +40,7 @@ final class ChannelManager: @unchecked Sendable {
 
   var flutterEventStream = Stream()
 
+  @Sendable
   private func messageHandler(_ arguments: String?) async -> Int? {
     logger.debug("received message \(String(describing: arguments))")
     return magicCookie
@@ -55,6 +56,7 @@ final class ChannelManager: @unchecked Sendable {
     stop()
   }
 
+  @Sendable
   private func methodCallHandler(
     call: FlutterSwift
       .FlutterMethodCall<Int>
