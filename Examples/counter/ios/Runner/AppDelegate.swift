@@ -13,20 +13,14 @@ class AppDelegate: FlutterAppDelegate {
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     let flutterViewController = window!.rootViewController as! FlutterViewController
-    Task { @MainActor in
-      do {
-        channelManager = try await ChannelManager(viewController: flutterViewController)
-      } catch {
-        exit(1)
-      }
-    }
+    channelManager = try! ChannelManager(viewController: flutterViewController)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
 
 extension ChannelManager {
-  convenience init(viewController: FlutterViewController) async throws {
-    await self
+  convenience init(viewController: FlutterViewController) throws {
+    try self
       .init(binaryMessenger: FlutterPlatformMessenger(
         wrapping: viewController.engine!.binaryMessenger
       ))
