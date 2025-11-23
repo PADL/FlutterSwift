@@ -39,9 +39,6 @@ public protocol FlutterChannel: AnyObject, Hashable, Equatable {
   var binaryMessenger: FlutterBinaryMessenger { get }
   var codec: FlutterMessageCodec { get }
   var priority: TaskPriority? { get }
-
-  func resizeChannelBuffer(_ newSize: Int) async throws
-  func allowChannelBufferOverflow(_ allowed: Bool) async throws
 }
 
 protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
@@ -50,30 +47,32 @@ protocol _FlutterBinaryMessengerConnectionRepresentable: FlutterChannel {
 
 private let kControlChannelName = "dev.flutter/channel-buffers"
 
+@FlutterPlatformThreadActor
 private func _controlChannelBuffers(
   binaryMessenger: FlutterBinaryMessenger,
   on channel: String,
   method: String,
   _ arg: AnyFlutterStandardCodable
-) async throws {
+) throws {
   let codec = FlutterStandardMessageCodec.shared
   let arguments: [AnyFlutterStandardCodable] = [AnyFlutterStandardCodable.string(channel), arg]
   let methodCall = FlutterMethodCall<[AnyFlutterStandardCodable]>(
     method: method,
     arguments: arguments
   )
-  try await binaryMessenger.send(
+  try binaryMessenger.send(
     on: kControlChannelName,
     message: codec.encode(methodCall)
   )
 }
 
+@FlutterPlatformThreadActor
 func _resizeChannelBuffer(
   binaryMessenger: FlutterBinaryMessenger,
   on channel: String,
   newSize: Int
-) async throws {
-  try await _controlChannelBuffers(
+) throws {
+  try _controlChannelBuffers(
     binaryMessenger: binaryMessenger,
     on: channel,
     method: "resize",
@@ -81,12 +80,13 @@ func _resizeChannelBuffer(
   )
 }
 
+@FlutterPlatformThreadActor
 func _allowChannelBufferOverflow(
   binaryMessenger: FlutterBinaryMessenger,
   on channel: String,
   allowed: Bool
-) async throws {
-  try await _controlChannelBuffers(
+) throws {
+  try _controlChannelBuffers(
     binaryMessenger: binaryMessenger,
     on: channel,
     method: "overflow",
@@ -107,12 +107,14 @@ public extension FlutterChannel {
 protocol _FlutterChannelDefaultBufferControl: FlutterChannel {}
 
 extension _FlutterChannelDefaultBufferControl {
-  public func resizeChannelBuffer(_ newSize: Int) async throws {
-    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  @FlutterPlatformThreadActor
+  public func resizeChannelBuffer(_ newSize: Int) throws {
+    try _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
   }
 
-  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
-    try await _allowChannelBufferOverflow(
+  @FlutterPlatformThreadActor
+  public func allowChannelBufferOverflow(_ allowed: Bool) throws {
+    try _allowChannelBufferOverflow(
       binaryMessenger: binaryMessenger,
       on: name,
       allowed: allowed

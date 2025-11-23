@@ -255,13 +255,15 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     tasks.withCriticalRegion { $0.count }
   }
 
-  public func resizeChannelBuffer(_ newSize: Int) async throws {
-    try await _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
+  @FlutterPlatformThreadActor
+  public func resizeChannelBuffer(_ newSize: Int) throws {
+    try _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: newSize)
     channelBufferSize = newSize
   }
 
-  public func allowChannelBufferOverflow(_ allowed: Bool) async throws {
-    try await _allowChannelBufferOverflow(
+  @FlutterPlatformThreadActor
+  public func allowChannelBufferOverflow(_ allowed: Bool) throws {
+    try _allowChannelBufferOverflow(
       binaryMessenger: binaryMessenger,
       on: name,
       allowed: allowed
