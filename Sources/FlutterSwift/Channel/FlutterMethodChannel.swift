@@ -141,11 +141,16 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     }
   }
 
+  #if canImport(Android)
+  @UIThreadActor
+  #else
+  @MainActor
+  #endif
   public func setMethodCallHandler<
     Arguments: Codable & Sendable,
     Result: Codable
-  >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) async throws {
-    try await setMessageHandler(handler) { [codec] unwrappedHandler in
+  >(_ handler: FlutterMethodCallHandler<Arguments, Result>?) throws {
+    try setMessageHandler(handler) { [codec] unwrappedHandler in
       { message in
         guard let message else {
           throw FlutterSwiftError.methodNotImplemented

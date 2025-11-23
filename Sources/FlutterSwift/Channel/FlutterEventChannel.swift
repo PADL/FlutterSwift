@@ -224,11 +224,16 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
    *
    * @param handler The stream handler.
    */
+  #if canImport(Android)
+  @UIThreadActor
+  #else
+  @MainActor
+  #endif
   public func setStreamHandler<Event: Codable & Sendable, Arguments: Codable & Sendable>(
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?
-  ) async throws {
-    try await setMessageHandler(onListen) { [weak self] unwrappedHandler in
+  ) throws {
+    try setMessageHandler(onListen) { [weak self] unwrappedHandler in
       { [weak self] message in
         guard let self else {
           throw FlutterSwiftError.messengerNotAvailable
