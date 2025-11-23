@@ -59,7 +59,7 @@ public typealias FlutterPlatformThreadActor = MainActor
 // annotations. They are classes which are thread-safe (they use mutexes
 // and/or atomics). Their methods will switch to the platform actor when they
 // call into the common messenger implementation. The basic and method channels
-// are completely synchronous except for this call to send(). An analyis of
+// are completely synchronous except for this call to send(). An analysis of
 // event channels is not provided here.
 //
 
