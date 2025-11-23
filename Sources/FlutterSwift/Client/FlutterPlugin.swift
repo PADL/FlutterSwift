@@ -103,12 +103,13 @@ public protocol FlutterPluginRegistry {
   func valuePublished(by pluginKey: String) -> Any?
 }
 
-public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
+public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unchecked Sendable {
   public let pluginKey: String
   public let engine: FlutterEngine
 
-  var registrar: FlutterDesktopPluginRegistrarRef?
-  var detachFromEngineCallbacks = [FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]()
+  var registrar: FlutterDesktopPluginRegistrarRef!
+  var detachFromEngineCallbacks =
+    ManagedCriticalState<[FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]>([:])
 
   public init(
     engine: FlutterEngine,
@@ -119,9 +120,11 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
     registrar = engine.getRegistrar(pluginName: pluginName)
     // FIXME: use std::function
     FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [self] _ in
-      for (channel, detachFromEngine) in detachFromEngineCallbacks {
-        try? channel.removeMessageHandler()
-        detachFromEngine(self)
+      detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
+        for (channel, detachFromEngine) in detachFromEngineCallbacks {
+          try? channel.removeMessageHandler()
+          detachFromEngine(self)
+        }
       }
       registrar = nil
     }
@@ -162,7 +165,9 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar {
         try delegate.handleMethod(call: call)
       }
     }
-    detachFromEngineCallbacks[channel] = detachCallback
+    detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
+      detachFromEngineCallbacks[channel] = detachCallback
+    }
   }
 
   public func lookupKey(for asset: String) -> String? {
