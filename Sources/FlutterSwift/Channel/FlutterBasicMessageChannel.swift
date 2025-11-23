@@ -88,11 +88,7 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
     return try codec.decode(reply)
   }
 
-  #if canImport(Android)
-  @UIThreadActor
-  #else
-  @MainActor
-  #endif
+  @PlatformThreadActor
   public func setMessageHandler<
     Message: Decodable & Sendable,
     Reply: Encodable & Sendable

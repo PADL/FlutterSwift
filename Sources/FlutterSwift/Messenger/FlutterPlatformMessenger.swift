@@ -74,16 +74,12 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _wrappedMessenger.cleanUpConnection(connection)
   }
 
-  #if canImport(Android)
-  @UIThreadActor
-  #else
-  @MainActor
-  #endif
+  @PlatformThreadActor
   private func _send(
     on channel: String,
     message: Data?,
     _ binaryReply: FlutterBinaryReply?
-  ) async throws {
+  ) throws {
     _wrappedMessenger.send(
       onChannel: channel,
       message: message,
@@ -93,10 +89,12 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
 
   // MARK: - public API
 
-  public func send(on channel: String, message: Data?) async throws {
-    try await _send(on: channel, message: message, nil)
+  @PlatformThreadActor
+  public func send(on channel: String, message: Data?) throws {
+    try _send(on: channel, message: message, nil)
   }
 
+  @PlatformThreadActor
   public func send(
     on channel: String,
     message: Data?,

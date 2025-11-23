@@ -141,11 +141,7 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     }
   }
 
-  #if canImport(Android)
-  @UIThreadActor
-  #else
-  @MainActor
-  #endif
+  @PlatformThreadActor
   public func setMethodCallHandler<
     Arguments: Codable & Sendable,
     Result: Codable
