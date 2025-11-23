@@ -224,7 +224,7 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
    *
    * @param handler The stream handler.
    */
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func setStreamHandler<Event: Codable & Sendable, Arguments: Codable & Sendable>(
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?

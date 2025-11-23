@@ -141,7 +141,7 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     }
   }
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func setMethodCallHandler<
     Arguments: Codable & Sendable,
     Result: Codable

@@ -32,16 +32,16 @@ public typealias FlutterBinaryMessageHandler = @Sendable (Data?) async throws ->
 public typealias FlutterBinaryMessengerConnection = Int64
 
 #if canImport(Android)
-package typealias PlatformThreadActor = UIThreadActor
+public typealias FlutterPlatformThreadActor = UIThreadActor
 #else
-package typealias PlatformThreadActor = MainActor
+public typealias FlutterPlatformThreadActor = MainActor
 #endif
 
 public protocol FlutterBinaryMessenger: Sendable {
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   func send(on channel: String, message: Data?) throws
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
 
   func setMessageHandler(

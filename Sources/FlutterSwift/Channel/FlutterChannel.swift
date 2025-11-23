@@ -139,7 +139,7 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
   /// handler will be removed (as if `removeMessageHandler()` was called`.
   /// Otherwise, `block` is called to wrap the handler into a
   /// `FlutterBinaryMessageHandler`.
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   func setMessageHandler<Handler>(
     _ optionalHandler: Handler?,
     _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler

@@ -123,7 +123,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
 
   // MARK: - public API
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func send(
     on channel: String,
     message: Data?,
@@ -155,7 +155,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
     }
   }
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func send(on channel: String, message: Data?) throws {
     try send(on: channel, message: message, nil)
   }

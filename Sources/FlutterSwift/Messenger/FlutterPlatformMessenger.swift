@@ -74,7 +74,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     _wrappedMessenger.cleanUpConnection(connection)
   }
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   private func _send(
     on channel: String,
     message: Data?,
@@ -89,12 +89,12 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
 
   // MARK: - public API
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func send(on channel: String, message: Data?) throws {
     try _send(on: channel, message: message, nil)
   }
 
-  @PlatformThreadActor
+  @FlutterPlatformThreadActor
   public func send(
     on channel: String,
     message: Data?,
