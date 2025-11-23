@@ -48,12 +48,12 @@ final class ChannelManager: @unchecked Sendable {
   }
 
   @Sendable
-  private func onListen(_ arguments: Arguments?) throws -> FlutterEventStream<Event> {
+  private func onListen(_ arguments: Arguments?) async throws -> FlutterEventStream<Event> {
     flutterEventStream.eraseToAnyAsyncSequence()
   }
 
   @Sendable
-  private func onCancel(_ arguments: Arguments?) throws {
+  private func onCancel(_ arguments: Arguments?) async throws {
     stop()
   }
 
