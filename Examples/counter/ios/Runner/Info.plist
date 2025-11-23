@@ -45,7 +45,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>FLTEnableMergedPlatformUIThread</key>
-	<false/>
 </dict>
 </plist>
