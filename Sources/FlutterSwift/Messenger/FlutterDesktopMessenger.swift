@@ -65,7 +65,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
   // *send* messages from the main thread. according to the eLinux docs,
   // we only need to acquire the lock when not on the platform thread. But
   // this doesn't really make sense.
-  @MainActor
+  @FlutterPlatformThreadActor
   private func send(
     on channel: String,
     message: Data?,

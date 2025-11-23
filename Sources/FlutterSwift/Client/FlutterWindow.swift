@@ -87,7 +87,7 @@ public struct FlutterWindow: Sendable {
   // note: this still needs to run within a CFRunLoop as it appears Dispatch
   // does not guarantee @MainActor runs on the main thread otherwise.
 
-  @MainActor
+  @FlutterPlatformThreadActor
   public func run() async throws {
     precondition(viewController.view.frameRate != 0)
     let framePeriodNS =
