@@ -106,7 +106,12 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     tasks.withCriticalRegion { tasks in
       tasks.values.forEach { $0.cancel() }
     }
-    try? removeMessageHandler()
+    let name = self.name
+    let binaryMessenger = self.binaryMessenger
+    let connection = self.connection
+    Task { @FlutterPlatformThreadActor in
+      Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
+    }
   }
 
   private func _cancelTask(_ id: String) {

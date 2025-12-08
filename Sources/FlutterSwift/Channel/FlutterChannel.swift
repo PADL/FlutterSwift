@@ -123,17 +123,26 @@ extension _FlutterChannelDefaultBufferControl {
 }
 
 extension _FlutterBinaryMessengerConnectionRepresentable {
-  func removeMessageHandler() throws {
+  static func _removeMessageHandler(
+    on name: String,
+    connection: FlutterBinaryMessengerConnection,
+    binaryMessenger: FlutterBinaryMessenger
+  ) {
     if connection > 0 {
       try? binaryMessenger.cleanUp(connection: connection)
-      connection = 0
     } else {
       _ = try? binaryMessenger.setMessageHandler(
         on: name,
         handler: nil,
-        priority: priority
+        priority: nil
       )
     }
+  }
+
+  @FlutterPlatformThreadActor
+  func removeMessageHandler() throws {
+    Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
+    connection = 0
   }
 
   /// helper function to set the message handler for a channel.
