@@ -123,6 +123,7 @@ extension _FlutterChannelDefaultBufferControl {
 }
 
 extension _FlutterBinaryMessengerConnectionRepresentable {
+  @FlutterPlatformThreadActor
   static func _removeMessageHandler(
     on name: String,
     connection: FlutterBinaryMessengerConnection,
@@ -140,7 +141,7 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
   }
 
   @FlutterPlatformThreadActor
-  func removeMessageHandler() throws {
+  func removeMessageHandler() {
     Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
     connection = 0
   }
@@ -156,7 +157,7 @@ extension _FlutterBinaryMessengerConnectionRepresentable {
     _ block: @Sendable (Handler) -> FlutterBinaryMessageHandler
   ) throws {
     guard let unwrappedHandler = optionalHandler else {
-      try removeMessageHandler()
+      removeMessageHandler()
       return
     }
     connection = try binaryMessenger.setMessageHandler(

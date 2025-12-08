@@ -122,7 +122,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [self] _ in
       detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
         for (channel, detachFromEngine) in detachFromEngineCallbacks {
-          try? channel.removeMessageHandler()
+          Task { @FlutterPlatformThreadActor in await channel.removeMessageHandler() }
           detachFromEngine(self)
         }
       }
