@@ -35,20 +35,20 @@ public final class FlutterViewController: @unchecked Sendable {
   }
 
   public struct ViewProperties: Sendable {
-    let width: Int32
-    let height: Int32
-    let viewRotation: ViewRotation
-    let viewMode: ViewMode
-    let title: String?
-    let appId: String?
-    let useMouseCursor: Bool
-    let useOnscreenKeyboard: Bool
-    let useWindowDecoration: Bool
-    let textScaleFactor: Double
-    let enableHighContrast: Bool
-    let forceScaleFactor: Bool
-    let scaleFactor: Double
-    let enableVSync: Bool
+    public let width: Int32
+    public let height: Int32
+    public let viewRotation: ViewRotation
+    public let viewMode: ViewMode
+    public let title: String?
+    public let appId: String?
+    public let useMouseCursor: Bool
+    public let useOnscreenKeyboard: Bool
+    public let useWindowDecoration: Bool
+    public let textScaleFactor: Double
+    public let enableHighContrast: Bool
+    public let forceScaleFactor: Bool
+    public let scaleFactor: Double
+    public let enableVSync: Bool
 
     #if FLUTTER_TARGET_BACKEND_GBM || FLUTTER_TARGET_BACKEND_EGLSTREAM
     public static let ViewModeDefault = ViewMode.kFullscreen
