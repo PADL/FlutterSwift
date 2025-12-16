@@ -94,7 +94,7 @@ final class ChannelManager: @unchecked Sendable {
     }
   }
 
-  @MainActor
+  @FlutterPlatformThreadActor
   init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) throws {
     #if canImport(Android)
     LoggingSystem.bootstrap(AndroidLogHandler.taggedBySource)
@@ -127,7 +127,7 @@ final class ChannelManager: @unchecked Sendable {
 
 #if os(Linux) && canImport(Glibc)
 extension ChannelManager {
-  @MainActor
+  @FlutterPlatformThreadActor
   convenience init(viewController: FlutterViewController) throws {
     try self.init(binaryMessenger: viewController.engine.binaryMessenger)
   }
