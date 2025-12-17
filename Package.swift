@@ -413,7 +413,7 @@ targets += [
       .define("USE_LIBSYSTEMD"),
       // ENABLE_ELINUX_EMBEDDER_LOG ON
       .define("ENABLE_ELINUX_EMBEDDER_LOG"),
-      // .define("FLUTTER_RELEASE") // FIXME: for release
+      .define("FLUTTER_RELEASE", .when(configuration: .release)),
       .define("RAPIDJSON_HAS_STDSTRING"),
       .define("RAPIDJSON_HAS_CXX11_RANGE_FOR"),
       .define("RAPIDJSON_HAS_CXX11_RVALUE_REFS"),
