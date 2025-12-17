@@ -273,6 +273,12 @@ targets += [
 
 switch FlutterELinuxBackend {
 case .drmGbm:
+  products += [
+    .library(
+      name: "CLibDRM",
+      targets: ["CLibDRM"]
+    ),
+  ]
   targets += [
     .systemLibrary(
       name: "CLibInput",
@@ -283,6 +289,15 @@ case .drmGbm:
       name: "CLibDRM",
       pkgConfig: "libdrm",
       providers: [.apt(["libdrm-dev"])]
+    ),
+    .target(
+      name: "LibDRM",
+      dependencies: [
+        "CLibDRM",
+        .product(name: "SystemPackage", package: "swift-system"),
+      ],
+      cxxSettings: platformCxxSettings,
+      swiftSettings: platformSwiftSettings
     ),
     .systemLibrary(
       name: "CLibUDev",
@@ -334,7 +349,7 @@ let BackendDependencies: [Target.Dependency]
 
 switch FlutterELinuxBackend {
 case .drmGbm:
-  BackendDependencies = ["CLibInput", "CLibDRM", "CLibUDev", "CGBM"]
+  BackendDependencies = ["CLibInput", "CLibDRM", "LibDRM", "CLibUDev", "CGBM"]
   ExcludedSources = WaylandSources + DRMEGLSources
 case .drmEglStream:
   BackendDependencies = [] // TODO:
@@ -439,7 +454,7 @@ targets += [
   ),
 ]
 
-products = [
+products += [
   .executable(name: "counter", targets: ["counter"]),
 ]
 
@@ -494,8 +509,8 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", from: "0.9.0"),
-    // TODO: use a release when one made with Android support
     .package(url: "https://github.com/apple/swift-log", from: "1.6.2"),
+    .package(url: "https://github.com/apple/swift-system", from: "1.2.1"),
   ] + packageDependencies,
   targets: [
     .target(
