@@ -27,6 +27,8 @@ ${DART_CACHE_BINDIR}/dartaotruntime \
   --no-print-incremental-dependencies \
   -Ddart.vm.profile=false \
   -Ddart.vm.product=true \
+  --delete-tostring-package-uri=dart:ui \
+  --delete-tostring-package-uri=package:flutter \
   --aot \
   --tfa \
   --target-os linux \
