@@ -1,6 +1,6 @@
 - remove checked in Wayland sources, write a SwiftPM extension to generate them
 - fix `libflutter_engine.so` binary artifact
-- [build steps](https://github.com/sony/flutter-embedded-linux/wiki/Building-Flutter-apps#cross-build-for-arm64-targets-on-x64-hosts)
+- [build steps](https://github.com/flutter-elinux/flutter-embedded-linux/wiki/Building-Flutter-apps#cross-build-for-arm64-targets-on-x64-hosts)
 
 - warnings
   * FlutterSwift/Client/FlutterEngine.swift:40:77: warning: passing argument of non-sendable type 'FlutterDesktopEngineRef' (aka 'OpaquePointer') into actor-isolated context may introduce data races
