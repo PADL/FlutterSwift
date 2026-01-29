@@ -6,7 +6,7 @@ It consists of three components:
 
 * An idiomatic, [Codable](https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types), [asynchronous](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/) Swift implementation of Flutter [platform channels](https://docs.flutter.dev/platform-integration/platform-channels)
 * Wrappers to integrate with the platform event loop and Flutter embedding's runner
-* On [eLinux](https://github.com/sony/flutter-embedded-linux), a pure Swift runner that hosts your application
+* On [eLinux](https://github.com/flutter-elinux/flutter-embedded-linux), a pure Swift runner that hosts your application
 
 The end-goal is to allow Flutter to be used for the UI, and Swift the business logic, in a cross-platform manner. Currently supported targets are macOS, iOS, Android and eLinux.
 
