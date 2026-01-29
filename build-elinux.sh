@@ -41,21 +41,20 @@ ${DART_CACHE_BINDIR}/dartaotruntime \
 # Build AOT image.
 if [ "X${FLUTTER_SWIFT_BUILD_CONFIG}" == "Xrelease" ]; then
   echo "Building AOT image..."
-  ${FLUTTER_CACHE_ENGINEDIR}/linux-${ARCH}-release/gen_snapshot \
+  ${DART_CACHE_BINDIR}/utils/gen_snapshot \
     --deterministic \
     --snapshot_kind=app-aot-elf \
-    --elf=.dart_tool/flutter_build/flutter-embedded-linux/app.so \
+    --elf=${BUNDLE_DIR}/lib/libapp.so \
     --strip \
     .dart_tool/flutter_build/flutter-embedded-linux/app.dill
 
-  cp .dart_tool/flutter_build/flutter-embedded-linux/app.so ${BUNDLE_DIR}/lib/libapp.so
   ls -al ${BUNDLE_DIR}/lib/libapp.so
 
   # remove these artefacts to ensure we don't accidentally start in JIT mode
   echo "Removing JIT artifacts..."
-  rm -rf ${BUNDLE_DIR}/data/flutter_assets/kernel_blob.bin
-  rm -rf ${BUNDLE_DIR}/data/flutter_assets/isolate_snapshot_data
-  rm -rf ${BUNDLE_DIR}/data/flutter_assets/vm_snapshot_data
+  rm -f ${BUNDLE_DIR}/data/flutter_assets/kernel_blob.bin
+  rm -f ${BUNDLE_DIR}/data/flutter_assets/isolate_snapshot_data
+  rm -f ${BUNDLE_DIR}/data/flutter_assets/vm_snapshot_data
 fi
 
 echo "Building Swift component..."
