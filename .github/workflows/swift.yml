@@ -5,10 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
-# FIXME: using third-party PR to support 3.32.8
 env:
-  FLUTTER_REPOSITORY: https://github.com/zxcv1884/flutter-elinux.git
-  FLUTTER_SDK_TAG: 2d27a80ec57ed14c79ffdd96945be2501c51b2aa
+  FLUTTER_REPOSITORY: https://github.com/flutter-elinux/flutter-elinux.git
+  FLUTTER_SDK_TAG: 03f96aaeaa2dcadb5eb4321d7c765a13a16a0210
   FLUTTER_ROOT: /opt/flutter-elinux
 
 jobs:
