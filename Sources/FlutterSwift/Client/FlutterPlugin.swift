@@ -119,14 +119,15 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     pluginKey = pluginName
     registrar = engine.getRegistrar(pluginName: pluginName)
     // FIXME: use std::function
-    FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [self] _ in
-      detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
+    FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [weak self] _ in
+      guard let self else { return }
+      self.detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
         for (channel, detachFromEngine) in detachFromEngineCallbacks {
           Task { @FlutterPlatformThreadActor in await channel.removeMessageHandler() }
           detachFromEngine(self)
         }
       }
-      registrar = nil
+      self.registrar = nil
     }
   }
 
