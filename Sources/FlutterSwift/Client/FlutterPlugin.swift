@@ -152,7 +152,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
   }
 
   public func publish(_ value: Any) {
-    engine.pluginPublications[pluginKey] = value
+    engine.pluginPublications.withCriticalRegion { $0[pluginKey] = value }
   }
 
   func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
