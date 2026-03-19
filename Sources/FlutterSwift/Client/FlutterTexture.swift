@@ -47,29 +47,32 @@ public class FlutterPixelBuffer {
   public var width: Int
   public var height: Int
 
-  private var _desktopPixelBuffer = FlutterDesktopPixelBuffer()
+  private let _desktopPixelBuffer: UnsafeMutablePointer<FlutterDesktopPixelBuffer>
 
   public init(width: Int, height: Int) {
     buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height)
     buffer.initialize(repeating: 0, count: width * height)
     self.width = width
     self.height = height
+    _desktopPixelBuffer = .allocate(capacity: 1)
+    _desktopPixelBuffer.initialize(to: FlutterDesktopPixelBuffer())
   }
 
   deinit {
     buffer.deallocate()
+    _desktopPixelBuffer.deallocate()
   }
 
   fileprivate func getDesktopPixelBufferTextureConfig(
     width: Int,
     height: Int
   ) -> UnsafePointer<FlutterDesktopPixelBuffer> {
-    _desktopPixelBuffer.buffer = UnsafePointer(buffer)
-    _desktopPixelBuffer.width = self.width
-    _desktopPixelBuffer.height = self.height
-    _desktopPixelBuffer.release_context = _retainAnyObject(self)
-    _desktopPixelBuffer.release_callback = _releaseAnyObject
-    return withUnsafePointer(to: &_desktopPixelBuffer) { $0 }
+    _desktopPixelBuffer.pointee.buffer = UnsafePointer(buffer)
+    _desktopPixelBuffer.pointee.width = self.width
+    _desktopPixelBuffer.pointee.height = self.height
+    _desktopPixelBuffer.pointee.release_context = _retainAnyObject(self)
+    _desktopPixelBuffer.pointee.release_callback = _releaseAnyObject
+    return UnsafePointer(_desktopPixelBuffer)
   }
 }
 
@@ -90,12 +93,18 @@ public class FlutterEGLImage {
   public var width: Int
   public var height: Int
 
-  private var _desktopEGLImage = FlutterDesktopEGLImage()
+  private let _desktopEGLImage: UnsafeMutablePointer<FlutterDesktopEGLImage>
 
   public init(eglImage: UnsafeRawPointer, width: Int = 0, height: Int = 0) {
     self.eglImage = eglImage
     self.width = width
     self.height = height
+    _desktopEGLImage = .allocate(capacity: 1)
+    _desktopEGLImage.initialize(to: FlutterDesktopEGLImage())
+  }
+
+  deinit {
+    _desktopEGLImage.deallocate()
   }
 
   fileprivate func getDesktopEGLImageTextureConfig(
@@ -104,12 +113,12 @@ public class FlutterEGLImage {
     eglDisplay: UnsafeMutableRawPointer!,
     eglContext: UnsafeMutableRawPointer!
   ) -> UnsafePointer<FlutterDesktopEGLImage> {
-    _desktopEGLImage.egl_image = eglImage
-    _desktopEGLImage.width = self.width
-    _desktopEGLImage.height = self.height
-    _desktopEGLImage.release_context = _retainAnyObject(self)
-    _desktopEGLImage.release_callback = _releaseAnyObject
-    return withUnsafePointer(to: &_desktopEGLImage) { $0 }
+    _desktopEGLImage.pointee.egl_image = eglImage
+    _desktopEGLImage.pointee.width = self.width
+    _desktopEGLImage.pointee.height = self.height
+    _desktopEGLImage.pointee.release_context = _retainAnyObject(self)
+    _desktopEGLImage.pointee.release_callback = _releaseAnyObject
+    return UnsafePointer(_desktopEGLImage)
   }
 }
 
