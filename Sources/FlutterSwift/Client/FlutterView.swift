@@ -24,7 +24,7 @@ public struct FlutterView {
   let view: flutter.FlutterELinuxView
   var platformViewsPluginRegistrar: FlutterPluginRegistrar?
   var platformViewsHandler: FlutterPlatformViewsPlugin?
-  var viewController: FlutterViewController? {
+  weak var viewController: FlutterViewController? {
     didSet {
       if let viewController {
         platformViewsPluginRegistrar = viewController.engine.registrar(for: kChannelName)
