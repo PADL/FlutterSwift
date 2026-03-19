@@ -29,18 +29,23 @@ import Foundation
 
 /// The internal state used by the decoders.
 final class FlutterStandardDecodingState {
-  private var data: Data
+  private let data: Data
+  private var offset: Int
 
-  var isAtEnd: Bool { data.isEmpty }
+  var isAtEnd: Bool { offset >= data.count }
 
   init(data: Data) {
     self.data = data
+    self.offset = 0
   }
 
+  private var remaining: Int { data.count - offset }
+
   fileprivate func peekStandardField() throws -> FlutterStandardField {
-    guard let byte = data.first else {
+    guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
+    let byte = data[data.startIndex + offset]
     guard let fieldType = FlutterStandardField(rawValue: byte) else {
       throw FlutterSwiftError.unknownStandardFieldType(byte)
     }
@@ -48,9 +53,11 @@ final class FlutterStandardDecodingState {
   }
 
   private func decodeStandardField() throws -> FlutterStandardField {
-    guard let byte = data.popFirst() else {
+    guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
+    let byte = data[data.startIndex + offset]
+    offset += 1
     guard let fieldType = FlutterStandardField(rawValue: byte) else {
       throw FlutterSwiftError.unknownStandardFieldType(byte)
     }
@@ -66,9 +73,11 @@ final class FlutterStandardDecodingState {
   }
 
   private func decodeSize() throws -> Int {
-    guard let byte = data.popFirst() else {
+    guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
+    let byte = data[data.startIndex + offset]
+    offset += 1
     if byte < 254 {
       return Int(byte)
     } else if byte == 254 {
@@ -81,36 +90,39 @@ final class FlutterStandardDecodingState {
   }
 
   private func assertAlignment(_ alignment: Int) throws {
-    let mod = data.count % alignment
-    guard data.count >= mod else {
+    let mod = remaining % alignment
+    guard remaining >= mod else {
       throw FlutterSwiftError.invalidAlignment
     }
-    data.removeFirst(mod)
+    offset += mod
   }
 
   func decodeData() throws -> Data {
     try assertStandardField(.uint8Data)
     let length = try decodeSize()
-    let raw = data.prefix(length)
-    guard raw.count == length else {
+    let start = data.startIndex + offset
+    guard remaining >= length else {
       throw FlutterSwiftError.eofTooEarly
     }
-    data.removeFirst(length)
+    let raw = data[start..<(start + length)]
+    offset += length
     return Data(raw)
   }
 
   @inlinable
   func decodeDiscriminant() throws -> UInt8 {
-    guard let byte = data.popFirst() else {
+    guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
+    let byte = data[data.startIndex + offset]
+    offset += 1
     return byte
   }
 
   func decodeNil() throws -> Bool {
     let fieldType = try peekStandardField()
     if fieldType == .nil {
-      data.removeFirst()
+      offset += 1
       return true
     } else {
       return false
@@ -199,13 +211,14 @@ final class FlutterStandardDecodingState {
     where Integer: FixedWidthInteger
   {
     let byteWidth = Integer.bitWidth / 8
-    guard data.count >= byteWidth else {
+    guard remaining >= byteWidth else {
       throw FlutterSwiftError.eofTooEarly
     }
-    let value = data.withUnsafeBytes {
+    let start = data.startIndex + offset
+    let value = data[start..<(start + byteWidth)].withUnsafeBytes {
       $0.loadUnaligned(as: type)
     }
-    data.removeFirst(byteWidth)
+    offset += byteWidth
     return value
   }
 
@@ -224,11 +237,12 @@ final class FlutterStandardDecodingState {
   func decode(_ type: String.Type) throws -> String {
     try assertStandardField(.string)
     let length = try decodeSize()
-    let raw = data.prefix(length)
-    guard raw.count == length else {
+    let start = data.startIndex + offset
+    guard remaining >= length else {
       throw FlutterSwiftError.eofTooEarly
     }
-    data.removeFirst(length)
+    let raw = data[start..<(start + length)]
+    offset += length
     guard let value = String(data: raw, encoding: .utf8) else {
       throw FlutterSwiftError.stringNotDecodable(raw)
     }
