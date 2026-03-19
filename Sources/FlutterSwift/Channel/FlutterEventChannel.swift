@@ -200,9 +200,9 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
       }
 
       let stream = try await onListen(call.arguments)
-      let task = EventStreamTask(priority: priority) {
-        try? await self._run(for: stream, name: name)
-        self._removeTask(invocationID)
+      let task = EventStreamTask(priority: priority) { [weak self] in
+        try? await self?._run(for: stream, name: name)
+        self?._removeTask(invocationID)
       }
       _addTask(invocationID, task)
       envelope = FlutterEnvelope.success(nil)
