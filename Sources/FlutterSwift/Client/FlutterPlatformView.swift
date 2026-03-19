@@ -146,6 +146,7 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendabl
     }
 
     platformView.dispose()
+    platformViews.removeValue(forKey: viewId)
     return nil
   }
 }
