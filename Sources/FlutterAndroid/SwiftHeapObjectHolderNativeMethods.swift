@@ -32,8 +32,9 @@ public extension SwiftHeapObjectHolder {
   }
 
   convenience init(swiftObject: some AnyObject, environment: JNIEnvironment?) {
-    let heapObjectIntPtr = unsafeBitCast(swiftObject, to: Int.self) // Int32 on 32-bit platforms
-    self.init(Int64(heapObjectIntPtr), environment: environment) // will call retain()
+    let heapObjectPtr = Unmanaged.passUnretained(swiftObject).toOpaque()
+    let heapObjectInt64 = Int64(Int(bitPattern: heapObjectPtr))
+    self.init(heapObjectInt64, environment: environment) // will call retain()
   }
 
   var swiftObject: AnyObject? {
