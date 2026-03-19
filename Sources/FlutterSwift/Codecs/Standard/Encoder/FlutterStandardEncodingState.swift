@@ -36,12 +36,12 @@ final class FlutterStandardEncodingState {
 
   private func encodeSize(_ size: Int) throws {
     if size < 254 {
-      data += [UInt8(size)]
+      data.append(UInt8(size))
     } else if size <= UInt16.max {
-      data += [254]
+      data.append(254)
       withUnsafeBytes(of: UInt16(size)) { data += $0 }
     } else if size <= UInt32.max {
-      data += [255]
+      data.append(255)
       withUnsafeBytes(of: UInt32(size)) { data += $0 }
     } else {
       throw FlutterSwiftError.variableSizedTypeTooBig
@@ -61,7 +61,7 @@ final class FlutterStandardEncodingState {
 
   @inlinable
   func encodeDiscriminant(_ value: UInt8) throws {
-    data += [value]
+    data.append(value)
   }
 
   func encodeNil() throws {
