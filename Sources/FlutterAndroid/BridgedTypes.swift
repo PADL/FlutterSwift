@@ -15,23 +15,23 @@
 //
 
 import FoundationEssentials
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 extension Data {
-  func asJavaNIOByteBuffer() -> JavaNIOByteBuffer {
-    let byteBuffer = _javaNIOByteBufferClass.allocateDirect(Int32(count))!
+  func asByteBuffer() -> ByteBuffer {
+    let byteBuffer = _byteBufferClass.allocateDirect(Int32(count))!
 
     return byteBuffer.put(map { Int8(bitPattern: $0) }, 0, Int32(count))
   }
 }
 
-extension JavaNIOByteBuffer {
+extension ByteBuffer {
   func asData() throws -> Data {
     let array: [Int8]
 
     if hasArray() {
-      let position = Int(position()), limit = Int(limit())
+      let buffer = JavaNIOBuffer(javaHolder: self.javaHolder)
+      let position = Int(buffer.position()), limit = Int(buffer.limit())
       let offset = Int(arrayOffset()) + position
 
       array = Array(self.array()[offset..<(offset + limit)])

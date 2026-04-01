@@ -19,8 +19,7 @@ import FoundationEssentials
 #else
 import Foundation
 #endif
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 extension _FlutterSwiftBinaryMessageHandler {
   public typealias MessageHandler = @Sendable (Data?, @Sendable @escaping (Data?) -> ()) -> ()
@@ -33,16 +32,16 @@ extension _FlutterSwiftBinaryMessageHandler {
     }
 
     func onMessage(
-      _ message: JavaNIOByteBuffer?,
+      _ message: ByteBuffer?,
       _ binaryReply: FlutterBinaryMessenger.BinaryReply?
-    ) {
+      ) {
       _callback(try! message?.asData()) { data in
         guard let binaryReply else { return }
         if let binaryReply = binaryReply.as(_FlutterSwiftBinaryReply.self) {
           // if binaryReply is native Swift, short-circuit to avoid redundant data conversion
           binaryReply.reply(data)
         } else {
-          binaryReply.reply(data?.asJavaNIOByteBuffer())
+          binaryReply.reply(data?.asByteBuffer())
         }
       }
     }
@@ -68,7 +67,7 @@ extension _FlutterSwiftBinaryMessageHandler {
 extension _FlutterSwiftBinaryMessageHandler: _FlutterSwiftBinaryMessageHandlerNativeMethods {
   @JavaMethod
   public func onMessage(
-    _ message: JavaNIOByteBuffer?,
+    _ message: ByteBuffer?,
     _ binaryReply: FlutterBinaryMessenger.BinaryReply?
   ) {
     messageHandlerHolder.onMessage(message, binaryReply)

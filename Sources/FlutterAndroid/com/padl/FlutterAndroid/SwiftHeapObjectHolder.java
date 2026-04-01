@@ -18,7 +18,7 @@ package com.padl.FlutterAndroid;
 
 import java.lang.ref.Cleaner;
 
-class SwiftHeapObjectHolder implements AutoCloseable {
+public class SwiftHeapObjectHolder implements AutoCloseable {
   private static final Cleaner cleaner = Cleaner.create();
 
   private final Cleaner.Cleanable _cleanable;

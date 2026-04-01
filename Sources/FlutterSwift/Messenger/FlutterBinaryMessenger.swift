@@ -32,6 +32,7 @@ public typealias FlutterBinaryMessageHandler = @Sendable (Data?) async throws ->
 public typealias FlutterBinaryMessengerConnection = Int64
 
 #if canImport(Android)
+import AndroidLooper
 public typealias FlutterPlatformThreadActor = UIThreadActor
 #else
 public typealias FlutterPlatformThreadActor = MainActor

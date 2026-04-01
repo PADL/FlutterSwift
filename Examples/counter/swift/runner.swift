@@ -94,8 +94,7 @@ final class ChannelManager: @unchecked Sendable {
     }
   }
 
-  @FlutterPlatformThreadActor
-  init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) throws {
+  init(binaryMessenger: FlutterSwift.FlutterBinaryMessenger) {
     #if canImport(Android)
     LoggingSystem.bootstrap(AndroidLogHandler.taggedBySource)
     #else
@@ -118,7 +117,10 @@ final class ChannelManager: @unchecked Sendable {
       name: "com.example.counter.toggle",
       binaryMessenger: binaryMessenger
     )
+  }
 
+  @FlutterPlatformThreadActor
+  func configureHandlers() throws {
     try flutterBasicMessageChannel.setMessageHandler(messageHandler)
     try flutterEventChannel.setStreamHandler(onListen: onListen, onCancel: onCancel)
     try flutterMethodChannel.setMethodCallHandler(methodCallHandler)
@@ -127,9 +129,8 @@ final class ChannelManager: @unchecked Sendable {
 
 #if os(Linux) && canImport(Glibc)
 extension ChannelManager {
-  @FlutterPlatformThreadActor
-  convenience init(viewController: FlutterViewController) throws {
-    try self.init(binaryMessenger: viewController.engine.binaryMessenger)
+  convenience init(viewController: FlutterViewController) {
+    self.init(binaryMessenger: viewController.engine.binaryMessenger)
   }
 }
 
@@ -154,15 +155,16 @@ enum Counter {
     guard let window else {
       exit(2)
     }
-    ChannelManager.shared = try! ChannelManager(viewController: window.viewController)
+    ChannelManager.shared = ChannelManager(viewController: window.viewController)
+    try! ChannelManager.shared.configureHandlers()
     window.run()
   }
 }
 
 #elseif canImport(Android)
+import AndroidLooper
 import FlutterAndroid
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 @JavaClass("com.example.counter.ChannelManager")
 open class _ChannelManager: JavaObject {
@@ -186,7 +188,10 @@ extension _ChannelManager: _ChannelManagerNativeMethods {
   @JavaMethod
   public func initChannelManager() {
     let wrappedMessenger = FlutterPlatformMessenger(wrapping: binaryMessenger!)
-    ChannelManager.shared = ChannelManager(binaryMessenger: wrappedMessenger)
+    UIThreadActor.assumeIsolated {
+      ChannelManager.shared = ChannelManager(binaryMessenger: wrappedMessenger)
+      try! ChannelManager.shared.configureHandlers()
+    }
   }
 }
 #endif

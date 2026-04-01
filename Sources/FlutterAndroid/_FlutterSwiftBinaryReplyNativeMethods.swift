@@ -19,8 +19,7 @@ import FoundationEssentials
 #else
 import Foundation
 #endif
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 package extension _FlutterSwiftBinaryReply {
   // note: block convention necessary to allow casting to AnyObject
@@ -38,7 +37,7 @@ package extension _FlutterSwiftBinaryReply {
 @JavaImplementation("com.padl.FlutterAndroid.FlutterSwiftBinaryReply")
 extension _FlutterSwiftBinaryReply: _FlutterSwiftBinaryReplyNativeMethods {
   @JavaMethod
-  public func reply(_ replyBuffer: JavaNIOByteBuffer?) {
+  public func reply(_ replyBuffer: ByteBuffer?) {
     try! block(replyBuffer?.asData())
   }
 }

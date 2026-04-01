@@ -19,8 +19,7 @@ import FoundationEssentials
 #else
 import Foundation
 #endif
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 public extension SwiftHeapObjectHolder {
   fileprivate static func _getUnmanagedSwiftHeapObject(_ heapObjectInt64Ptr: Int64)
@@ -44,7 +43,7 @@ public extension SwiftHeapObjectHolder {
   }
 }
 
-extension SwiftHeapObjectHolder: CustomJavaClassLoader {
+extension SwiftHeapObjectHolder: AnyJavaObjectWithCustomClassLoader {
   public static func getJavaClassLoader(in environment: JNIEnvironment) throws -> JavaClassLoader! {
     _getFlutterSwiftClassLoader()
   }
@@ -53,7 +52,7 @@ extension SwiftHeapObjectHolder: CustomJavaClassLoader {
 @JavaImplementation("com.padl.FlutterAndroid.SwiftHeapObjectHolder")
 public extension JavaClass<SwiftHeapObjectHolder> {
   @JavaMethod
-  static func _1retainSwiftHeapObject(
+  static func _retainSwiftHeapObject(
     _ heapObjectInt64Ptr: Int64,
     environment: JNIEnvironment? = nil
   ) {
@@ -61,7 +60,7 @@ public extension JavaClass<SwiftHeapObjectHolder> {
   }
 
   @JavaMethod
-  static func _1releaseSwiftHeapObject(
+  static func _releaseSwiftHeapObject(
     _ heapObjectInt64Ptr: Int64,
     environment: JNIEnvironment? = nil
   ) {
