@@ -14,6 +14,7 @@ class AppDelegate: FlutterAppDelegate {
     GeneratedPluginRegistrant.register(with: self)
     let flutterViewController = window!.rootViewController as! FlutterViewController
     channelManager = try! ChannelManager(viewController: flutterViewController)
+    try! channelManager?.configureHandlers()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

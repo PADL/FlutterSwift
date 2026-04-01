@@ -13,6 +13,7 @@ class MainFlutterWindow: NSWindow {
 
     do {
       runner = try ChannelManager(viewController: flutterViewController)
+      try runner.configureHandlers()
     } catch {
       NSApp.terminate(self)
     }
