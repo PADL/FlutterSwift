@@ -30,8 +30,8 @@ import Foundation
  * Values supported as method arguments and result payloads are those supported by
  * `FlutterStandardMessageCodec`.
  */
-public final class FlutterStandardMethodCodec: FlutterMethodCodec {
-  public let shared: FlutterStandardMethodCodec = .init()
+public final class FlutterStandardMethodCodec: FlutterMethodCodec, Sendable {
+  public static let shared: FlutterStandardMethodCodec = .init()
 
   public init() {}
 

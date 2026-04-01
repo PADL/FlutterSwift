@@ -31,8 +31,8 @@ import Foundation
  * Values supported as methods arguments and result payloads are
  * those supported as top-level or leaf values by `FlutterJSONMessageCodec`.
  */
-public final class FlutterJSONMethodCodec: FlutterMethodCodec {
-  public let shared: FlutterJSONMethodCodec = .init()
+public final class FlutterJSONMethodCodec: FlutterMethodCodec, Sendable {
+  public static let shared: FlutterJSONMethodCodec = .init()
 
   public init() {}
 

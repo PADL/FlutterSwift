@@ -36,7 +36,7 @@ import Foundation
  * populate a `FlutterError`.
  */
 public protocol FlutterMethodCodec {
-  var shared: Self { get }
+  static var shared: Self { get }
 
   func encode<T>(method: FlutterMethodCall<T>) throws -> Data
   func decode<T>(method: Data) throws -> FlutterMethodCall<T>

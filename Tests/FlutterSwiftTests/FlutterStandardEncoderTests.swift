@@ -270,7 +270,7 @@ final class FlutterStandardEncoderTests: XCTestCase {
     let generic = Generic<String>(value: "Hello, world", additional: 255)
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: generic)
 
-    // FIXME: Either -- enums are not supported, we need to interrogate metadata to determine number of keys, this is possible but probably useless because there is no direct equivalent on the Flutter side
+    // FIXME: enums are not supported, we need to interrogate metadata to determine number of keys, this is possible but probably useless because there is no direct equivalent on the Flutter side
   }
 
   func testConstructedStandardVariantEncoderDecoder() throws {
