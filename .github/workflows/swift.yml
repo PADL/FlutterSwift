@@ -16,10 +16,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: 🔍 Xcode Select
+      - name: Install swiftly
         run: |
-          XCODE_PATH=`mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode' && kMDItemVersion = '16.*'" -onlyin /Applications | head -1`
-          echo "DEVELOPER_DIR=$XCODE_PATH/Contents/Developer" >> $GITHUB_ENV
+          curl -L https://download.swift.org/swiftly/darwin/swiftly.pkg > swiftly.pkg
+          installer -pkg swiftly.pkg -target CurrentUserHomeDirectory
+          ~/.swiftly/bin/swiftly init --assume-yes --skip-install
+      - name: Install Swift
+        run: |
+          . ~/.swiftly/env.sh
+          swiftly install 6.0.3 --post-install-file=post-install.sh
+          if [ -f post-install.sh ]; then . post-install.sh; fi
+          echo "$HOME/.swiftly/bin" >> $GITHUB_PATH
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:

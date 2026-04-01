@@ -121,6 +121,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
       return _setMessageHandler(on: channel, nil)
     }
     return _setMessageHandler(on: channel) { message, callback in
+      nonisolated(unsafe) let callback = callback
       Task {
         let response = try await handler(message)
         callback(response)
