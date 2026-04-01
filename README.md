@@ -30,7 +30,9 @@ Please note the distinction between Flutter _embeddings_ or _embedders_, which a
 
 ### iOS and macOS
 
-Example Xcode projects are included in the standard places in the [Examples/counter](Examples/counter) directory. You may need to tweak the bundle identifier to match your developer ID.
+Install [Flutter](https://docs.flutter.dev/get-started/install) and [Xcode](https://developer.apple.com/xcode/) on your development machine. Add FlutterSwift as a Swift package dependency from Xcode (see [Architecture](#mobile-and-desktop-platforms) above).
+
+Example Xcode projects are included in the [Examples/counter](Examples/counter) directory under `ios/` and `macos/`. You may need to tweak the bundle identifier to match your developer ID. The shared Swift runner code is in [Examples/counter/swift/](Examples/counter/swift/).
 
 ### Android
 
@@ -108,9 +110,19 @@ Note that `@MainActor` is unavailable on Android; use `@UIThreadActor` instead.
 
 ### Embedded Linux
 
-Assuming the Flutter SDK is installed in `/opt/flutter-elinux/flutter`, you can just run `./build-counter-linux.sh` in the top-level directory, followed by `./run-counter-linux.sh`. This will build the Flutter AOT object, followed by the Swift runner.
+Ensure [swiftly](https://swiftlang.github.io/swiftly/) and [Flutter eLinux](https://github.com/flutter-elinux/flutter-elinux) are installed. Flutter eLinux should be in `/opt/flutter-elinux`; Swift is expected at `~/.local/share/swiftly/bin` (the default swiftly location).
 
-The environment variable `FLUTTER_SWIFT_BACKEND` can be set to one of `gbm`, `eglstream`, or `wayland`, as appropriate. This should be set both for building and running. You will probably want to set it to `wayland` unless you are actually testing on an embedded system.
+To build and run the counter example:
+
+```sh
+export FLUTTER_SWIFT_BACKEND=wayland
+./build-elinux.sh
+./run-elinux.sh
+```
+
+This builds the Flutter assets and AOT object, cross-compiles the Swift runner, and copies the Flutter engine into the bundle.
+
+The environment variable `FLUTTER_SWIFT_BACKEND` can be set to one of `gbm`, `eglstream`, or `wayland`, as appropriate. This should be set both for building and running. You will probably want to set it to `wayland` unless you are actually testing on an embedded system. Set `FLUTTER_SWIFT_BUILD_CONFIG` to `release` for a release build (defaults to `debug`).
 
 ## Usage
 

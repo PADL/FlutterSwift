@@ -36,7 +36,7 @@ export FLUTTER_CACHE_ENGINEDIR=${FLUTTER_SDK}/bin/cache/artifacts/engine
 export DART_CACHE_BINDIR=${FLUTTER_SDK}/bin/cache/dart-sdk/bin
 export ELINUX_ENGINE_BASE_URL="https://github.com/flutter-elinux/flutter-embedded-linux/releases"
 
-export PATH=$PATH:${FLUTTER_ROOT}/bin:${FLUTTER_SDK}/bin:/opt/swift/usr/bin
+export PATH=$PATH:${FLUTTER_ROOT}/bin:${FLUTTER_SDK}/bin:${HOME}/.local/share/swiftly/bin
 
 # Package name of the build target Flutter app
 export SOURCE_DIR=${pwd}/Examples/${APP_PACKAGE_NAME}
