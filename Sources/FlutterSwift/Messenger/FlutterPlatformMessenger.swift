@@ -44,7 +44,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   public typealias PlatformFlutterBinaryMessageHandler = FlutterAndroid.FlutterBinaryMessageHandler
   #endif
 
-  nonisolated(unsafe) private let _wrappedMessenger: PlatformFlutterBinaryMessenger
+  private nonisolated(unsafe) let _wrappedMessenger: PlatformFlutterBinaryMessenger
 
   // MARK: - Initializers
 
@@ -120,9 +120,18 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     guard let handler else {
       return _setMessageHandler(on: channel, nil)
     }
+
     return _setMessageHandler(on: channel) { message, callback in
-      nonisolated(unsafe) let callback = callback
-      Task {
+      struct _SendableBinaryReply: @unchecked Sendable {
+        let callback: FlutterBinaryReply
+
+        func callAsFunction(_ response: Data?) {
+          callback(response)
+        }
+      }
+
+      let callback = _SendableBinaryReply(callback: callback)
+      let _ = Task { @Sendable [handler, message, callback] in
         let response = try await handler(message)
         callback(response)
       }
