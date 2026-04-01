@@ -40,8 +40,8 @@ struct KeyValuePair<Key: Hashable & Codable, Value: Codable>: Codable, Hashable 
 extension KeyValuePair: Sendable where Key: Sendable, Value: Sendable {}
 
 protocol FlutterMapRepresentable<Key, Value>: Collection {
-  associatedtype Key: Codable & Hashable & Sendable
-  associatedtype Value: Codable & Sendable
+  associatedtype Key: Codable & Hashable
+  associatedtype Value: Codable
 
   init(setOfKeyValuePairs: Set<KeyValuePair<Key, Value>>)
   init(from: FlutterStandardDecoderImpl) throws

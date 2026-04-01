@@ -44,7 +44,7 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
   public typealias PlatformFlutterBinaryMessageHandler = FlutterAndroid.FlutterBinaryMessageHandler
   #endif
 
-  private let _wrappedMessenger: PlatformFlutterBinaryMessenger
+  nonisolated(unsafe) private let _wrappedMessenger: PlatformFlutterBinaryMessenger
 
   // MARK: - Initializers
 
