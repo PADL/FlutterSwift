@@ -28,13 +28,14 @@ extension Data {
 extension ByteBuffer {
   func asData() throws -> Data {
     let array: [Int8]
+    let buffer = JavaNIOBuffer(javaHolder: self.javaHolder)
+    let position = Int(buffer.position()), limit = Int(buffer.limit())
+    let remaining = limit - position
 
     if hasArray() {
-      let buffer = JavaNIOBuffer(javaHolder: self.javaHolder)
-      let position = Int(buffer.position()), limit = Int(buffer.limit())
       let offset = Int(arrayOffset()) + position
 
-      array = Array(self.array()[offset..<(offset + limit)])
+      array = Array(self.array()[offset..<(offset + remaining)])
     } else {
       array = _byteBufferHelperClass.getByteBufferContents(self)
     }

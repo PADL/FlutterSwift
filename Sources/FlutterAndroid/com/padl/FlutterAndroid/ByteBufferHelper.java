@@ -26,9 +26,8 @@ public class ByteBufferHelper {
   }
 
   public static byte[] getByteBufferContents(ByteBuffer byteBuffer) {
-    int position = byteBuffer.position();
-    int length = byteBuffer.limit() - position;
-
-    return getByteBufferContents(byteBuffer, position, length);
+    byte[] array = new byte[byteBuffer.remaining()];
+    byteBuffer.get(array);
+    return array;
   }
 }
