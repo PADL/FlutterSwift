@@ -19,17 +19,16 @@ import AndroidLogging
 import AndroidLooper
 import Atomics
 import FoundationEssentials
-import JavaKit
-import JavaRuntime
+import SwiftJava
 import Logging
 
-var _javaNIOByteBufferClass: JavaClass<JavaNIOByteBuffer>!
-var _byteBufferHelperClass: JavaClass<ByteBufferHelper>!
+nonisolated(unsafe) var _byteBufferClass: JavaClass<ByteBuffer>!
+nonisolated(unsafe) var _byteBufferHelperClass: JavaClass<ByteBufferHelper>!
 
-private var _flutterSwiftClassLoader: JavaClassLoader!
-private var _flutterClassLoader: JavaClassLoader!
+private nonisolated(unsafe) var _flutterSwiftClassLoader: JavaClassLoader!
+private nonisolated(unsafe) var _flutterClassLoader: JavaClassLoader!
 
-private var _logger: Logger!
+private nonisolated(unsafe) var _logger: Logger!
 
 @_cdecl("JNI_OnLoad")
 public func JNI_OnLoad(
@@ -53,7 +52,7 @@ public func JNI_OnLoad(
     precondition(_flutterSwiftClassLoader != nil)
     _flutterClassLoader = anInterface.getClassLoader()
     precondition(_flutterClassLoader != nil)
-    _javaNIOByteBufferClass = try JavaClass<JavaNIOByteBuffer>()
+    _byteBufferClass = try JavaClass<ByteBuffer>()
     _byteBufferHelperClass = try JavaClass<ByteBufferHelper>()
 
     _logger.info("JNI_OnLoad: registered class loaders")
@@ -71,7 +70,7 @@ public func JNI_OnUnload(
 ) {
   _flutterSwiftClassLoader = nil
   _flutterClassLoader = nil
-  _javaNIOByteBufferClass = nil
+  _byteBufferClass = nil
   _byteBufferHelperClass = nil
 
   AndroidLooper_deinitialize(nil)

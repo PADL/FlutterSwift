@@ -123,7 +123,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
       guard let self else { return }
       self.detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
         for (channel, detachFromEngine) in detachFromEngineCallbacks {
-          Task { @FlutterPlatformThreadActor in await channel.removeMessageHandler() }
+          Task { await channel.removeMessageHandler() }
           detachFromEngine(self)
         }
       }

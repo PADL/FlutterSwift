@@ -110,8 +110,8 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     let name = self.name
     let binaryMessenger = self.binaryMessenger
     let connection = self.connection
-    Task { @FlutterPlatformThreadActor in
-      Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
+    Task {
+      await Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
     }
   }
 

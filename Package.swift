@@ -129,12 +129,12 @@ if FlutterSwiftJVM {
   ]
   packageDependencies += [
     .package(
-      url: "https://github.com/PADL/swift-java",
-      branch: "lhoward/android"
+      url: "https://github.com/swiftlang/swift-java",
+      branch: "main"
     ),
     .package(
       url: "https://github.com/PADL/AndroidLooper",
-      from: "0.0.1"
+      from: "0.0.3"
     ),
     .package(
       url: "https://github.com/PADL/AndroidLogging",
@@ -146,10 +146,8 @@ if FlutterSwiftJVM {
     .plugin(name: "SwiftJavaPlugin", package: "swift-java"),
   ]
 
-  let javaKitDependencies: [Target.Dependency] = [
-    .product(name: "JavaKit", package: "swift-java"),
-    .product(name: "JavaKitFunction", package: "swift-java"),
-    .product(name: "JavaKitJar", package: "swift-java"),
+  let swiftJavaDependencies: [Target.Dependency] = [
+    .product(name: "SwiftJava", package: "swift-java"),
   ]
 
   products += [
@@ -163,7 +161,7 @@ if FlutterSwiftJVM {
   targets += [
     .target(
       name: "FlutterAndroid",
-      dependencies: javaKitDependencies + [
+      dependencies: swiftJavaDependencies + [
         "AndroidLooper",
         "AndroidLogging",
         .product(name: "Atomics", package: "swift-atomics"),
@@ -184,7 +182,7 @@ if FlutterSwiftJVM {
     ),
   ]
 
-  targetDependencies += javaKitDependencies + ["FlutterAndroid"]
+  targetDependencies += swiftJavaDependencies + ["FlutterAndroid", "AndroidLooper"]
 } else {
   javaHome = nil
   javaPlatformIncludePath = nil

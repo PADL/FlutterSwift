@@ -17,8 +17,7 @@
 import Android
 import Atomics
 import FoundationEssentials
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 // this API is designed to mimic the iOS/macOS APIs, hence lack of Swiftiness
 
@@ -28,8 +27,9 @@ public typealias FlutterBinaryReply = (Data?) -> ()
 public typealias FlutterBinaryMessageHandler = _FlutterSwiftBinaryMessageHandler.MessageHandler
 
 extension FlutterBinaryMessenger: @unchecked Sendable {}
+extension FlutterBinaryMessenger.BinaryReply: @unchecked Sendable {}
 
-extension FlutterBinaryMessenger: CustomJavaClassLoader {
+extension FlutterBinaryMessenger: AnyJavaObjectWithCustomClassLoader {
   public static func getJavaClassLoader(in environment: JNIEnvironment) throws -> JavaClassLoader! {
     _getFlutterClassLoader()
   }
@@ -37,7 +37,7 @@ extension FlutterBinaryMessenger: CustomJavaClassLoader {
 
 public extension FlutterBinaryMessenger {
   func send(onChannel channel: String, message: Data?, binaryReply: FlutterBinaryReply?) {
-    send(channel, message?.asJavaNIOByteBuffer())
+    send(channel, message?.asByteBuffer())
   }
 
   func cleanUpConnection(_ connection: Int64) {}
