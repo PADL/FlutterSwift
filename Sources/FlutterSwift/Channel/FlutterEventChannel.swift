@@ -111,7 +111,11 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     let binaryMessenger = self.binaryMessenger
     let connection = self.connection
     Task {
-      await Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
+      await Self._removeMessageHandler(
+        on: name,
+        connection: connection,
+        binaryMessenger: binaryMessenger
+      )
     }
   }
 

@@ -19,8 +19,8 @@ import AndroidLogging
 import AndroidLooper
 import Atomics
 import FoundationEssentials
-import SwiftJava
 import Logging
+import SwiftJava
 
 nonisolated(unsafe) var _byteBufferClass: JavaClass<ByteBuffer>!
 nonisolated(unsafe) var _byteBufferHelperClass: JavaClass<ByteBufferHelper>!

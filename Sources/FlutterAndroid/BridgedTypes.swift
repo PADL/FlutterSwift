@@ -46,7 +46,7 @@ extension Data {
 
 extension ByteBuffer {
   func asData() throws -> Data {
-    let buffer = JavaNIOBuffer(javaHolder: self.javaHolder)
+    let buffer = JavaNIOBuffer(javaHolder: javaHolder)
     let position = Int(buffer.position()), limit = Int(buffer.limit())
     let remaining = limit - position
 

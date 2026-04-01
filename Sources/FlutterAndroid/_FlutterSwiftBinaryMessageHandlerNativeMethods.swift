@@ -34,7 +34,7 @@ extension _FlutterSwiftBinaryMessageHandler {
     func onMessage(
       _ message: ByteBuffer?,
       _ binaryReply: FlutterBinaryMessenger.BinaryReply?
-      ) {
+    ) {
       _callback(try! message?.asData()) { data in
         guard let binaryReply else { return }
         if let binaryReply = binaryReply.as(_FlutterSwiftBinaryReply.self) {

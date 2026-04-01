@@ -36,7 +36,7 @@ final class FlutterStandardDecodingState {
 
   init(data: Data) {
     self.data = data
-    self.offset = 0
+    offset = 0
   }
 
   private var remaining: Int { data.count - offset }
