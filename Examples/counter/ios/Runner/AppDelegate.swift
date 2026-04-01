@@ -23,7 +23,7 @@ extension ChannelManager {
   convenience init(viewController: FlutterViewController) throws {
     try self
       .init(binaryMessenger: FlutterPlatformMessenger(
-        wrapping: viewController.engine!.binaryMessenger
+        wrapping: viewController.engine.binaryMessenger
       ))
   }
 }
