@@ -18,9 +18,10 @@
 @_implementationOnly
 import CxxFlutterSwift
 import CxxStdlib
+import Synchronization
 
 public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
-  var pluginPublications = ManagedCriticalState<[String: Any]>([:])
+  let pluginPublications = Mutex<[String: Any]>([:])
   let project: DartProject
   weak var viewController: FlutterViewController?
   private var engine: flutter.FlutterELinuxEngine! // strong or weak ref
@@ -92,7 +93,7 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   }
 
   public func shutDown() {
-    pluginPublications.withCriticalRegion { $0.removeAll() }
+    pluginPublications.withLock { $0.removeAll() }
     if engine != nil, ownsEngine {
       FlutterDesktopEngineDestroy(_handle)
     }
@@ -114,7 +115,7 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   }
 
   public func registrar(for pluginKey: String) -> FlutterPluginRegistrar? {
-    pluginPublications.withCriticalRegion { $0[pluginKey] = FlutterNull() }
+    pluginPublications.withLock { $0[pluginKey] = FlutterNull() }
     return FlutterDesktopPluginRegistrar(engine: self, pluginKey)
   }
 
@@ -123,7 +124,7 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
   }
 
   public func valuePublished(by pluginKey: String) -> Any? {
-    pluginPublications.withCriticalRegion { $0[pluginKey] }
+    pluginPublications.withLock { $0[pluginKey] }
   }
 
   public var isImpellerEnabled: Bool {

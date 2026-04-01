@@ -18,6 +18,7 @@
 @_implementationOnly
 import CxxFlutterSwift
 import Foundation
+import Synchronization
 
 public protocol FlutterPlugin: Sendable {
   associatedtype Arguments: Codable & Sendable
@@ -108,8 +109,8 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
   public let engine: FlutterEngine
 
   var registrar: FlutterDesktopPluginRegistrarRef!
-  var detachFromEngineCallbacks =
-    ManagedCriticalState<[FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]>([:])
+  let detachFromEngineCallbacks =
+    Mutex<[FlutterMethodChannel: (FlutterPluginRegistrar) -> ()]>([:])
 
   public init(
     engine: FlutterEngine,
@@ -121,7 +122,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     // FIXME: use std::function
     FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [weak self] _ in
       guard let self else { return }
-      self.detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
+      self.detachFromEngineCallbacks.withLock { detachFromEngineCallbacks in
         for (channel, detachFromEngine) in detachFromEngineCallbacks {
           Task { await channel.removeMessageHandler() }
           detachFromEngine(self)
@@ -153,7 +154,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
   }
 
   public func publish(_ value: Any) {
-    engine.pluginPublications.withCriticalRegion { $0[pluginKey] = value }
+    engine.pluginPublications.withLock { $0[pluginKey] = value }
   }
 
   func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
@@ -166,7 +167,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
         try delegate.handleMethod(call: call)
       }
     }
-    detachFromEngineCallbacks.withCriticalRegion { detachFromEngineCallbacks in
+    detachFromEngineCallbacks.withLock { detachFromEngineCallbacks in
       detachFromEngineCallbacks[channel] = detachCallback
     }
   }
