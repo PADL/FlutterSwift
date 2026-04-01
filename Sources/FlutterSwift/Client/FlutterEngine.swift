@@ -21,7 +21,7 @@ import CxxStdlib
 import Synchronization
 
 public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
-  let pluginPublications = Mutex<[String: Any]>([:])
+  let pluginPublications = Mutex<[String: any Sendable]>([:])
   let project: DartProject
   weak var viewController: FlutterViewController?
   private var engine: flutter.FlutterELinuxEngine! // strong or weak ref
@@ -123,7 +123,7 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     valuePublished(by: pluginKey) != nil
   }
 
-  public func valuePublished(by pluginKey: String) -> Any? {
+  public func valuePublished(by pluginKey: String) -> (any Sendable)? {
     pluginPublications.withLock { $0[pluginKey] }
   }
 

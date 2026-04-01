@@ -93,7 +93,7 @@ public protocol FlutterPluginRegistrar {
     viewFactory factory: FlutterPlatformViewFactory,
     with factoryId: String
   ) throws
-  func publish(_ value: Any)
+  func publish(_ value: any Sendable)
   func lookupKey(for asset: String) -> String?
   func lookupKey(for asset: String, from package: String) -> String?
 }
@@ -101,7 +101,7 @@ public protocol FlutterPluginRegistrar {
 public protocol FlutterPluginRegistry {
   func registrar(for pluginKey: String) -> FlutterPluginRegistrar?
   func has(plugin pluginKey: String) -> Bool
-  func valuePublished(by pluginKey: String) -> Any?
+  func valuePublished(by pluginKey: String) -> (any Sendable)?
 }
 
 public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unchecked Sendable {
@@ -153,7 +153,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     platformViewsHandler.register(viewType: factoryId, factory: factory)
   }
 
-  public func publish(_ value: Any) {
+  public func publish(_ value: any Sendable) {
     engine.pluginPublications.withLock { $0[pluginKey] = value }
   }
 
