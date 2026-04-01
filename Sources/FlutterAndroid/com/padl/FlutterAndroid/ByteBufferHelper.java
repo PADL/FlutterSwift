@@ -19,12 +19,6 @@ package com.padl.FlutterAndroid;
 import java.nio.ByteBuffer;
 
 public class ByteBufferHelper {
-  public static byte[] getByteBufferContents(ByteBuffer byteBuffer, int offset, int length) {
-    byte[] array = new byte[length];
-    byteBuffer.get(array, offset, length);
-    return array;
-  }
-
   public static byte[] getByteBufferContents(ByteBuffer byteBuffer) {
     byte[] array = new byte[byteBuffer.remaining()];
     byteBuffer.get(array);

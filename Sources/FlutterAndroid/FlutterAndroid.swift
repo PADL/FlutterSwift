@@ -18,10 +18,19 @@ import Android
 import Atomics
 import FoundationEssentials
 import SwiftJava
+import Synchronization
 
 // this API is designed to mimic the iOS/macOS APIs, hence lack of Swiftiness
 
 private let currentMessengerConnection = ManagedAtomic<Int64>(0)
+
+/// Tracks active handler connections so cleanUpConnection() can remove them deterministically
+/// rather than relying on Java GC to release the Swift heap holders.
+private struct ConnectionEntry {
+  let channel: String
+}
+
+private let connectionRegistry = Mutex([Int64: ConnectionEntry]())
 
 public typealias FlutterBinaryReply = (Data?) -> ()
 public typealias FlutterBinaryMessageHandler = _FlutterSwiftBinaryMessageHandler.MessageHandler
@@ -40,7 +49,12 @@ public extension FlutterBinaryMessenger {
     send(channel, message?.asByteBuffer())
   }
 
-  func cleanUpConnection(_ connection: Int64) {}
+  func cleanUpConnection(_ connection: Int64) {
+    let entry = connectionRegistry.withLock { $0.removeValue(forKey: connection) }
+    if let entry {
+      setMessageHandler(entry.channel, nil)
+    }
+  }
 
   func setMessageHandlerOnChannel(
     _ channel: String,
@@ -52,7 +66,10 @@ public extension FlutterBinaryMessenger {
         .BinaryMessageHandler(javaHolder: binaryMessageHandler.javaHolder)
 
       setMessageHandler(channel, typeErasedBinaryMessageHandler)
-      return currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
+      let connection = currentMessengerConnection
+        .wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
+      connectionRegistry.withLock { $0[connection] = ConnectionEntry(channel: channel) }
+      return connection
     } else {
       setMessageHandler(channel, nil)
       return 0
