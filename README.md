@@ -194,7 +194,9 @@ extension _ChannelManager: _ChannelManagerNativeMethods {
   @JavaMethod
   public func initChannelManager() {
     let wrappedMessenger = FlutterPlatformMessenger(wrapping: binaryMessenger!)
-    // initialize your channels, remembering to take a strong reference to them
+    UIThreadActor.assumeIsolated {
+      // initialize your channels, remembering to take a strong reference to them
+    }
   }
 }
 ```
