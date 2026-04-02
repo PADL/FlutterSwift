@@ -1,0 +1,6 @@
+-keep class com.padl.FlutterAndroid.ByteBufferHelper { *; }
+-keep class com.padl.FlutterAndroid.FlutterSwiftBinaryMessageHandler { *; }
+-keep class com.padl.FlutterAndroid.FlutterSwiftBinaryReply { *; }
+-keep class com.padl.FlutterAndroid.SwiftHeapObjectHolder { *; }
+-keep class io.flutter.plugin.common.BinaryMessenger { *; }
+-keep class io.flutter.plugin.common.BinaryMessenger$* { *; }

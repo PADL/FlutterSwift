@@ -47,6 +47,10 @@ android {
             isJniDebuggable = true
         }
         release {
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "../../../Sources/FlutterAndroid/proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("debug")
             isJniDebuggable = false
         }
