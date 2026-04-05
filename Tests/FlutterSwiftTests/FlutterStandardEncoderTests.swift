@@ -177,6 +177,21 @@ final class FlutterStandardEncoderTests: XCTestCase {
       encodes: AnyFlutterStandardCodable(UInt32(0xFEDC)),
       to: [0x04, 0xDC, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     )
+    try assertThat(
+      encoder,
+      encodes: AnyFlutterStandardCodable(UInt64(0xFEDC_BA09)),
+      to: [0x04, 0x09, 0xBA, 0xDC, 0xFE, 0x00, 0x00, 0x00, 0x00]
+    )
+    try assertThat(
+      encoder,
+      encodes: AnyFlutterStandardCodable(UInt64(0xFFFF_FFFF_FFFF_FFFA)),
+      to: [0x04, 0xFA, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+    )
+    try assertThat(
+      encoder,
+      encodes: AnyFlutterStandardCodable(UInt64.max),
+      to: [0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+    )
   }
 
   func testDefaultStandardEncoderDecoder() throws {
@@ -188,6 +203,12 @@ final class FlutterStandardEncoderTests: XCTestCase {
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt16(12343))
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt32(13_423_433))
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt64(1_214_423_123))
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt64.max)
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: UInt64(0xFFFF_FFFF_FFFF_FFFA)
+    )
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int8(123))
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int16(12343))
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int32(13_423_433))
