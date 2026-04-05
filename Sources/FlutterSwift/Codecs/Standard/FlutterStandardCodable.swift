@@ -155,6 +155,25 @@ extension UInt32: FlutterStandardCodable {
   }
 }
 
+/// NOTE: Flutter's standard message codec has no unsigned 64-bit integer type.
+/// UInt64 values are represented as Int64 using bit pattern reinterpretation,
+/// which is lossless but means values above Int64.max will appear as negative
+/// on the Dart side. Dart code should use `.toUnsigned(64)` to recover the
+/// original unsigned value. This is consistent with the approach used by
+/// FlutterStandardEncodingState.encode(_ value: UInt64).
+extension UInt64: FlutterStandardCodable {
+  public init(any: AnyFlutterStandardCodable) throws {
+    guard case let .int64(int64) = any else {
+      throw FlutterSwiftError.fieldNotDecodable
+    }
+    self = UInt64(bitPattern: int64)
+  }
+
+  public func bridgeToAnyFlutterStandardCodable() throws -> AnyFlutterStandardCodable {
+    .int64(Int64(bitPattern: self))
+  }
+}
+
 extension Float: FlutterStandardCodable {
   public init(any: AnyFlutterStandardCodable) throws {
     guard case let .float64(float64) = any else {
