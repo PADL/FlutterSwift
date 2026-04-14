@@ -187,12 +187,18 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
 
         nonisolated(unsafe) let responseHandle = message.response_handle
         let _ = Task(priority: priority) { @Sendable [self, handler, channel, messageData] in
-          let response = try await handler(messageData)
-          try? self.sendResponse(
-            on: channel,
-            handle: responseHandle,
-            response: response
-          )
+          do {
+            let response = try await handler(messageData)
+            try? self.sendResponse(
+              on: channel,
+              handle: responseHandle,
+              response: response
+            )
+          } catch {
+            // Always send a response even on error so the Flutter engine
+            // can release the MallocMapping-owned message buffer (flutter/flutter#159363).
+            try? self.sendResponse(on: channel, handle: responseHandle, response: nil)
+          }
         }
       }
 

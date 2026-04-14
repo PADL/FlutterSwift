@@ -132,8 +132,14 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
 
       let callback = _SendableBinaryReply(callback: callback)
       let _ = Task { @Sendable [handler, message, callback] in
-        let response = try await handler(message)
-        callback(response)
+        do {
+          let response = try await handler(message)
+          callback(response)
+        } catch {
+          // Always invoke the reply callback even on error so the Flutter engine
+          // can release the MallocMapping-owned message buffer (flutter/flutter#159363).
+          callback(nil)
+        }
       }
     }
   }
