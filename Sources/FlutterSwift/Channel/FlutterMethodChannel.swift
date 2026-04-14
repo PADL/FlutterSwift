@@ -167,6 +167,8 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
           envelope = try await .success(unwrappedHandler(call))
         } catch let error as FlutterError {
           envelope = .failure(error)
+        } catch {
+          envelope = .failure(error.flutterError)
         }
         return try codec.encode(envelope)
       }

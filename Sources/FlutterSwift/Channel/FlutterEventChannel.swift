@@ -167,7 +167,8 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     } catch is CancellationError {
       try await binaryMessenger.send(on: name, message: nil)
     } catch {
-      throw FlutterSwiftError.invalidEventError
+      let envelope = FlutterEnvelope<Event>.failure(error.flutterError)
+      try await binaryMessenger.send(on: name, message: codec.encode(envelope))
     }
   }
 
@@ -217,6 +218,8 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         envelope = FlutterEnvelope.success(nil)
       } catch let error as FlutterError {
         envelope = FlutterEnvelope.failure(error)
+      } catch {
+        envelope = FlutterEnvelope.failure(error.flutterError)
       }
       _cancelTask(invocationID)
     default:

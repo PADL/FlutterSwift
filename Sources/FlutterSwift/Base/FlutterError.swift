@@ -14,6 +14,12 @@
 // limitations under the License.
 //
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
 /**
  * Error object representing an unsuccessful outcome of invoking a method
  * on a `FlutterMethodChannel`, or an error event on a `FlutterEventChannel`.
@@ -65,5 +71,36 @@ public struct FlutterError: Error, Codable, Sendable {
     if let stacktrace {
       try container.encode(stacktrace)
     }
+  }
+}
+
+extension Error {
+  var flutterErrorDetails: AnyFlutterStandardCodable? {
+    #if canImport(FoundationEssentials)
+    return .string(String(describing: self))
+    #else
+    let nsError = self as NSError
+    guard !nsError.userInfo.isEmpty else {
+      return .string(localizedDescription)
+    }
+    var details: [AnyFlutterStandardCodable: AnyFlutterStandardCodable] = [
+      .string("domain"): .string(nsError.domain),
+      .string("code"): .int32(Int32(nsError.code)),
+    ]
+    for (key, value) in nsError.userInfo {
+      if let stringValue = value as? String {
+        details[.string(key)] = .string(stringValue)
+      }
+    }
+    return .map(details)
+    #endif
+  }
+
+  var flutterError: FlutterError {
+    FlutterError(
+      code: "unknown",
+      message: String(describing: self),
+      details: flutterErrorDetails
+    )
   }
 }
