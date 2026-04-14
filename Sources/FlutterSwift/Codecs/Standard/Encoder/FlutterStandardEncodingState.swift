@@ -249,6 +249,8 @@ extension AnyFlutterStandardCodable: Encodable {
         .singleValueContainer() as! SingleValueFlutterStandardEncodingContainer
 
       switch self {
+      case .nil:
+        try container.state.encodeNil()
       case .true:
         try container.state.encode(true)
       case .false:
@@ -275,13 +277,13 @@ extension AnyFlutterStandardCodable: Encodable {
         try container.state.encodeList(list, codingPath: container.codingPath)
       case let .map(map):
         try container.state.encodeMap(map, codingPath: container.codingPath)
-      default:
-        throw FlutterSwiftError.fieldNotEncodable
       }
     } else {
       var container = encoder.singleValueContainer()
 
       switch self {
+      case .nil:
+        try container.encodeNil()
       case .true:
         try container.encode(true)
       case .false:
@@ -308,8 +310,6 @@ extension AnyFlutterStandardCodable: Encodable {
         try container.encode(list)
       case let .map(map):
         try container.encode(map)
-      default:
-        throw FlutterSwiftError.fieldNotEncodable
       }
     }
   }
