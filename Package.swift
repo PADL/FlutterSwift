@@ -344,16 +344,26 @@ let X11Sources = ["elinux_window_x11.cc", "native_window_x11.cc"]
 
 let ExcludedSources: [String]
 let BackendDependencies: [Target.Dependency]
+// Explicit link-library list for the chosen backend. SwiftPM resolves
+// .systemLibrary(pkgConfig:) cflags correctly via pkg-config, but doesn't
+// always propagate the pkg-config --libs through a C++ intermediate target
+// (CxxFlutterSwift) to the final executable. Hardcoding .linkedLibrary on
+// CxxFlutterSwift's linkerSettings ensures the libs show up at link time
+// even when pkg-config-driven propagation doesn't.
+let BackendLinkedLibraries: [String]
 
 switch FlutterELinuxBackend {
 case .drmGbm:
   BackendDependencies = ["CLibInput", "CLibDRM", "LibDRM", "CLibUDev", "CGBM"]
+  BackendLinkedLibraries = ["gbm", "EGL", "GLESv2", "drm", "input", "udev", "xkbcommon"]
   ExcludedSources = WaylandSources + DRMEGLSources
 case .drmEglStream:
   BackendDependencies = [] // TODO:
+  BackendLinkedLibraries = []
   ExcludedSources = WaylandSources + DRMGBMSources
 case .wayland:
   BackendDependencies = ["CWaylandCursor", "CWaylandEGL"]
+  BackendLinkedLibraries = ["wayland-client", "wayland-egl", "wayland-cursor", "EGL", "GLESv2", "xkbcommon"]
   ExcludedSources = DRMCommonSources + DRMGBMSources + DRMEGLSources
 }
 
@@ -432,9 +442,10 @@ targets += [
       // FIXME: include path for swift/bridging.h
       .unsafeFlags(["-pthread", "-std=c++17"] + CxxIncludeFlags),
     ],
-    linkerSettings: [
-      // .unsafeFlags(["-pthread"]),
-    ]
+    linkerSettings:
+      BackendLinkedLibraries.map { .linkedLibrary($0) } + [
+        // .unsafeFlags(["-pthread"]),
+      ]
   ),
   .executableTarget(
     name: "counter",
