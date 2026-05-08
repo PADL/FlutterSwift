@@ -49,21 +49,27 @@ extension SwiftHeapObjectHolder: AnyJavaObjectWithCustomClassLoader {
   }
 }
 
-@JavaImplementation("com.padl.FlutterAndroid.SwiftHeapObjectHolder")
-public extension JavaClass<SwiftHeapObjectHolder> {
-  @JavaMethod
-  static func _retainSwiftHeapObject(
-    _ heapObjectInt64Ptr: Int64,
-    environment: JNIEnvironment? = nil
-  ) {
-    _ = SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.retain()
-  }
+// Use @_cdecl directly rather than @JavaImplementation on JavaClass<T>, since
+// swift-java's @JavaImplementation macro produces malformed expansions for generic
+// class specializations (swiftlang/swift-java#674 regression).
+//
+// The `clazz` parameter must be the C `jobject` type from <jni.h>, not JavaKit's
+// `JavaObject` Swift class — `@_cdecl` requires every parameter to be representable
+// in Objective-C, and Swift class types aren't.
+@_cdecl("Java_com_padl_FlutterAndroid_SwiftHeapObjectHolder__1retainSwiftHeapObject")
+public func Java_com_padl_FlutterAndroid_SwiftHeapObjectHolder__1retainSwiftHeapObject(
+  _ environment: JNIEnvironment?,
+  _ clazz: jobject?,
+  _ heapObjectInt64Ptr: Int64
+) {
+  _ = SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.retain()
+}
 
-  @JavaMethod
-  static func _releaseSwiftHeapObject(
-    _ heapObjectInt64Ptr: Int64,
-    environment: JNIEnvironment? = nil
-  ) {
-    SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.release()
-  }
+@_cdecl("Java_com_padl_FlutterAndroid_SwiftHeapObjectHolder__1releaseSwiftHeapObject")
+public func Java_com_padl_FlutterAndroid_SwiftHeapObjectHolder__1releaseSwiftHeapObject(
+  _ environment: JNIEnvironment?,
+  _ clazz: jobject?,
+  _ heapObjectInt64Ptr: Int64
+) {
+  SwiftHeapObjectHolder._getUnmanagedSwiftHeapObject(heapObjectInt64Ptr)?.release()
 }
