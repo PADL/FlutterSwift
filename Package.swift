@@ -32,24 +32,17 @@ func tryGuessSwiftRoot() -> String {
 }
 
 let SwiftRoot = EnvSysRoot ?? tryGuessSwiftRoot()
-var FlutterPlatform: String
+var FlutterPlatform: String = ""
 var FlutterUnsafeLinkerFlags: [String] = []
 
-#if os(macOS) // Note: This is the _build_ platform
-// platformSwiftSettings += []
+// On Darwin (macOS/iOS), Flutter.framework / FlutterMacOS.framework is provided
+// by the consumer Xcode project (via $(FRAMEWORK_SEARCH_PATHS) populated by
+// Flutter's xcode_backend.sh / macos_assemble.sh build phases). FlutterSwift
+// therefore declares no Darwin framework dependency at the package level;
+// `swift build` outside of Xcode will compile the codecs but `canImport` will
+// hide the Messenger.
 
-let FlutterRoot = "/opt/flutter"
-let _FlutterLibPath = "\(FlutterRoot)/bin/cache/artifacts/engine"
-
-FlutterPlatform = "darwin-x64"
-let FlutterFramework = "FlutterMacOS"
-let FlutterLibPath = "\(_FlutterLibPath)/\(FlutterPlatform)"
-FlutterUnsafeLinkerFlags = [
-  "-Xlinker", "-F", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-rpath", "-Xlinker", FlutterLibPath,
-  "-Xlinker", "-framework", "-Xlinker", FlutterFramework,
-]
-#elseif os(Linux)
+#if os(Linux)
 // FIXME: this is clearly not right
 let FlutterRoot = ".build/artifacts/flutterswift/CFlutterEngine/flutter-engine.artifactbundle"
 #if arch(arm64)
@@ -526,7 +519,6 @@ let package = Package(
       name: "FlutterSwift",
       dependencies: [
         .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
-        .target(name: "Flutter", condition: .when(platforms: [.iOS])),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Atomics", package: "swift-atomics"),
         "AsyncExtensions",
@@ -534,7 +526,7 @@ let package = Package(
       cxxSettings: platformCxxSettings,
       swiftSettings: platformSwiftSettings,
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.linux])),
       ]
     ),
     .testTarget(
@@ -545,12 +537,8 @@ let package = Package(
       cxxSettings: platformCxxSettings,
       swiftSettings: platformSwiftSettings,
       linkerSettings: [
-        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.macOS, .linux])),
+        .unsafeFlags(FlutterUnsafeLinkerFlags, .when(platforms: [.linux])),
       ]
-    ),
-    .binaryTarget(
-      name: "Flutter",
-      path: "Flutter.xcframework.zip"
     ),
   ] + targets,
   cLanguageStandard: .c17,
