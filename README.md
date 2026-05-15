@@ -18,7 +18,9 @@ The following assumes a reasonable degree of familiarity both with Flutter (spec
 
 On mobile and desktop platforms such as macOS, iOS and Android, the `FlutterPlatformMessenger` class wraps the platform's existing [binary messenger](https://api.flutter.dev/flutter/services/BinaryMessenger-class.html). This is due to the platform binary messenger not being replaceable, as it is used by host platform plugins.
 
-On Darwin platforms (that is, iOS and macOS), you can simply add FlutterSwift as a Swift package dependency from Xcode. On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
+On Darwin platforms (that is, iOS and macOS), you can simply add FlutterSwift as a Swift package dependency from Xcode. `Flutter.framework` / `FlutterMacOS.framework` is provided by your Flutter project's own xcconfig (via `xcode_backend.sh` / `macos_assemble.sh`), so FlutterSwift declares no Darwin framework dependency at the package level and ships no bundled Flutter binaries — the same mechanism Flutter's SwiftPM-aware plugins (e.g. `url_launcher_macos`) use. Note that standalone `swift build` on Darwin therefore compiles only the codecs; `FlutterPlatformMessenger` is `#if canImport`'d out unless built inside an Xcode project that wires up Flutter.
+
+On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
 
 ### Embedded platforms
 
