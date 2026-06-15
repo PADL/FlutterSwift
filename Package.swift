@@ -494,6 +494,22 @@ targets += [
 
 #endif
 
+// On Darwin, Flutter is vended to the host Xcode project as a generated SwiftPM
+// package ("FlutterFramework") whose path is exported by Flutter's xcconfig as
+// FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH. Depend on it when present so the Flutter /
+// FlutterMacOS module is in scope and `canImport(Flutter)` succeeds (otherwise
+// FlutterPlatformMessenger is compiled out). Absent — plain `swift build`, Linux,
+// Android — this is a no-op, preserving the existing behaviour on those platforms.
+if let flutterFrameworkPath = ProcessInfo.processInfo
+  .environment["FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH"], !flutterFrameworkPath.isEmpty {
+  packageDependencies += [
+    .package(name: "FlutterFramework", path: flutterFrameworkPath),
+  ]
+  targetDependencies += [
+    .product(name: "FlutterFramework", package: "FlutterFramework"),
+  ]
+}
+
 let package = Package(
   name: "FlutterSwift",
   platforms: [
