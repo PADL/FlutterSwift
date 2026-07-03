@@ -133,6 +133,17 @@ final class FlutterStandardDecoderTests: XCTestCase {
     try assertThat(decoder, decodes: [0x02], to: AnyFlutterStandardCodable.false)
   }
 
+  func testDecodesTypedDataAlignmentBeforeTrailingField() throws {
+    let decoder = FlutterStandardDecoder()
+
+    // list([int32Data([1]), "z"]); total length not a multiple of 4 exposes the alignment bug
+    try assertThat(
+      decoder,
+      decodes: [12, 2, 9, 1, 1, 0, 0, 0, 7, 1, 0x7A],
+      to: AnyFlutterStandardCodable.list([.int32Data([1]), .string("z")])
+    )
+  }
+
   private func assertThat<Value>(
     _ decoder: FlutterStandardDecoder,
     decodes array: [UInt8],

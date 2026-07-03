@@ -342,6 +342,57 @@ final class FlutterStandardEncoderTests: XCTestCase {
     )
   }
 
+  func testEncodesTypedDataFloatAndAlignment() throws {
+    let encoder = FlutterStandardEncoder()
+
+    // Data payload: uint8Data(0x08), length, bytes
+    try assertThat(encoder, encodes: Data([0xAA, 0xBB, 0xCC]), to: [0x08, 0x03, 0xAA, 0xBB, 0xCC])
+
+    // Float scalar is promoted to float64(0x06): 7 pad bytes then the 8-byte value
+    try assertThat(
+      encoder,
+      encodes: Float(1.0),
+      to: [0x06, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F]
+    )
+
+    // Int64 typed array uses int64Data(0x0A), aligned to 8 (6 pad bytes after tag+size)
+    try assertThat(
+      encoder,
+      encodes: [Int64(1), Int64(2)],
+      to: [0x0A, 0x02,
+           0, 0, 0, 0, 0, 0,
+           1, 0, 0, 0, 0, 0, 0, 0,
+           2, 0, 0, 0, 0, 0, 0, 0]
+    )
+
+    // Int32 array value lands at an already-4-aligned offset: no padding is inserted
+    try assertThat(
+      encoder,
+      encodes: ["ab": [Int32(1)]],
+      to: [13, 1, 7, 2, 0x61, 0x62, 9, 1, 1, 0, 0, 0]
+    )
+  }
+
+  func testTypedDataRoundTrips() throws {
+    let decoder = FlutterStandardDecoder()
+    let encoder = FlutterStandardEncoder()
+
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Data([0xAA, 0xBB, 0xCC]))
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Float(1.0))
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Float(-2.5))
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: [Int64(-1), Int64(1_000_000_000_000)]
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: [Double(1.5), Double(2.5)]
+    )
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["ab": [Int32(1)]])
+  }
+
   private func assertThat<Value>(
     encoder: FlutterStandardEncoder,
     decoder: FlutterStandardDecoder,

@@ -50,13 +50,16 @@ final class FlutterStandardEncodingState {
 
   private func encodeAlignment(_ alignment: Int) throws {
     let mod = data.count % alignment
-    data += Data(repeating: 0, count: alignment - mod)
+    // no padding when already aligned: `alignment - mod` would be a whole block
+    if mod != 0 {
+      data += Data(repeating: 0, count: alignment - mod)
+    }
   }
 
   private func encode(_ value: Data) throws {
     try encodeStandardField(.uint8Data)
     try encodeSize(value.count)
-    data += data
+    data += value
   }
 
   @inlinable
@@ -82,7 +85,7 @@ final class FlutterStandardEncodingState {
   }
 
   fileprivate func encodeArray(_ value: [Int64]) throws {
-    try encodeStandardField(.int32Data)
+    try encodeStandardField(.int64Data)
     try encodeSize(value.count)
     try encodeAlignment(MemoryLayout<Int64>.stride)
     try value.forEach { try encodeInteger($0) }
@@ -152,9 +155,8 @@ final class FlutterStandardEncodingState {
   }
 
   func encode(_ value: Float) throws {
-    try encodeStandardField(.float64)
-    try encodeAlignment(MemoryLayout<Double>.alignment)
-    try encodeInteger(value.bitPattern)
+    // no float32 scalar in the standard codec; promote to float64
+    try encode(Double(value))
   }
 
   func encode(_ value: Int) throws {

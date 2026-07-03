@@ -90,11 +90,14 @@ final class FlutterStandardDecodingState {
   }
 
   private func assertAlignment(_ alignment: Int) throws {
-    let mod = remaining % alignment
-    guard remaining >= mod else {
+    // padding is relative to the read position, not the bytes remaining
+    let mod = offset % alignment
+    guard mod == 0 || remaining >= alignment - mod else {
       throw FlutterSwiftError.invalidAlignment
     }
-    offset += mod
+    if mod != 0 {
+      offset += alignment - mod
+    }
   }
 
   func decodeData() throws -> Data {

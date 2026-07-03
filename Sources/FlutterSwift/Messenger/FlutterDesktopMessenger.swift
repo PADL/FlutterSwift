@@ -16,6 +16,7 @@
 
 #if os(Linux) && canImport(Glibc)
 import Atomics
+import Synchronization
 @_implementationOnly
 import CxxFlutterSwift
 #if canImport(FoundationEssentials)
@@ -26,6 +27,8 @@ import Foundation
 
 public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked Sendable {
   private let currentMessengerConnection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
+  // connection -> channel, so cleanUp(connection:) can unregister the callback
+  private let handlerChannels = Mutex<[FlutterBinaryMessengerConnection: String]>([:])
   private let messenger: FlutterDesktopMessengerRef
 
   // : - Initializers
@@ -130,18 +133,15 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
     priority: TaskPriority?
   ) async throws -> Data? {
     try await withPriority(priority) {
-      await withUnsafeContinuation { continuation in
+      try await withUnsafeThrowingContinuation { continuation in
         let replyThunk: FlutterDesktopBinaryReplyBlock?
 
         replyThunk = { bytes, count in
           let data: Data?
 
           if let bytes, count > 0 {
-            data = Data(
-              bytesNoCopy: UnsafeMutableRawPointer(mutating: bytes),
-              count: count,
-              deallocator: .none
-            )
+            // copy: the engine-owned reply buffer is freed after this callback
+            data = Data(bytes: bytes, count: count)
           } else {
             data = nil
           }
@@ -149,7 +149,12 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
         }
 
         Task {
-          try? await self.send(on: channel, message: message, replyThunk)
+          do {
+            try await self.send(on: channel, message: message, replyThunk)
+          } catch {
+            // send() threw before the reply block registered; it will never fire
+            continuation.resume(throwing: error)
+          }
         }
       }
     }
@@ -169,6 +174,13 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
 
     if let handler {
       connection = currentMessengerConnection.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
+      handlerChannels.withLock { registry in
+        // drop any stale mapping for this channel from a prior registration
+        for (staleConnection, staleChannel) in registry where staleChannel == channel {
+          registry[staleConnection] = nil
+        }
+        registry[connection] = channel
+      }
 
       try setCallbackBlock(on: channel) { [weak self] _, message in
         let message = message.pointee
@@ -204,12 +216,23 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
 
     } else {
       connection = 0
+      handlerChannels.withLock { registry in
+        for (staleConnection, staleChannel) in registry where staleChannel == channel {
+          registry[staleConnection] = nil
+        }
+      }
       try setCallbackBlock(on: channel, nil)
     }
 
     return connection
   }
 
-  public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {}
+  public func cleanUp(connection: FlutterBinaryMessengerConnection) throws {
+    guard let channel = handlerChannels.withLock({ $0.removeValue(forKey: connection) })
+    else {
+      return
+    }
+    try setCallbackBlock(on: channel, nil)
+  }
 }
 #endif
