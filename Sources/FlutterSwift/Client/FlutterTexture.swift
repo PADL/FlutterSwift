@@ -42,18 +42,27 @@ private func _releaseAnyObject(_ anyObjectPtr: UnsafeMutableRawPointer?) {
   Unmanaged<AnyObject>.fromOpaque(anyObjectPtr!).release()
 }
 
-public class FlutterPixelBuffer {
-  public var buffer: UnsafeMutablePointer<UInt8>
-  public var width: Int
-  public var height: Int
+public final class FlutterPixelBuffer {
+  /// Bytes per pixel for the RGBA8888/BGRA8888 formats used by the pixel-buffer
+  /// texture path. `FlutterDesktopPixelBuffer.width`/`height` are measured in
+  /// pixels, so the backing store must hold `width * height * bytesPerPixel`.
+  public static let bytesPerPixel = 4
 
+  public let width: Int
+  public let height: Int
+
+  /// Size of the backing store, in bytes.
+  public var byteCount: Int { width * height * Self.bytesPerPixel }
+
+  private let buffer: UnsafeMutablePointer<UInt8>
   private let _desktopPixelBuffer: UnsafeMutablePointer<FlutterDesktopPixelBuffer>
 
   public init(width: Int, height: Int) {
-    buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height)
-    buffer.initialize(repeating: 0, count: width * height)
     self.width = width
     self.height = height
+    let byteCount = width * height * Self.bytesPerPixel
+    buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: byteCount)
+    buffer.initialize(repeating: 0, count: byteCount)
     _desktopPixelBuffer = .allocate(capacity: 1)
     _desktopPixelBuffer.initialize(to: FlutterDesktopPixelBuffer())
   }
@@ -61,6 +70,26 @@ public class FlutterPixelBuffer {
   deinit {
     buffer.deallocate()
     _desktopPixelBuffer.deallocate()
+  }
+
+  /// Scoped, bounds-checked mutable access to the pixel data as a
+  /// `MutableSpan<UInt8>` spanning `byteCount` bytes. Preferred over handing
+  /// out a length-less raw pointer.
+  public func withMutableSpan<R>(
+    _ body: (inout MutableSpan<UInt8>) throws -> R
+  ) rethrows -> R {
+    let buf = UnsafeMutableBufferPointer(start: buffer, count: byteCount)
+    var span = buf.mutableSpan
+    return try body(&span)
+  }
+
+  /// Scoped raw access for interop paths that require a pointer (e.g. a
+  /// `memcpy` from a hardware buffer or codec). The buffer spans `byteCount`
+  /// bytes.
+  public func withUnsafeMutableBytes<R>(
+    _ body: (UnsafeMutableRawBufferPointer) throws -> R
+  ) rethrows -> R {
+    try body(UnsafeMutableRawBufferPointer(start: buffer, count: byteCount))
   }
 
   fileprivate func getDesktopPixelBufferTextureConfig(
