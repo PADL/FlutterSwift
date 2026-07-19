@@ -144,6 +144,31 @@ final class FlutterStandardDecoderTests: XCTestCase {
     )
   }
 
+  // The decoder mixes two indexing schemes over its backing `Data`: scalar
+  // integers are read from a 0-based `RawSpan` (`data.bytes`), while strings,
+  // typed-data blocks and field bytes are read via `data.startIndex + offset`
+  // subscripting. These must agree when the input `Data` is a slice with a
+  // non-zero `startIndex`, so decode representative values from a re-sliced Data.
+  func testDecodesFromNonZeroStartIndexSlice() throws {
+    let encoder = FlutterStandardEncoder()
+    let decoder = FlutterStandardDecoder()
+
+    func decodeFromSlice<Value: Codable & Equatable>(_ value: Value) throws -> Value {
+      var padded = Data([0xAA, 0xBB, 0xCC, 0xDD, 0xEE])
+      padded.append(try encoder.encode(value))
+      let slice = padded[5...]
+      XCTAssertEqual(slice.startIndex, 5) // exercises the startIndex != 0 path
+      return try decoder.decode(Value.self, from: slice)
+    }
+
+    // Int64 scalar exercises decodeInteger via the 0-based RawSpan.
+    XCTAssertEqual(try decodeFromSlice(Int64(0x0102_0304_0506_0708)), 0x0102_0304_0506_0708)
+    // String exercises subscript-based access.
+    XCTAssertEqual(try decodeFromSlice("hello"), "hello")
+    // Typed-data array exercises the bulk copyBytes path.
+    XCTAssertEqual(try decodeFromSlice([Int32(1), -2, 3, -4]), [1, -2, 3, -4])
+  }
+
   private func assertThat<Value>(
     _ decoder: FlutterStandardDecoder,
     decodes array: [UInt8],

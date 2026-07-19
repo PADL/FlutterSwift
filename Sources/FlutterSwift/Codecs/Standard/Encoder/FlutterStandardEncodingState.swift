@@ -30,11 +30,11 @@ final class FlutterStandardEncodingState {
     self.data = data
   }
 
-  private func encodeStandardField(_ fieldType: FlutterStandardField) throws {
+  private func encodeStandardField(_ fieldType: FlutterStandardField) throws(FlutterSwiftError) {
     withUnsafeBytes(of: fieldType) { data += $0 }
   }
 
-  private func encodeSize(_ size: Int) throws {
+  private func encodeSize(_ size: Int) throws(FlutterSwiftError) {
     if size < 254 {
       data.append(UInt8(size))
     } else if size <= UInt16.max {
@@ -48,7 +48,7 @@ final class FlutterStandardEncodingState {
     }
   }
 
-  private func encodeAlignment(_ alignment: Int) throws {
+  private func encodeAlignment(_ alignment: Int) throws(FlutterSwiftError) {
     let mod = data.count % alignment
     // no padding when already aligned: `alignment - mod` would be a whole block
     if mod != 0 {
@@ -56,53 +56,58 @@ final class FlutterStandardEncodingState {
     }
   }
 
-  private func encode(_ value: Data) throws {
+  private func encode(_ value: Data) throws(FlutterSwiftError) {
     try encodeStandardField(.uint8Data)
     try encodeSize(value.count)
     data += value
   }
 
   @inlinable
-  func encodeDiscriminant(_ value: UInt8) throws {
+  func encodeDiscriminant(_ value: UInt8) throws(FlutterSwiftError) {
     data.append(value)
   }
 
-  func encodeNil() throws {
+  func encodeNil() throws(FlutterSwiftError) {
     try encodeStandardField(.nil)
   }
 
-  fileprivate func encodeArray(_ value: [UInt8]) throws {
-    try encodeStandardField(.uint8Data)
+  /// Bulk-encode a typed-data array in a single buffer append.
+  ///
+  /// The Flutter standard codec stores typed data (`Uint8List`, `Int32List`,
+  /// `Int64List`, `Float32List`, `Float64List`) in host byte order — the engine
+  /// `memcpy`s the backing store on its side too — so an element's in-memory
+  /// representation is exactly its wire representation. Copying the array's raw
+  /// storage once is therefore equivalent to encoding each element via
+  /// `withUnsafeBytes(of:)`, but performs O(1) buffer operations instead of O(n)
+  /// appends (each of which re-checks bounds and copy-on-write ownership).
+  private func encodeTypedArray<T>(
+    _ fieldType: FlutterStandardField,
+    _ value: [T]
+  ) throws(FlutterSwiftError) {
+    try encodeStandardField(fieldType)
     try encodeSize(value.count)
-    data += value
+    try encodeAlignment(MemoryLayout<T>.stride)
+    value.withUnsafeBytes { data.append(contentsOf: $0) }
   }
 
-  fileprivate func encodeArray(_ value: [Int32]) throws {
-    try encodeStandardField(.int32Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Int32>.stride)
-    try value.forEach { try encodeInteger($0) }
+  fileprivate func encodeArray(_ value: [UInt8]) throws(FlutterSwiftError) {
+    try encodeTypedArray(.uint8Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Int64]) throws {
-    try encodeStandardField(.int64Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Int64>.stride)
-    try value.forEach { try encodeInteger($0) }
+  fileprivate func encodeArray(_ value: [Int32]) throws(FlutterSwiftError) {
+    try encodeTypedArray(.int32Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Double]) throws {
-    try encodeStandardField(.float64Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Double>.stride)
-    try value.forEach { try encodeInteger($0.bitPattern) }
+  fileprivate func encodeArray(_ value: [Int64]) throws(FlutterSwiftError) {
+    try encodeTypedArray(.int64Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Float]) throws {
-    try encodeStandardField(.float32Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Float>.stride)
-    try value.forEach { try encodeInteger($0.bitPattern) }
+  fileprivate func encodeArray(_ value: [Double]) throws(FlutterSwiftError) {
+    try encodeTypedArray(.float64Data, value)
+  }
+
+  fileprivate func encodeArray(_ value: [Float]) throws(FlutterSwiftError) {
+    try encodeTypedArray(.float32Data, value)
   }
 
   fileprivate func encodeList(
@@ -128,13 +133,15 @@ final class FlutterStandardEncodingState {
     }
   }
 
-  private func encodeInteger<Integer>(_ value: Integer) throws where Integer: FixedWidthInteger {
+  private func encodeInteger<Integer>(_ value: Integer) throws(FlutterSwiftError)
+    where Integer: FixedWidthInteger
+  {
     withUnsafeBytes(of: value) {
       data += $0
     }
   }
 
-  func encode(_ value: String) throws {
+  func encode(_ value: String) throws(FlutterSwiftError) {
     try encodeStandardField(.string)
     guard let encoded = value.data(using: .utf8) else {
       throw FlutterSwiftError.stringNotEncodable(value)
@@ -144,22 +151,22 @@ final class FlutterStandardEncodingState {
     data += encoded
   }
 
-  func encode(_ value: Bool) throws {
+  func encode(_ value: Bool) throws(FlutterSwiftError) {
     try encodeStandardField(value ? .true : .false)
   }
 
-  func encode(_ value: Double) throws {
+  func encode(_ value: Double) throws(FlutterSwiftError) {
     try encodeStandardField(.float64)
     try encodeAlignment(MemoryLayout<Double>.alignment)
     try encodeInteger(value.bitPattern)
   }
 
-  func encode(_ value: Float) throws {
+  func encode(_ value: Float) throws(FlutterSwiftError) {
     // no float32 scalar in the standard codec; promote to float64
     try encode(Double(value))
   }
 
-  func encode(_ value: Int) throws {
+  func encode(_ value: Int) throws(FlutterSwiftError) {
     if MemoryLayout<Int>.size == 8 {
       try encode(Int64(value))
     } else if MemoryLayout<Int>.size == 4 {
@@ -169,41 +176,41 @@ final class FlutterStandardEncodingState {
     }
   }
 
-  func encode(_ value: Int8) throws {
+  func encode(_ value: Int8) throws(FlutterSwiftError) {
     try encode(Int32(value))
   }
 
-  func encode(_ value: Int16) throws {
+  func encode(_ value: Int16) throws(FlutterSwiftError) {
     try encode(Int32(value))
   }
 
-  func encode(_ value: Int32) throws {
+  func encode(_ value: Int32) throws(FlutterSwiftError) {
     try encodeStandardField(.int32)
     try encodeInteger(value)
   }
 
-  func encode(_ value: Int64) throws {
+  func encode(_ value: Int64) throws(FlutterSwiftError) {
     try encodeStandardField(.int64)
     try encodeInteger(value)
   }
 
-  func encode(_ value: UInt) throws {
+  func encode(_ value: UInt) throws(FlutterSwiftError) {
     try encode(Int(value))
   }
 
-  func encode(_ value: UInt8) throws {
+  func encode(_ value: UInt8) throws(FlutterSwiftError) {
     try encode(Int32(value))
   }
 
-  func encode(_ value: UInt16) throws {
+  func encode(_ value: UInt16) throws(FlutterSwiftError) {
     try encode(Int32(value))
   }
 
-  func encode(_ value: UInt32) throws {
+  func encode(_ value: UInt32) throws(FlutterSwiftError) {
     try encode(Int32(bitPattern: value))
   }
 
-  func encode(_ value: UInt64) throws {
+  func encode(_ value: UInt64) throws(FlutterSwiftError) {
     try encode(Int64(bitPattern: value))
   }
 
@@ -216,19 +223,26 @@ final class FlutterStandardEncodingState {
     state: FlutterStandardEncodingState,
     codingPath: [any CodingKey]
   ) throws where T: Encodable {
+    // The typed-data array cases are guarded on the value's *exact* dynamic
+    // type rather than dispatching on the `as?` cast alone. An empty array
+    // bridges to any element type — `[Int32]() as? [UInt8]` succeeds and
+    // produces a fresh empty `[UInt8]` — so without the guard an empty
+    // `[Int32]`/`[Int64]`/`[Float]`/`[Double]` (indeed any empty non-UInt8
+    // array) would fall into the first `[UInt8]` case and be mis-tagged as
+    // uint8Data. `type(of: value)` inspects the original value before the cast.
     switch value {
     case let value as Data:
       try state.encode(value)
-    case let value as [UInt8]:
-      try state.encodeArray(value)
-    case let value as [Int32]:
-      try state.encodeArray(value)
-    case let value as [Int64]:
-      try state.encodeArray(value)
-    case let value as [Float]:
-      try state.encodeArray(value)
-    case let value as [Double]:
-      try state.encodeArray(value)
+    case let array as [UInt8] where type(of: value) == [UInt8].self:
+      try state.encodeArray(array)
+    case let array as [Int32] where type(of: value) == [Int32].self:
+      try state.encodeArray(array)
+    case let array as [Int64] where type(of: value) == [Int64].self:
+      try state.encodeArray(array)
+    case let array as [Float] where type(of: value) == [Float].self:
+      try state.encodeArray(array)
+    case let array as [Double] where type(of: value) == [Double].self:
+      try state.encodeArray(array)
     case let value as any FlutterListRepresentable:
       try state.encodeList(value, codingPath: codingPath)
     case let value as any FlutterMapRepresentable:

@@ -41,7 +41,7 @@ final class FlutterStandardDecodingState {
 
   private var remaining: Int { data.count - offset }
 
-  fileprivate func peekStandardField() throws -> FlutterStandardField {
+  fileprivate func peekStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
     guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
@@ -52,7 +52,7 @@ final class FlutterStandardDecodingState {
     return fieldType
   }
 
-  private func decodeStandardField() throws -> FlutterStandardField {
+  private func decodeStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
     guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
@@ -65,14 +65,14 @@ final class FlutterStandardDecodingState {
   }
 
   @inlinable
-  func assertStandardField(_ assertedFieldType: FlutterStandardField) throws {
+  func assertStandardField(_ assertedFieldType: FlutterStandardField) throws(FlutterSwiftError) {
     let fieldType = try decodeStandardField()
     guard fieldType == assertedFieldType else {
       throw FlutterSwiftError.unexpectedStandardFieldType(fieldType)
     }
   }
 
-  private func decodeSize() throws -> Int {
+  private func decodeSize() throws(FlutterSwiftError) -> Int {
     guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
@@ -89,7 +89,7 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  private func assertAlignment(_ alignment: Int) throws {
+  private func assertAlignment(_ alignment: Int) throws(FlutterSwiftError) {
     // padding is relative to the read position, not the bytes remaining
     let mod = offset % alignment
     guard mod == 0 || remaining >= alignment - mod else {
@@ -100,7 +100,7 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  func decodeData() throws -> Data {
+  func decodeData() throws(FlutterSwiftError) -> Data {
     try assertStandardField(.uint8Data)
     let length = try decodeSize()
     let start = data.startIndex + offset
@@ -113,7 +113,7 @@ final class FlutterStandardDecodingState {
   }
 
   @inlinable
-  func decodeDiscriminant() throws -> UInt8 {
+  func decodeDiscriminant() throws(FlutterSwiftError) -> UInt8 {
     guard offset < data.count else {
       throw FlutterSwiftError.eofTooEarly
     }
@@ -122,7 +122,7 @@ final class FlutterStandardDecodingState {
     return byte
   }
 
-  func decodeNil() throws -> Bool {
+  func decodeNil() throws(FlutterSwiftError) -> Bool {
     let fieldType = try peekStandardField()
     if fieldType == .nil {
       offset += 1
@@ -132,51 +132,58 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  private func decodeArray<Value>(
+  /// Bulk-decode a typed-data array with a single `memcpy`.
+  ///
+  /// Mirrors `FlutterStandardEncodingState.encodeTypedArray`: the standard codec
+  /// stores typed data in host byte order, so the wire bytes are the elements'
+  /// in-memory representation. We copy the whole region into a freshly allocated
+  /// (and therefore correctly aligned) array buffer in one operation instead of
+  /// reconstructing each element with a separate unaligned load. `copyBytes`
+  /// tolerates an unaligned source, so this is safe regardless of where the
+  /// message buffer happens to sit in memory.
+  private func decodeTypedArray<T: BitwiseCopyable>(
     _ fieldType: FlutterStandardField,
-    _ block: () throws -> Value
-  ) throws -> [Value] {
+    _ type: T.Type
+  ) throws(FlutterSwiftError) -> [T] {
     try assertStandardField(fieldType)
     let count = try decodeSize()
-    try assertAlignment(MemoryLayout<Value>.stride)
-    var values = [Value]()
-    values.reserveCapacity(count)
-    for _ in 0..<count {
-      try values.append(block())
+    try assertAlignment(MemoryLayout<T>.stride)
+    let byteCount = count * MemoryLayout<T>.stride
+    guard remaining >= byteCount else {
+      throw FlutterSwiftError.eofTooEarly
     }
+    let start = data.startIndex + offset
+    let values = [T](unsafeUninitializedCapacity: count) { buffer, initializedCount in
+      if count > 0 {
+        data.copyBytes(
+          to: UnsafeMutableRawBufferPointer(buffer),
+          from: start..<(start + byteCount)
+        )
+      }
+      initializedCount = count
+    }
+    offset += byteCount
     return values
   }
 
-  func decodeArray(_ type: UInt8.Type) throws -> [UInt8] {
-    try decodeArray(.uint8Data) {
-      try decodeInteger(type)
-    }
+  func decodeArray(_ type: UInt8.Type) throws(FlutterSwiftError) -> [UInt8] {
+    try decodeTypedArray(.uint8Data, type)
   }
 
-  func decodeArray(_ type: Int32.Type) throws -> [Int32] {
-    try decodeArray(.int32Data) {
-      try decodeInteger(type)
-    }
+  func decodeArray(_ type: Int32.Type) throws(FlutterSwiftError) -> [Int32] {
+    try decodeTypedArray(.int32Data, type)
   }
 
-  func decodeArray(_ type: Int64.Type) throws -> [Int64] {
-    try decodeArray(.int64Data) {
-      try decodeInteger(type)
-    }
+  func decodeArray(_ type: Int64.Type) throws(FlutterSwiftError) -> [Int64] {
+    try decodeTypedArray(.int64Data, type)
   }
 
-  func decodeArray(_ type: Double.Type) throws -> [Double] {
-    try decodeArray(.float64Data) {
-      let bitPattern = try decodeInteger(UInt64.self)
-      return Double(bitPattern: bitPattern)
-    }
+  func decodeArray(_ type: Double.Type) throws(FlutterSwiftError) -> [Double] {
+    try decodeTypedArray(.float64Data, type)
   }
 
-  func decodeArray(_ type: Float.Type) throws -> [Float] {
-    try decodeArray(.float32Data) {
-      let bitPattern = try decodeInteger(UInt32.self)
-      return Float(bitPattern: bitPattern)
-    }
+  func decodeArray(_ type: Float.Type) throws(FlutterSwiftError) -> [Float] {
+    try decodeTypedArray(.float32Data, type)
   }
 
   func decodeList<Value: Decodable>(
@@ -210,22 +217,23 @@ final class FlutterStandardDecodingState {
     return values
   }
 
-  private func decodeInteger<Integer>(_ type: Integer.Type) throws -> Integer
-    where Integer: FixedWidthInteger
+  private func decodeInteger<Integer>(_ type: Integer.Type) throws(FlutterSwiftError) -> Integer
+    where Integer: FixedWidthInteger & BitwiseCopyable
   {
     let byteWidth = Integer.bitWidth / 8
     guard remaining >= byteWidth else {
       throw FlutterSwiftError.eofTooEarly
     }
-    let start = data.startIndex + offset
-    let value = data[start..<(start + byteWidth)].withUnsafeBytes {
-      $0.loadUnaligned(as: type)
-    }
+    // Read directly from a borrowed `RawSpan` view of the message rather than
+    // materialising a `Data` slice (with its retain/range bookkeeping) per
+    // scalar. `offset` is measured from the logical start of the message, which
+    // is exactly the span's origin.
+    let value = data.bytes.unsafeLoadUnaligned(fromByteOffset: offset, as: type)
     offset += byteWidth
     return value
   }
 
-  func decode(_ type: Bool.Type) throws -> Bool {
+  func decode(_ type: Bool.Type) throws(FlutterSwiftError) -> Bool {
     let fieldType = try decodeStandardField()
     switch fieldType {
     case .true:
@@ -237,7 +245,7 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  func decode(_ type: String.Type) throws -> String {
+  func decode(_ type: String.Type) throws(FlutterSwiftError) -> String {
     try assertStandardField(.string)
     let length = try decodeSize()
     let start = data.startIndex + offset
@@ -252,17 +260,17 @@ final class FlutterStandardDecodingState {
     return value
   }
 
-  func decode(_ type: Double.Type) throws -> Double {
+  func decode(_ type: Double.Type) throws(FlutterSwiftError) -> Double {
     try assertStandardField(.float64)
     try assertAlignment(MemoryLayout<Double>.alignment)
     return try Double(bitPattern: decodeInteger(UInt64.self))
   }
 
-  func decode(_ type: Float.Type) throws -> Float {
+  func decode(_ type: Float.Type) throws(FlutterSwiftError) -> Float {
     try Float(decode(Double.self))
   }
 
-  func decode(_ type: Int.Type) throws -> Int {
+  func decode(_ type: Int.Type) throws(FlutterSwiftError) -> Int {
     if MemoryLayout<Int>.size == 8 {
       return try Int(decode(Int64.self))
     } else if MemoryLayout<Int>.size == 4 {
@@ -272,56 +280,56 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  func decode(_ type: Int8.Type) throws -> Int8 {
+  func decode(_ type: Int8.Type) throws(FlutterSwiftError) -> Int8 {
     guard let value = try Int8(exactly: decode(Int32.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
   }
 
-  func decode(_ type: Int16.Type) throws -> Int16 {
+  func decode(_ type: Int16.Type) throws(FlutterSwiftError) -> Int16 {
     guard let value = try Int16(exactly: decode(Int32.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
   }
 
-  func decode(_ type: Int32.Type) throws -> Int32 {
+  func decode(_ type: Int32.Type) throws(FlutterSwiftError) -> Int32 {
     try assertStandardField(.int32)
     return try decodeInteger(type)
   }
 
-  func decode(_ type: Int64.Type) throws -> Int64 {
+  func decode(_ type: Int64.Type) throws(FlutterSwiftError) -> Int64 {
     try assertStandardField(.int64)
     return try decodeInteger(type)
   }
 
-  func decode(_ type: UInt.Type) throws -> UInt {
+  func decode(_ type: UInt.Type) throws(FlutterSwiftError) -> UInt {
     guard let value = try UInt(exactly: decodeInteger(Int.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
   }
 
-  func decode(_ type: UInt8.Type) throws -> UInt8 {
+  func decode(_ type: UInt8.Type) throws(FlutterSwiftError) -> UInt8 {
     guard let value = try UInt8(exactly: decode(Int32.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
   }
 
-  func decode(_ type: UInt16.Type) throws -> UInt16 {
+  func decode(_ type: UInt16.Type) throws(FlutterSwiftError) -> UInt16 {
     guard let value = try UInt16(exactly: decode(Int32.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
   }
 
-  func decode(_ type: UInt32.Type) throws -> UInt32 {
+  func decode(_ type: UInt32.Type) throws(FlutterSwiftError) -> UInt32 {
     try UInt32(bitPattern: decode(Int32.self))
   }
 
-  func decode(_ type: UInt64.Type) throws -> UInt64 {
+  func decode(_ type: UInt64.Type) throws(FlutterSwiftError) -> UInt64 {
     try UInt64(bitPattern: decode(Int64.self))
   }
 

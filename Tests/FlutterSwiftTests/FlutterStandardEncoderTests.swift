@@ -393,6 +393,65 @@ final class FlutterStandardEncoderTests: XCTestCase {
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["ab": [Int32(1)]])
   }
 
+  // Exercises the bulk (memcpy-based) typed-array encode/decode paths at their
+  // boundaries: empty arrays (zero-length copy) and arrays large enough that the
+  // per-element vs. bulk distinction matters.
+  func testTypedDataBulkEdgeCases() throws {
+    let decoder = FlutterStandardDecoder()
+    let encoder = FlutterStandardEncoder()
+
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [UInt8]())
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [Int32]())
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [Int64]())
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [Float]())
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [Double]())
+
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { UInt8($0 & 0xFF) }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Int32($0) * -7 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Int64($0) << 33 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Double($0) * 0.25 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Float($0) * -1.5 }
+    )
+  }
+
+  // An empty array of any element type casts successfully to `[UInt8]`, so the
+  // encoder must dispatch typed-data arrays on their exact element type. These
+  // assert the field tag (uint8Data=0x08, int32Data=0x09, int64Data=0x0A,
+  // float64Data=0x0B, float32Data=0x0E, list=0x0C) rather than everything
+  // collapsing to uint8Data.
+  func testEmptyTypedArraysEncodeWithCorrectFieldTag() throws {
+    let encoder = FlutterStandardEncoder()
+
+    try assertThat(encoder, encodes: [UInt8](), to: [0x08, 0x00])
+    try assertThat(encoder, encodes: [Int32](), to: [0x09, 0x00, 0, 0])
+    try assertThat(encoder, encodes: [Int64](), to: [0x0A, 0x00, 0, 0, 0, 0, 0, 0])
+    try assertThat(encoder, encodes: [Double](), to: [0x0B, 0x00, 0, 0, 0, 0, 0, 0])
+    try assertThat(encoder, encodes: [Float](), to: [0x0E, 0x00, 0, 0])
+
+    // Empty non-typed-data arrays (e.g. String elements) must encode as an
+    // empty list, not as an empty uint8Data.
+    try assertThat(encoder, encodes: [String](), to: [0x0C, 0x00])
+  }
+
   private func assertThat<Value>(
     encoder: FlutterStandardEncoder,
     decoder: FlutterStandardDecoder,
