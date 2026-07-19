@@ -132,51 +132,58 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  private func decodeArray<Value>(
+  /// Bulk-decode a typed-data array with a single `memcpy`.
+  ///
+  /// Mirrors `FlutterStandardEncodingState.encodeTypedArray`: the standard codec
+  /// stores typed data in host byte order, so the wire bytes are the elements'
+  /// in-memory representation. We copy the whole region into a freshly allocated
+  /// (and therefore correctly aligned) array buffer in one operation instead of
+  /// reconstructing each element with a separate unaligned load. `copyBytes`
+  /// tolerates an unaligned source, so this is safe regardless of where the
+  /// message buffer happens to sit in memory.
+  private func decodeTypedArray<T: BitwiseCopyable>(
     _ fieldType: FlutterStandardField,
-    _ block: () throws -> Value
-  ) throws -> [Value] {
+    _ type: T.Type
+  ) throws -> [T] {
     try assertStandardField(fieldType)
     let count = try decodeSize()
-    try assertAlignment(MemoryLayout<Value>.stride)
-    var values = [Value]()
-    values.reserveCapacity(count)
-    for _ in 0..<count {
-      try values.append(block())
+    try assertAlignment(MemoryLayout<T>.stride)
+    let byteCount = count * MemoryLayout<T>.stride
+    guard remaining >= byteCount else {
+      throw FlutterSwiftError.eofTooEarly
     }
+    let start = data.startIndex + offset
+    let values = [T](unsafeUninitializedCapacity: count) { buffer, initializedCount in
+      if count > 0 {
+        data.copyBytes(
+          to: UnsafeMutableRawBufferPointer(buffer),
+          from: start..<(start + byteCount)
+        )
+      }
+      initializedCount = count
+    }
+    offset += byteCount
     return values
   }
 
   func decodeArray(_ type: UInt8.Type) throws -> [UInt8] {
-    try decodeArray(.uint8Data) {
-      try decodeInteger(type)
-    }
+    try decodeTypedArray(.uint8Data, type)
   }
 
   func decodeArray(_ type: Int32.Type) throws -> [Int32] {
-    try decodeArray(.int32Data) {
-      try decodeInteger(type)
-    }
+    try decodeTypedArray(.int32Data, type)
   }
 
   func decodeArray(_ type: Int64.Type) throws -> [Int64] {
-    try decodeArray(.int64Data) {
-      try decodeInteger(type)
-    }
+    try decodeTypedArray(.int64Data, type)
   }
 
   func decodeArray(_ type: Double.Type) throws -> [Double] {
-    try decodeArray(.float64Data) {
-      let bitPattern = try decodeInteger(UInt64.self)
-      return Double(bitPattern: bitPattern)
-    }
+    try decodeTypedArray(.float64Data, type)
   }
 
   func decodeArray(_ type: Float.Type) throws -> [Float] {
-    try decodeArray(.float32Data) {
-      let bitPattern = try decodeInteger(UInt32.self)
-      return Float(bitPattern: bitPattern)
-    }
+    try decodeTypedArray(.float32Data, type)
   }
 
   func decodeList<Value: Decodable>(
@@ -211,16 +218,17 @@ final class FlutterStandardDecodingState {
   }
 
   private func decodeInteger<Integer>(_ type: Integer.Type) throws -> Integer
-    where Integer: FixedWidthInteger
+    where Integer: FixedWidthInteger & BitwiseCopyable
   {
     let byteWidth = Integer.bitWidth / 8
     guard remaining >= byteWidth else {
       throw FlutterSwiftError.eofTooEarly
     }
-    let start = data.startIndex + offset
-    let value = data[start..<(start + byteWidth)].withUnsafeBytes {
-      $0.loadUnaligned(as: type)
-    }
+    // Read directly from a borrowed `RawSpan` view of the message rather than
+    // materialising a `Data` slice (with its retain/range bookkeeping) per
+    // scalar. `offset` is measured from the logical start of the message, which
+    // is exactly the span's origin.
+    let value = data.bytes.unsafeLoadUnaligned(fromByteOffset: offset, as: type)
     offset += byteWidth
     return value
   }

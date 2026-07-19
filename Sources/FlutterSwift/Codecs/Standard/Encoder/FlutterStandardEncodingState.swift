@@ -71,38 +71,43 @@ final class FlutterStandardEncodingState {
     try encodeStandardField(.nil)
   }
 
-  fileprivate func encodeArray(_ value: [UInt8]) throws {
-    try encodeStandardField(.uint8Data)
+  /// Bulk-encode a typed-data array in a single buffer append.
+  ///
+  /// The Flutter standard codec stores typed data (`Uint8List`, `Int32List`,
+  /// `Int64List`, `Float32List`, `Float64List`) in host byte order — the engine
+  /// `memcpy`s the backing store on its side too — so an element's in-memory
+  /// representation is exactly its wire representation. Copying the array's raw
+  /// storage once is therefore equivalent to encoding each element via
+  /// `withUnsafeBytes(of:)`, but performs O(1) buffer operations instead of O(n)
+  /// appends (each of which re-checks bounds and copy-on-write ownership).
+  private func encodeTypedArray<T>(
+    _ fieldType: FlutterStandardField,
+    _ value: [T]
+  ) throws {
+    try encodeStandardField(fieldType)
     try encodeSize(value.count)
-    data += value
+    try encodeAlignment(MemoryLayout<T>.stride)
+    value.withUnsafeBytes { data.append(contentsOf: $0) }
+  }
+
+  fileprivate func encodeArray(_ value: [UInt8]) throws {
+    try encodeTypedArray(.uint8Data, value)
   }
 
   fileprivate func encodeArray(_ value: [Int32]) throws {
-    try encodeStandardField(.int32Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Int32>.stride)
-    try value.forEach { try encodeInteger($0) }
+    try encodeTypedArray(.int32Data, value)
   }
 
   fileprivate func encodeArray(_ value: [Int64]) throws {
-    try encodeStandardField(.int64Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Int64>.stride)
-    try value.forEach { try encodeInteger($0) }
+    try encodeTypedArray(.int64Data, value)
   }
 
   fileprivate func encodeArray(_ value: [Double]) throws {
-    try encodeStandardField(.float64Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Double>.stride)
-    try value.forEach { try encodeInteger($0.bitPattern) }
+    try encodeTypedArray(.float64Data, value)
   }
 
   fileprivate func encodeArray(_ value: [Float]) throws {
-    try encodeStandardField(.float32Data)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<Float>.stride)
-    try value.forEach { try encodeInteger($0.bitPattern) }
+    try encodeTypedArray(.float32Data, value)
   }
 
   fileprivate func encodeList(

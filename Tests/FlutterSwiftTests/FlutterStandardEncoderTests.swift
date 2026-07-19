@@ -393,6 +393,47 @@ final class FlutterStandardEncoderTests: XCTestCase {
     try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: ["ab": [Int32(1)]])
   }
 
+  // Exercises the bulk (memcpy-based) typed-array encode/decode paths at their
+  // boundaries: empty arrays (zero-length copy) and arrays large enough that the
+  // per-element vs. bulk distinction matters.
+  func testTypedDataBulkEdgeCases() throws {
+    let decoder = FlutterStandardDecoder()
+    let encoder = FlutterStandardEncoder()
+
+    // NOTE: empty non-UInt8 typed arrays (e.g. `[Int32]()`) are intentionally
+    // not exercised here: an empty `Array<Int32>` casts successfully to `[UInt8]`
+    // (Swift's "empty array casts to any array type" behaviour), so the encoder's
+    // type-dispatch mis-tags them as uint8Data. That is a pre-existing dispatch
+    // issue independent of the bulk-copy paths under test.
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: [UInt8]())
+
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { UInt8($0 & 0xFF) }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Int32($0) * -7 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Int64($0) << 33 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Double($0) * 0.25 }
+    )
+    try assertThat(
+      encoder: encoder,
+      decoder: decoder,
+      canEncodeDecode: (0..<1000).map { Float($0) * -1.5 }
+    )
+  }
+
   private func assertThat<Value>(
     encoder: FlutterStandardEncoder,
     decoder: FlutterStandardDecoder,
