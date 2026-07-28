@@ -21,6 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import BinaryParsing
+
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else
@@ -337,6 +339,27 @@ final class FlutterStandardDecodingState {
     try FlutterStandardDecodingState.decode(type, state: self, codingPath: [])
   }
 
+  /// Parse a dynamically typed value at the current position.
+  ///
+  /// Bridges the `Codable` path onto `AnyFlutterStandardCodable`'s
+  /// `ParserSpan` parser. The span is taken over the whole message so that
+  /// `startPosition` is measured from the same origin as `offset` — which the
+  /// codec's alignment rules depend on — and the cursor is written back on the
+  /// way out. Nested values are parsed within this one span, so an arbitrarily
+  /// deep value costs a single borrow of the buffer.
+  func decodeAnyValue() throws(FlutterSwiftError) -> AnyFlutterStandardCodable {
+    do {
+      return try data.withParserSpan { (span) throws(ParsingError) in
+        try span.seek(toAbsoluteOffset: offset)
+        let value = try AnyFlutterStandardCodable(parsingValue: &span)
+        offset = span.startPosition
+        return value
+      }
+    } catch {
+      throw FlutterSwiftError(error)
+    }
+  }
+
   static func decode<T>(
     _ type: T.Type,
     state: FlutterStandardDecodingState,
@@ -355,6 +378,9 @@ final class FlutterStandardDecodingState {
     } else {
       let value: T
       switch type {
+      case is AnyFlutterStandardCodable.Type:
+        // parsed directly, without a decoder or container
+        value = try state.decodeAnyValue() as! T
       case is Data.Type:
         value = try state.decodeData() as! T
       case is [UInt8].Type:
@@ -379,52 +405,6 @@ final class FlutterStandardDecodingState {
         ))
       }
       return value
-    }
-  }
-}
-
-extension AnyFlutterStandardCodable: Decodable {
-  public init(from decoder: any Decoder) throws {
-    guard let decoder = decoder as? FlutterStandardDecoderImpl else {
-      throw FlutterSwiftError.fieldNotDecodable
-    }
-
-    let container = try decoder
-      .singleValueContainer() as! SingleValueFlutterStandardDecodingContainer
-
-    switch try container.state.peekStandardField() {
-    case .nil:
-      try container.state.assertStandardField(.nil)
-      self = .nil
-    case .true:
-      fallthrough
-    case .false:
-      let b = try container.state.decode(Bool.self)
-      self = b ? .true : .false
-    case .int32:
-      self = try .int32(container.state.decode(Int32.self))
-    case .int64:
-      self = try .int64(container.state.decode(Int64.self))
-    case .float64:
-      self = try .float64(container.state.decode(Double.self))
-    case .string:
-      self = try .string(container.state.decode(String.self))
-    case .uint8Data:
-      self = try .uint8Data(container.state.decodeArray(UInt8.self))
-    case .int32Data:
-      self = try .int32Data(container.state.decodeArray(Int32.self))
-    case .int64Data:
-      self = try .int64Data(container.state.decodeArray(Int64.self))
-    case .float32Data:
-      self = try .float32Data(container.state.decodeArray(Float.self))
-    case .float64Data:
-      self = try .float64Data(container.state.decodeArray(Double.self))
-    case .list:
-      self = try .list(container.state.decode([Self].self, codingPath: []))
-    case .map:
-      self = try .map(container.state.decode([Self: Self].self, codingPath: []))
-    default:
-      throw FlutterSwiftError.fieldNotDecodable
     }
   }
 }

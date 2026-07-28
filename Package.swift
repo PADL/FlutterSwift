@@ -1,4 +1,4 @@
-// swift-tools-version:6.0
+// swift-tools-version:6.2
 
 import Foundation
 import PackageDescription
@@ -526,6 +526,7 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-atomics", from: "1.0.0"),
+    .package(url: "https://github.com/apple/swift-binary-parsing", from: "0.0.2"),
     .package(url: "https://github.com/lhoward/AsyncExtensions", from: "0.9.0"),
     .package(url: "https://github.com/apple/swift-log", from: "1.6.2"),
     .package(url: "https://github.com/apple/swift-system", from: "1.2.1"),
@@ -537,6 +538,7 @@ let package = Package(
         .target(name: "CxxFlutterSwift", condition: .when(platforms: [.linux])),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Atomics", package: "swift-atomics"),
+        .product(name: "BinaryParsing", package: "swift-binary-parsing"),
         "AsyncExtensions",
       ] + targetDependencies,
       cxxSettings: platformCxxSettings,
