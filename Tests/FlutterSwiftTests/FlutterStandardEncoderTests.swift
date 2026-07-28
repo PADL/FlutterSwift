@@ -452,6 +452,33 @@ final class FlutterStandardEncoderTests: XCTestCase {
     try assertThat(encoder, encodes: [String](), to: [0x0C, 0x00])
   }
 
+  /// Every integer width has to survive a round trip through the tagged wire
+  /// representation it is widened to. `UInt` in particular encodes as a tagged
+  /// `Int`, so decoding it must consume that tag.
+  func testIntegerScalarRoundTrips() throws {
+    let encoder = FlutterStandardEncoder()
+    let decoder = FlutterStandardDecoder()
+
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int8.min)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int8.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int16.min)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int16.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int32.min)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int32.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int64.min)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int64.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int.min)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: Int.max)
+
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt8.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt16.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt32.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt64.max)
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt(0))
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt(0x1234_5678))
+    try assertThat(encoder: encoder, decoder: decoder, canEncodeDecode: UInt(Int.max))
+  }
+
   private func assertThat<Value>(
     encoder: FlutterStandardEncoder,
     decoder: FlutterStandardDecoder,

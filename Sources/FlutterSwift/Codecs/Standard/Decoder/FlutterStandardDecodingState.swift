@@ -30,142 +30,113 @@ import Foundation
 #endif
 
 /// The internal state used by the decoders.
+///
+/// Holds a *borrowed* view of the message rather than its own `Data`. The
+/// buffer belongs to `FlutterStandardDecoder.decode`, which keeps it alive
+/// across the whole decode; this is what lets the codec read a message without
+/// first copying it, and without a `Data` subscript per token.
+///
+/// Byte-level reads go through `withParser`, which lends the cursor to
+/// `BinaryParsing` and takes back wherever the parse finished. The grammar
+/// itself lives on `ParserSpan` (`FlutterStandardReader.swift`) and is shared with
+/// `AnyFlutterStandardCodable`'s direct (non-`Codable`) parser, so there is one
+/// implementation of sizes, alignment, strings and typed data rather than two.
+///
+/// - Important: decoding containers must not outlive the `decode` call that
+///   created them — the same constraint `JSONDecoder` places on its own buffer
+///   view. Nothing in `Codable`'s API encourages that, but a `Decodable`
+///   implementation that stored its `Decoder` away for later would be reading
+///   freed memory.
 final class FlutterStandardDecodingState {
-  private let data: Data
+  private let bytes: UnsafeRawBufferPointer
   private var offset: Int
 
-  var isAtEnd: Bool { offset >= data.count }
+  var isAtEnd: Bool { offset >= bytes.count }
 
-  init(data: Data) {
-    self.data = data
+  init(bytes: UnsafeRawBufferPointer) {
+    self.bytes = bytes
     offset = 0
   }
 
-  private var remaining: Int { data.count - offset }
+  /// Runs `body` against a parser positioned at the cursor, then adopts the
+  /// cursor the parse left behind.
+  ///
+  /// Rebuilding the span per call costs a few integer operations, which is the
+  /// price of `ParserSpan` being non-escapable: it cannot be stored here, nor
+  /// handed to the escapable `Decoder` and container types. It is still far
+  /// cheaper than the `Data` subscripting it replaces, and a whole nested
+  /// value — a list, a map, an `AnyFlutterStandardCodable` — is parsed inside
+  /// a single call.
+  private func withParser<T>(
+    _ body: (inout ParserSpan) throws(ParsingError) -> T
+  ) throws(FlutterSwiftError) -> T {
+    let bytes = bytes
+    do {
+      var span = ParserSpan(_unsafeBytes: bytes)
+      try span.seek(toAbsoluteOffset: offset)
+      let value = try body(&span)
+      offset = span.startPosition
+      return value
+    } catch {
+      throw FlutterSwiftError(error)
+    }
+  }
 
   fileprivate func peekStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
-    guard offset < data.count else {
+    guard offset < bytes.count else {
       throw FlutterSwiftError.eofTooEarly
     }
-    let byte = data[data.startIndex + offset]
+    let byte = bytes[offset]
     guard let fieldType = FlutterStandardField(rawValue: byte) else {
       throw FlutterSwiftError.unknownStandardFieldType(byte)
     }
     return fieldType
   }
 
-  private func decodeStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
-    guard offset < data.count else {
-      throw FlutterSwiftError.eofTooEarly
-    }
-    let byte = data[data.startIndex + offset]
-    offset += 1
-    guard let fieldType = FlutterStandardField(rawValue: byte) else {
-      throw FlutterSwiftError.unknownStandardFieldType(byte)
-    }
-    return fieldType
-  }
-
-  @inlinable
   func assertStandardField(_ assertedFieldType: FlutterStandardField) throws(FlutterSwiftError) {
-    let fieldType = try decodeStandardField()
-    guard fieldType == assertedFieldType else {
-      throw FlutterSwiftError.unexpectedStandardFieldType(fieldType)
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(assertedFieldType)
     }
   }
 
   private func decodeSize() throws(FlutterSwiftError) -> Int {
-    guard offset < data.count else {
-      throw FlutterSwiftError.eofTooEarly
-    }
-    let byte = data[data.startIndex + offset]
-    offset += 1
-    if byte < 254 {
-      return Int(byte)
-    } else if byte == 254 {
-      return try Int(decodeInteger(UInt16.self))
-    } else if byte == 255 {
-      return try Int(decodeInteger(UInt32.self))
-    } else {
-      fatalError("notreached")
-    }
-  }
-
-  private func assertAlignment(_ alignment: Int) throws(FlutterSwiftError) {
-    // padding is relative to the read position, not the bytes remaining
-    let mod = offset % alignment
-    guard mod == 0 || remaining >= alignment - mod else {
-      throw FlutterSwiftError.invalidAlignment
-    }
-    if mod != 0 {
-      offset += alignment - mod
+    try withParser { span throws(ParsingError) in
+      try span.parseSize()
     }
   }
 
   func decodeData() throws(FlutterSwiftError) -> Data {
-    try assertStandardField(.uint8Data)
-    let length = try decodeSize()
-    let start = data.startIndex + offset
-    guard remaining >= length else {
-      throw FlutterSwiftError.eofTooEarly
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(.uint8Data)
+      return try span.parseData()
     }
-    let raw = data[start..<(start + length)]
-    offset += length
-    return Data(raw)
   }
 
-  @inlinable
   func decodeDiscriminant() throws(FlutterSwiftError) -> UInt8 {
-    guard offset < data.count else {
+    guard offset < bytes.count else {
       throw FlutterSwiftError.eofTooEarly
     }
-    let byte = data[data.startIndex + offset]
+    let byte = bytes[offset]
     offset += 1
     return byte
   }
 
   func decodeNil() throws(FlutterSwiftError) -> Bool {
-    let fieldType = try peekStandardField()
-    if fieldType == .nil {
-      offset += 1
-      return true
-    } else {
+    guard try peekStandardField() == .nil else {
       return false
     }
+    offset += 1
+    return true
   }
 
-  /// Bulk-decode a typed-data array with a single `memcpy`.
-  ///
-  /// Mirrors `FlutterStandardEncodingState.encodeTypedArray`: the standard codec
-  /// stores typed data in host byte order, so the wire bytes are the elements'
-  /// in-memory representation. We copy the whole region into a freshly allocated
-  /// (and therefore correctly aligned) array buffer in one operation instead of
-  /// reconstructing each element with a separate unaligned load. `copyBytes`
-  /// tolerates an unaligned source, so this is safe regardless of where the
-  /// message buffer happens to sit in memory.
   private func decodeTypedArray<T: BitwiseCopyable>(
     _ fieldType: FlutterStandardField,
     _ type: T.Type
   ) throws(FlutterSwiftError) -> [T] {
-    try assertStandardField(fieldType)
-    let count = try decodeSize()
-    try assertAlignment(MemoryLayout<T>.stride)
-    let byteCount = count * MemoryLayout<T>.stride
-    guard remaining >= byteCount else {
-      throw FlutterSwiftError.eofTooEarly
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(fieldType)
+      return try span.parseTypedArray(of: type)
     }
-    let start = data.startIndex + offset
-    let values = [T](unsafeUninitializedCapacity: count) { buffer, initializedCount in
-      if count > 0 {
-        data.copyBytes(
-          to: UnsafeMutableRawBufferPointer(buffer),
-          from: start..<(start + byteCount)
-        )
-      }
-      initializedCount = count
-    }
-    offset += byteCount
-    return values
   }
 
   func decodeArray(_ type: UInt8.Type) throws(FlutterSwiftError) -> [UInt8] {
@@ -219,53 +190,32 @@ final class FlutterStandardDecodingState {
     return values
   }
 
-  private func decodeInteger<Integer>(_ type: Integer.Type) throws(FlutterSwiftError) -> Integer
-    where Integer: FixedWidthInteger & BitwiseCopyable
-  {
-    let byteWidth = Integer.bitWidth / 8
-    guard remaining >= byteWidth else {
-      throw FlutterSwiftError.eofTooEarly
-    }
-    // Read directly from a borrowed `RawSpan` view of the message rather than
-    // materialising a `Data` slice (with its retain/range bookkeeping) per
-    // scalar. `offset` is measured from the logical start of the message, which
-    // is exactly the span's origin.
-    let value = data.bytes.unsafeLoadUnaligned(fromByteOffset: offset, as: type)
-    offset += byteWidth
-    return value
-  }
-
   func decode(_ type: Bool.Type) throws(FlutterSwiftError) -> Bool {
-    let fieldType = try decodeStandardField()
-    switch fieldType {
-    case .true:
-      return true
-    case .false:
-      return false
-    default:
-      throw FlutterSwiftError.unexpectedStandardFieldType(fieldType)
+    try withParser { span throws(ParsingError) in
+      let fieldType = try FlutterStandardField(parsing: &span)
+      switch fieldType {
+      case .true:
+        return true
+      case .false:
+        return false
+      default:
+        throw ParsingError(userError: FlutterSwiftError.unexpectedStandardFieldType(fieldType))
+      }
     }
   }
 
   func decode(_ type: String.Type) throws(FlutterSwiftError) -> String {
-    try assertStandardField(.string)
-    let length = try decodeSize()
-    let start = data.startIndex + offset
-    guard remaining >= length else {
-      throw FlutterSwiftError.eofTooEarly
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(.string)
+      return try span.parseString()
     }
-    let raw = data[start..<(start + length)]
-    offset += length
-    guard let value = String(data: raw, encoding: .utf8) else {
-      throw FlutterSwiftError.stringNotDecodable(raw)
-    }
-    return value
   }
 
   func decode(_ type: Double.Type) throws(FlutterSwiftError) -> Double {
-    try assertStandardField(.float64)
-    try assertAlignment(MemoryLayout<Double>.alignment)
-    return try Double(bitPattern: decodeInteger(UInt64.self))
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(.float64)
+      return try span.parseFloat64()
+    }
   }
 
   func decode(_ type: Float.Type) throws(FlutterSwiftError) -> Float {
@@ -297,17 +247,23 @@ final class FlutterStandardDecodingState {
   }
 
   func decode(_ type: Int32.Type) throws(FlutterSwiftError) -> Int32 {
-    try assertStandardField(.int32)
-    return try decodeInteger(type)
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(.int32)
+      return try Int32(parsing: &span, endianness: .host)
+    }
   }
 
   func decode(_ type: Int64.Type) throws(FlutterSwiftError) -> Int64 {
-    try assertStandardField(.int64)
-    return try decodeInteger(type)
+    try withParser { span throws(ParsingError) in
+      try span.parseAssertedField(.int64)
+      return try Int64(parsing: &span, endianness: .host)
+    }
   }
 
   func decode(_ type: UInt.Type) throws(FlutterSwiftError) -> UInt {
-    guard let value = try UInt(exactly: decodeInteger(Int.self)) else {
+    // `encode(UInt)` widens to `Int`, so read back the same way — reading a
+    // bare platform-width integer here would consume the type tag as data.
+    guard let value = try UInt(exactly: decode(Int.self)) else {
       throw FlutterSwiftError.integerOutOfRange
     }
     return value
@@ -341,22 +297,11 @@ final class FlutterStandardDecodingState {
 
   /// Parse a dynamically typed value at the current position.
   ///
-  /// Bridges the `Codable` path onto `AnyFlutterStandardCodable`'s
-  /// `ParserSpan` parser. The span is taken over the whole message so that
-  /// `startPosition` is measured from the same origin as `offset` — which the
-  /// codec's alignment rules depend on — and the cursor is written back on the
-  /// way out. Nested values are parsed within this one span, so an arbitrarily
-  /// deep value costs a single borrow of the buffer.
+  /// Nested values are parsed within this one span, so an arbitrarily deep
+  /// value costs a single `withParser` call — no decoder, no containers.
   func decodeAnyValue() throws(FlutterSwiftError) -> AnyFlutterStandardCodable {
-    do {
-      return try data.withParserSpan { (span) throws(ParsingError) in
-        try span.seek(toAbsoluteOffset: offset)
-        let value = try AnyFlutterStandardCodable(parsingValue: &span)
-        offset = span.startPosition
-        return value
-      }
-    } catch {
-      throw FlutterSwiftError(error)
+    try withParser { span throws(ParsingError) in
+      try AnyFlutterStandardCodable(parsingValue: &span)
     }
   }
 

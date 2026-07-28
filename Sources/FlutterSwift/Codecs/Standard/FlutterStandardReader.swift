@@ -62,6 +62,16 @@ extension FlutterStandardField {
 }
 
 extension ParserSpan {
+  /// Reads a type tag and requires it to be `expected`.
+  mutating func parseAssertedField(
+    _ expected: FlutterStandardField
+  ) throws(ParsingError) {
+    let field = try FlutterStandardField(parsing: &self)
+    guard field == expected else {
+      throw ParsingError(userError: FlutterSwiftError.unexpectedStandardFieldType(field))
+    }
+  }
+
   /// Reads the codec's variable-length size prefix.
   ///
   /// Sizes below 254 are stored in the prefix byte itself; 254 escapes to a
@@ -97,6 +107,18 @@ extension ParserSpan {
       throw ParsingError(userError: FlutterSwiftError.invalidAlignment)
     }
     try seek(toRelativeOffset: padding)
+  }
+
+  /// Reads a float64, including the padding that aligns it.
+  mutating func parseFloat64() throws(ParsingError) -> Double {
+    try parseAlignment(to: MemoryLayout<Double>.alignment)
+    return try Double(bitPattern: UInt64(parsing: &self, endianness: .host))
+  }
+
+  /// Reads a length-prefixed byte blob.
+  mutating func parseData() throws(ParsingError) -> Data {
+    let length = try parseSize()
+    return try Data(parsing: &self, byteCount: length)
   }
 
   /// Reads a length-prefixed UTF-8 string.

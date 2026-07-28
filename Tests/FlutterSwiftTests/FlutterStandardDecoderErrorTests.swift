@@ -47,6 +47,18 @@ final class FlutterStandardDecoderErrorTests: XCTestCase {
     XCTAssertNil(result)
   }
 
+  /// An empty `Data` yields a zero-length (possibly null-based) buffer, which
+  /// the borrowed-buffer decoding state has to tolerate rather than trap on.
+  func testDecodeEmptyDataForNonOptionalType() throws {
+    let decoder = FlutterStandardDecoder()
+    XCTAssertThrowsError(try decoder.decode(Int32.self, from: Data())) { error in
+      XCTAssertEqual(error as? FlutterSwiftError, .eofTooEarly)
+    }
+    XCTAssertThrowsError(try decoder.decode(String.self, from: Data())) { error in
+      XCTAssertEqual(error as? FlutterSwiftError, .eofTooEarly)
+    }
+  }
+
   func testDecodeUnknownFieldType() throws {
     let decoder = FlutterStandardDecoder()
     // 0xFF is not a valid FlutterStandardField type

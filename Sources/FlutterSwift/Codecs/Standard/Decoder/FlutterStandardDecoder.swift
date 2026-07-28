@@ -37,8 +37,12 @@ public struct FlutterStandardDecoder {
       return Any?.none as! Value
     }
 
-    let state: FlutterStandardDecodingState
-    state = FlutterStandardDecodingState(data: Data(data))
-    return try FlutterStandardDecodingState.decode(type, state: state, codingPath: [])
+    // The decoding state borrows these bytes rather than copying the message,
+    // so the whole decode has to happen inside this scope. Containers created
+    // during the decode must not escape it; see `FlutterStandardDecodingState`.
+    return try data.withUnsafeBytes { bytes in
+      let state = FlutterStandardDecodingState(bytes: bytes)
+      return try FlutterStandardDecodingState.decode(type, state: state, codingPath: [])
+    }
   }
 }
