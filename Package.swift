@@ -11,7 +11,11 @@ var targetDependencies = [Target.Dependency]()
 var targetPluginUsages = [Target.PluginUsage]()
 
 var platformCxxSettings: [CXXSetting] = []
-var platformSwiftSettings: [SwiftSetting] = []
+// `@_lifetime` is required to declare `mutating` methods on BinaryParsing's
+// ~Escapable `ParserSpan` (see FlutterStandardReader.swift); the attribute is
+// only accepted with this feature enabled. swift-binary-parsing enables it on
+// its own targets for the same reason.
+var platformSwiftSettings: [SwiftSetting] = [.enableExperimentalFeature("Lifetimes")]
 
 let EnvSysRoot = ProcessInfo.processInfo.environment["SYSROOT"]
 
