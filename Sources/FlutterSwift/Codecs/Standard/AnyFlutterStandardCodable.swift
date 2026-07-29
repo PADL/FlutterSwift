@@ -14,7 +14,11 @@
 // limitations under the License.
 //
 
-public indirect enum AnyFlutterStandardCodable: Hashable, Sendable {
+/// Not `indirect`: no case is recursive by value. `.list` and `.map` recurse
+/// through `Array`/`Dictionary`, which are single-pointer structs, so the enum
+/// is fixed-size (17 bytes) without boxing. Declaring it `indirect` heap-boxed
+/// every value — including every scalar property and metering event.
+public enum AnyFlutterStandardCodable: Hashable, Sendable {
   case `nil`
   case `true`
   case `false`

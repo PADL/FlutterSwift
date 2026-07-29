@@ -31,35 +31,25 @@ final class FlutterStandardEncodingState {
   }
 
   private func encodeStandardField(_ fieldType: FlutterStandardField) throws(FlutterSwiftError) {
-    withUnsafeBytes(of: fieldType) { data += $0 }
+    data.writeField(fieldType)
   }
 
   private func encodeSize(_ size: Int) throws(FlutterSwiftError) {
-    if size < 254 {
-      data.append(UInt8(size))
-    } else if size <= UInt16.max {
-      data.append(254)
-      withUnsafeBytes(of: UInt16(size)) { data += $0 }
-    } else if size <= UInt32.max {
-      data.append(255)
-      withUnsafeBytes(of: UInt32(size)) { data += $0 }
-    } else {
-      throw FlutterSwiftError.variableSizedTypeTooBig
-    }
+    try data.writeSize(size)
   }
 
   private func encodeAlignment(_ alignment: Int) throws(FlutterSwiftError) {
-    let mod = data.count % alignment
-    // no padding when already aligned: `alignment - mod` would be a whole block
-    if mod != 0 {
-      data += Data(repeating: 0, count: alignment - mod)
-    }
+    data.writeAlignment(alignment)
   }
 
   private func encode(_ value: Data) throws(FlutterSwiftError) {
-    try encodeStandardField(.uint8Data)
-    try encodeSize(value.count)
-    data += value
+    try data.writeData(value)
+  }
+
+  /// Writes an `AnyFlutterStandardCodable` straight into the buffer, bypassing
+  /// the encoder and container allocation the `Codable` path would need.
+  func write(_ value: AnyFlutterStandardCodable) throws(FlutterSwiftError) {
+    try value.write(into: &data)
   }
 
   @inlinable
@@ -84,33 +74,30 @@ final class FlutterStandardEncodingState {
     _ fieldType: FlutterStandardField,
     _ value: [T]
   ) throws(FlutterSwiftError) {
-    try encodeStandardField(fieldType)
-    try encodeSize(value.count)
-    try encodeAlignment(MemoryLayout<T>.stride)
-    value.withUnsafeBytes { data.append(contentsOf: $0) }
+    try data.writeTypedArray(fieldType, value)
   }
 
-  fileprivate func encodeArray(_ value: [UInt8]) throws(FlutterSwiftError) {
+  private func encodeArray(_ value: [UInt8]) throws(FlutterSwiftError) {
     try encodeTypedArray(.uint8Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Int32]) throws(FlutterSwiftError) {
+  private func encodeArray(_ value: [Int32]) throws(FlutterSwiftError) {
     try encodeTypedArray(.int32Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Int64]) throws(FlutterSwiftError) {
+  private func encodeArray(_ value: [Int64]) throws(FlutterSwiftError) {
     try encodeTypedArray(.int64Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Double]) throws(FlutterSwiftError) {
+  private func encodeArray(_ value: [Double]) throws(FlutterSwiftError) {
     try encodeTypedArray(.float64Data, value)
   }
 
-  fileprivate func encodeArray(_ value: [Float]) throws(FlutterSwiftError) {
+  private func encodeArray(_ value: [Float]) throws(FlutterSwiftError) {
     try encodeTypedArray(.float32Data, value)
   }
 
-  fileprivate func encodeList(
+  private func encodeList(
     _ value: some FlutterListRepresentable,
     codingPath: [CodingKey]
   ) throws {
@@ -121,7 +108,7 @@ final class FlutterStandardEncodingState {
     }
   }
 
-  fileprivate func encodeMap(
+  private func encodeMap(
     _ value: some FlutterMapRepresentable,
     codingPath: [CodingKey]
   ) throws {
@@ -142,13 +129,7 @@ final class FlutterStandardEncodingState {
   }
 
   func encode(_ value: String) throws(FlutterSwiftError) {
-    try encodeStandardField(.string)
-    guard let encoded = value.data(using: .utf8) else {
-      throw FlutterSwiftError.stringNotEncodable(value)
-    }
-
-    try encodeSize(encoded.count)
-    data += encoded
+    try data.writeString(value)
   }
 
   func encode(_ value: Bool) throws(FlutterSwiftError) {
@@ -261,39 +242,9 @@ final class FlutterStandardEncodingState {
 extension AnyFlutterStandardCodable: Encodable {
   public func encode(to encoder: any Encoder) throws {
     if let encoder = encoder as? FlutterStandardEncoderImpl {
-      let container = encoder
-        .singleValueContainer() as! SingleValueFlutterStandardEncodingContainer
-
-      switch self {
-      case .nil:
-        try container.state.encodeNil()
-      case .true:
-        try container.state.encode(true)
-      case .false:
-        try container.state.encode(false)
-      case let .int32(int32):
-        try container.state.encode(int32)
-      case let .int64(int64):
-        try container.state.encode(int64)
-      case let .float64(float64):
-        try container.state.encode(float64)
-      case let .string(string):
-        try container.state.encode(string)
-      case let .uint8Data(uint8Data):
-        try container.state.encodeArray(uint8Data)
-      case let .int32Data(int32Data):
-        try container.state.encodeArray(int32Data)
-      case let .int64Data(int64Data):
-        try container.state.encodeArray(int64Data)
-      case let .float32Data(float32Data):
-        try container.state.encodeArray(float32Data)
-      case let .float64Data(float64Data):
-        try container.state.encodeArray(float64Data)
-      case let .list(list):
-        try container.state.encodeList(list, codingPath: container.codingPath)
-      case let .map(map):
-        try container.state.encodeMap(map, codingPath: container.codingPath)
-      }
+      // the grammar lives in `write(into:)`; don't reimplement it here, and
+      // don't pay for a container we would only read `state` back out of
+      try encoder.state.write(self)
     } else {
       var container = encoder.singleValueContainer()
 
