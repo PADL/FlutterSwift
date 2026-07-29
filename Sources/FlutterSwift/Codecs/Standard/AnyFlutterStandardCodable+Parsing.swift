@@ -52,22 +52,22 @@ extension AnyFlutterStandardCodable: ExpressibleByParsing {
     case .int64:
       self = try .int64(Int64(parsing: &input, endianness: .host))
     case .float64:
-      try input.parseAlignment(to: MemoryLayout<Double>.alignment)
+      try parseAlignment(&input, to: MemoryLayout<Double>.alignment)
       self = try .float64(Double(bitPattern: UInt64(parsing: &input, endianness: .host)))
     case .string:
-      self = try .string(input.parseString())
+      self = try .string(parseString(&input))
     case .uint8Data:
-      self = try .uint8Data(input.parseTypedArray(of: UInt8.self))
+      self = try .uint8Data(parseTypedArray(&input, of: UInt8.self))
     case .int32Data:
-      self = try .int32Data(input.parseTypedArray(of: Int32.self))
+      self = try .int32Data(parseTypedArray(&input, of: Int32.self))
     case .int64Data:
-      self = try .int64Data(input.parseTypedArray(of: Int64.self))
+      self = try .int64Data(parseTypedArray(&input, of: Int64.self))
     case .float32Data:
-      self = try .float32Data(input.parseTypedArray(of: Float.self))
+      self = try .float32Data(parseTypedArray(&input, of: Float.self))
     case .float64Data:
-      self = try .float64Data(input.parseTypedArray(of: Double.self))
+      self = try .float64Data(parseTypedArray(&input, of: Double.self))
     case .list:
-      let count = try input.parseSize()
+      let count = try parseSize(&input)
       var values = [AnyFlutterStandardCodable]()
       values.reserveCapacity(count)
       for _ in 0..<count {
@@ -75,7 +75,7 @@ extension AnyFlutterStandardCodable: ExpressibleByParsing {
       }
       self = .list(values)
     case .map:
-      let count = try input.parseSize()
+      let count = try parseSize(&input)
       var values = [AnyFlutterStandardCodable: AnyFlutterStandardCodable](
         minimumCapacity: count
       )

@@ -61,106 +61,115 @@ extension FlutterStandardField {
   }
 }
 
-extension ParserSpan {
-  /// Reads a type tag and requires it to be `expected`.
-  mutating func parseAssertedField(
-    _ expected: FlutterStandardField
-  ) throws(ParsingError) {
-    let field = try FlutterStandardField(parsing: &self)
-    guard field == expected else {
-      throw ParsingError(userError: FlutterSwiftError.unexpectedStandardFieldType(field))
-    }
-  }
+// These are free functions rather than methods on `ParserSpan`: the span is
+// ~Escapable, so a `mutating` method on it requires an explicit lifetime
+// dependency (`@_lifetime(&self)`), an underscored attribute behind an
+// experimental feature that only BinaryParsing itself can rely on. An
+// extension declared here is rejected on Darwin with "a mutating method
+// cannot have a ~Escapable 'self'". Taking the span `inout` is how the
+// library's own public parsing surface is shaped too — `UInt8(parsing: &input)`.
 
-  /// Reads the codec's variable-length size prefix.
-  ///
-  /// Sizes below 254 are stored in the prefix byte itself; 254 escapes to a
-  /// `UInt16` and 255 to a `UInt32`, both in host byte order.
-  mutating func parseSize() throws(ParsingError) -> Int {
-    let byte = try UInt8(parsing: &self)
-    switch byte {
-    case 254:
-      return try Int(UInt16(parsing: &self, endianness: .host))
-    case 255:
-      let size = try UInt32(parsing: &self, endianness: .host)
-      guard let size = Int(exactly: size) else {
-        throw ParsingError(userError: FlutterSwiftError.variableSizedTypeTooBig)
-      }
-      return size
-    default:
-      return Int(byte)
-    }
+/// Reads a type tag and requires it to be `expected`.
+func parseAssertedField(
+  _ input: inout ParserSpan,
+  _ expected: FlutterStandardField
+) throws(ParsingError) {
+  let field = try FlutterStandardField(parsing: &input)
+  guard field == expected else {
+    throw ParsingError(userError: FlutterSwiftError.unexpectedStandardFieldType(field))
   }
+}
 
-  /// Consumes the padding that aligns the next read to `alignment`.
-  ///
-  /// Padding is measured from the start of the *message*, not from the bytes
-  /// remaining, which is exactly what `ParserSpan.startPosition` reports —
-  /// it stays absolute within the original region even across slicing.
-  mutating func parseAlignment(
-    to alignment: Int
-  ) throws(ParsingError) {
-    let mod = startPosition % alignment
-    guard mod != 0 else { return }
-    let padding = alignment - mod
-    guard padding <= count else {
-      throw ParsingError(userError: FlutterSwiftError.invalidAlignment)
-    }
-    try seek(toRelativeOffset: padding)
-  }
-
-  /// Reads a float64, including the padding that aligns it.
-  mutating func parseFloat64() throws(ParsingError) -> Double {
-    try parseAlignment(to: MemoryLayout<Double>.alignment)
-    return try Double(bitPattern: UInt64(parsing: &self, endianness: .host))
-  }
-
-  /// Reads a length-prefixed byte blob.
-  mutating func parseData() throws(ParsingError) -> Data {
-    let length = try parseSize()
-    return try Data(parsing: &self, byteCount: length)
-  }
-
-  /// Reads a length-prefixed UTF-8 string.
-  ///
-  /// `String(parsingUTF8:count:)` would repair invalid UTF-8 with U+FFFD; the
-  /// codec treats malformed input as a decode failure, so validate instead.
-  mutating func parseString() throws(ParsingError) -> String {
-    let length = try parseSize()
-    let slice = try sliceSpan(byteCount: length)
-    guard let value = slice.withUnsafeBytes({ String(validating: $0, as: UTF8.self) }) else {
-      let raw = slice.withUnsafeBytes { Data($0) }
-      throw ParsingError(userError: FlutterSwiftError.stringNotDecodable(raw))
-    }
-    return value
-  }
-
-  /// Bulk-reads a typed-data array with a single `memcpy`.
-  ///
-  /// Mirrors `writeTypedArray`: typed data is stored in host byte order, so the
-  /// wire bytes already are the elements' in-memory representation. The
-  /// destination array's storage is freshly allocated and therefore correctly
-  /// aligned, and `copyMemory` tolerates an unaligned source, so this is safe
-  /// wherever the message happens to sit.
-  mutating func parseTypedArray<T: BitwiseCopyable>(
-    of type: T.Type
-  ) throws(ParsingError) -> [T] {
-    let count = try parseSize()
-    try parseAlignment(to: MemoryLayout<T>.stride)
-    let (byteCount, overflow) = count.multipliedReportingOverflow(
-      by: MemoryLayout<T>.stride
-    )
-    guard !overflow else {
+/// Reads the codec's variable-length size prefix.
+///
+/// Sizes below 254 are stored in the prefix byte itself; 254 escapes to a
+/// `UInt16` and 255 to a `UInt32`, both in host byte order.
+func parseSize(_ input: inout ParserSpan) throws(ParsingError) -> Int {
+  let byte = try UInt8(parsing: &input)
+  switch byte {
+  case 254:
+    return try Int(UInt16(parsing: &input, endianness: .host))
+  case 255:
+    let size = try UInt32(parsing: &input, endianness: .host)
+    guard let size = Int(exactly: size) else {
       throw ParsingError(userError: FlutterSwiftError.variableSizedTypeTooBig)
     }
-    let slice = try sliceSpan(byteCount: byteCount)
-    return slice.withUnsafeBytes { source in
-      [T](unsafeUninitializedCapacity: count) { destination, initializedCount in
-        if count > 0 {
-          UnsafeMutableRawBufferPointer(destination).copyMemory(from: source)
-        }
-        initializedCount = count
+    return size
+  default:
+    return Int(byte)
+  }
+}
+
+/// Consumes the padding that aligns the next read to `alignment`.
+///
+/// Padding is measured from the start of the *message*, not from the bytes
+/// remaining, which is exactly what `ParserSpan.startPosition` reports —
+/// it stays absolute within the original region even across slicing.
+func parseAlignment(
+  _ input: inout ParserSpan,
+  to alignment: Int
+) throws(ParsingError) {
+  let mod = input.startPosition % alignment
+  guard mod != 0 else { return }
+  let padding = alignment - mod
+  guard padding <= input.count else {
+    throw ParsingError(userError: FlutterSwiftError.invalidAlignment)
+  }
+  try input.seek(toRelativeOffset: padding)
+}
+
+/// Reads a float64, including the padding that aligns it.
+func parseFloat64(_ input: inout ParserSpan) throws(ParsingError) -> Double {
+  try parseAlignment(&input, to: MemoryLayout<Double>.alignment)
+  return try Double(bitPattern: UInt64(parsing: &input, endianness: .host))
+}
+
+/// Reads a length-prefixed byte blob.
+func parseData(_ input: inout ParserSpan) throws(ParsingError) -> Data {
+  let length = try parseSize(&input)
+  return try Data(parsing: &input, byteCount: length)
+}
+
+/// Reads a length-prefixed UTF-8 string.
+///
+/// `String(parsingUTF8:count:)` would repair invalid UTF-8 with U+FFFD; the
+/// codec treats malformed input as a decode failure, so validate instead.
+func parseString(_ input: inout ParserSpan) throws(ParsingError) -> String {
+  let length = try parseSize(&input)
+  let slice = try input.sliceSpan(byteCount: length)
+  guard let value = slice.withUnsafeBytes({ String(validating: $0, as: UTF8.self) }) else {
+    let raw = slice.withUnsafeBytes { Data($0) }
+    throw ParsingError(userError: FlutterSwiftError.stringNotDecodable(raw))
+  }
+  return value
+}
+
+/// Bulk-reads a typed-data array with a single `memcpy`.
+///
+/// Mirrors `writeTypedArray`: typed data is stored in host byte order, so the
+/// wire bytes already are the elements' in-memory representation. The
+/// destination array's storage is freshly allocated and therefore correctly
+/// aligned, and `copyMemory` tolerates an unaligned source, so this is safe
+/// wherever the message happens to sit.
+func parseTypedArray<T: BitwiseCopyable>(
+  _ input: inout ParserSpan,
+  of type: T.Type
+) throws(ParsingError) -> [T] {
+  let count = try parseSize(&input)
+  try parseAlignment(&input, to: MemoryLayout<T>.stride)
+  let (byteCount, overflow) = count.multipliedReportingOverflow(
+    by: MemoryLayout<T>.stride
+  )
+  guard !overflow else {
+    throw ParsingError(userError: FlutterSwiftError.variableSizedTypeTooBig)
+  }
+  let slice = try input.sliceSpan(byteCount: byteCount)
+  return slice.withUnsafeBytes { source in
+    [T](unsafeUninitializedCapacity: count) { destination, initializedCount in
+      if count > 0 {
+        UnsafeMutableRawBufferPointer(destination).copyMemory(from: source)
       }
+      initializedCount = count
     }
   }
 }

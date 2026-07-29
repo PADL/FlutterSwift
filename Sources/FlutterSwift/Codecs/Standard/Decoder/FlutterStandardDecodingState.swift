@@ -51,7 +51,9 @@ final class FlutterStandardDecodingState {
   private let bytes: UnsafeRawBufferPointer
   private var offset: Int
 
-  var isAtEnd: Bool { offset >= bytes.count }
+  var isAtEnd: Bool {
+    offset >= bytes.count
+  }
 
   init(bytes: UnsafeRawBufferPointer) {
     self.bytes = bytes
@@ -82,7 +84,7 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  fileprivate func peekStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
+  private func peekStandardField() throws(FlutterSwiftError) -> FlutterStandardField {
     guard offset < bytes.count else {
       throw FlutterSwiftError.eofTooEarly
     }
@@ -95,20 +97,20 @@ final class FlutterStandardDecodingState {
 
   func assertStandardField(_ assertedFieldType: FlutterStandardField) throws(FlutterSwiftError) {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(assertedFieldType)
+      try parseAssertedField(&span, assertedFieldType)
     }
   }
 
   private func decodeSize() throws(FlutterSwiftError) -> Int {
     try withParser { span throws(ParsingError) in
-      try span.parseSize()
+      try parseSize(&span)
     }
   }
 
   func decodeData() throws(FlutterSwiftError) -> Data {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(.uint8Data)
-      return try span.parseData()
+      try parseAssertedField(&span, .uint8Data)
+      return try parseData(&span)
     }
   }
 
@@ -134,8 +136,8 @@ final class FlutterStandardDecodingState {
     _ type: T.Type
   ) throws(FlutterSwiftError) -> [T] {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(fieldType)
-      return try span.parseTypedArray(of: type)
+      try parseAssertedField(&span, fieldType)
+      return try parseTypedArray(&span, of: type)
     }
   }
 
@@ -173,12 +175,10 @@ final class FlutterStandardDecodingState {
     return values
   }
 
-  private func decodeMap<Key, Value>(
+  private func decodeMap<Key: Hashable & Codable, Value: Codable>(
     _ type: KeyValuePair<Key, Value>.Type,
     codingPath: [CodingKey]
-  ) throws -> [Key: Value] where Key: Hashable & Codable,
-    Value: Codable
-  {
+  ) throws -> [Key: Value] {
     try assertStandardField(.map)
     let count = try decodeSize()
     var values = [Key: Value](minimumCapacity: count)
@@ -206,15 +206,15 @@ final class FlutterStandardDecodingState {
 
   func decode(_ type: String.Type) throws(FlutterSwiftError) -> String {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(.string)
-      return try span.parseString()
+      try parseAssertedField(&span, .string)
+      return try parseString(&span)
     }
   }
 
   func decode(_ type: Double.Type) throws(FlutterSwiftError) -> Double {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(.float64)
-      return try span.parseFloat64()
+      try parseAssertedField(&span, .float64)
+      return try parseFloat64(&span)
     }
   }
 
@@ -248,14 +248,14 @@ final class FlutterStandardDecodingState {
 
   func decode(_ type: Int32.Type) throws(FlutterSwiftError) -> Int32 {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(.int32)
+      try parseAssertedField(&span, .int32)
       return try Int32(parsing: &span, endianness: .host)
     }
   }
 
   func decode(_ type: Int64.Type) throws(FlutterSwiftError) -> Int64 {
     try withParser { span throws(ParsingError) in
-      try span.parseAssertedField(.int64)
+      try parseAssertedField(&span, .int64)
       return try Int64(parsing: &span, endianness: .host)
     }
   }
@@ -291,7 +291,7 @@ final class FlutterStandardDecodingState {
     try UInt64(bitPattern: decode(Int64.self))
   }
 
-  func decode<T>(_ type: T.Type, codingPath: [any CodingKey]) throws -> T where T: Decodable {
+  func decode<T: Decodable>(_ type: T.Type, codingPath: [any CodingKey]) throws -> T {
     try FlutterStandardDecodingState.decode(type, state: self, codingPath: [])
   }
 
@@ -305,11 +305,11 @@ final class FlutterStandardDecodingState {
     }
   }
 
-  static func decode<T>(
+  static func decode<T: Decodable>(
     _ type: T.Type,
     state: FlutterStandardDecodingState,
     codingPath: [any CodingKey]
-  ) throws -> T where T: Decodable {
+  ) throws -> T {
     var count: Int?
     if let type = type as? any FlutterMapRepresentable.Type {
       try state.assertStandardField(.map)
