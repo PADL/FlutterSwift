@@ -63,6 +63,9 @@ extension FlutterStandardField {
 
 extension ParserSpan {
   /// Reads a type tag and requires it to be `expected`.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseAssertedField(
     _ expected: FlutterStandardField
   ) throws(ParsingError) {
@@ -76,6 +79,9 @@ extension ParserSpan {
   ///
   /// Sizes below 254 are stored in the prefix byte itself; 254 escapes to a
   /// `UInt16` and 255 to a `UInt32`, both in host byte order.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseSize() throws(ParsingError) -> Int {
     let byte = try UInt8(parsing: &self)
     switch byte {
@@ -97,6 +103,9 @@ extension ParserSpan {
   /// Padding is measured from the start of the *message*, not from the bytes
   /// remaining, which is exactly what `ParserSpan.startPosition` reports —
   /// it stays absolute within the original region even across slicing.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseAlignment(
     to alignment: Int
   ) throws(ParsingError) {
@@ -110,12 +119,18 @@ extension ParserSpan {
   }
 
   /// Reads a float64, including the padding that aligns it.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseFloat64() throws(ParsingError) -> Double {
     try parseAlignment(to: MemoryLayout<Double>.alignment)
     return try Double(bitPattern: UInt64(parsing: &self, endianness: .host))
   }
 
   /// Reads a length-prefixed byte blob.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseData() throws(ParsingError) -> Data {
     let length = try parseSize()
     return try Data(parsing: &self, byteCount: length)
@@ -125,6 +140,9 @@ extension ParserSpan {
   ///
   /// `String(parsingUTF8:count:)` would repair invalid UTF-8 with U+FFFD; the
   /// codec treats malformed input as a decode failure, so validate instead.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseString() throws(ParsingError) -> String {
     let length = try parseSize()
     let slice = try sliceSpan(byteCount: length)
@@ -142,6 +160,9 @@ extension ParserSpan {
   /// destination array's storage is freshly allocated and therefore correctly
   /// aligned, and `copyMemory` tolerates an unaligned source, so this is safe
   /// wherever the message happens to sit.
+  #if compiler(<6.3)
+  @_lifetime(&self)
+  #endif
   mutating func parseTypedArray<T: BitwiseCopyable>(
     of type: T.Type
   ) throws(ParsingError) -> [T] {
