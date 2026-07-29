@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 struct FlutterStandardEncoderImpl: Encoder {
-  private let state: FlutterStandardEncodingState
+  let state: FlutterStandardEncodingState
 
   let codingPath: [any CodingKey]
   var userInfo: [CodingUserInfoKey: Any] { [:] }

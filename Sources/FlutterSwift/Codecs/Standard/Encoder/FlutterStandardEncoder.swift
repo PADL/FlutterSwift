@@ -28,6 +28,16 @@ import Foundation
 
 struct FlutterStandardEncoder {
   func encode<Value>(_ value: Value) throws -> Data where Value: Encodable {
+    // Values whose shape is fully determined by their own case — chiefly
+    // `AnyFlutterStandardCodable` and the event-channel envelope wrapping it —
+    // write their bytes directly, skipping the encoder, containers and the
+    // per-value existential cast chain. Everything else, and any value whose
+    // conformance declines (`nil`), takes the `Codable` path unchanged.
+    if let value = value as? any FlutterStandardDirectlyEncodable,
+       let data = try value._directlyEncoded()
+    {
+      return data
+    }
     let state = FlutterStandardEncodingState()
     try state.encode(value, codingPath: [])
     return state.data

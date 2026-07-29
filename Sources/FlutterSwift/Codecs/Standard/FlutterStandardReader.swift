@@ -137,11 +137,11 @@ extension ParserSpan {
 
   /// Bulk-reads a typed-data array with a single `memcpy`.
   ///
-  /// Mirrors `FlutterStandardEncodingState.encodeTypedArray`: typed data is
-  /// stored in host byte order, so the wire bytes already are the elements'
-  /// in-memory representation. The destination array's storage is freshly
-  /// allocated and therefore correctly aligned, and `copyMemory` tolerates an
-  /// unaligned source, so this is safe wherever the message happens to sit.
+  /// Mirrors `writeTypedArray`: typed data is stored in host byte order, so the
+  /// wire bytes already are the elements' in-memory representation. The
+  /// destination array's storage is freshly allocated and therefore correctly
+  /// aligned, and `copyMemory` tolerates an unaligned source, so this is safe
+  /// wherever the message happens to sit.
   mutating func parseTypedArray<T: BitwiseCopyable>(
     of type: T.Type
   ) throws(ParsingError) -> [T] {
