@@ -20,6 +20,8 @@ On mobile and desktop platforms such as macOS, iOS and Android, the `FlutterPlat
 
 On Darwin platforms (that is, iOS and macOS), you can simply add FlutterSwift as a Swift package dependency from Xcode. `Flutter.framework` / `FlutterMacOS.framework` is provided by your Flutter project's own xcconfig (via `xcode_backend.sh` / `macos_assemble.sh`), so FlutterSwift declares no Darwin framework dependency at the package level and ships no bundled Flutter binaries — the same mechanism Flutter's SwiftPM-aware plugins (e.g. `url_launcher_macos`) use. Note that standalone `swift build` on Darwin therefore compiles only the codecs; `FlutterPlatformMessenger` is `#if canImport`'d out unless built inside an Xcode project that wires up Flutter.
 
+Because of this, an iOS host project needs a scheme pre-action so that `Flutter.framework` exists before the Swift package targets compile, and command-line `flutter build`/`flutter run` needs Xcode's prebuilt swift-syntax disabled. See [Documentation/Darwin-Xcode-Setup.md](Documentation/Darwin-Xcode-Setup.md) — both steps are applied in `Examples/counter`.
+
 On Android, you will need to link FlutterSwift into a Java Native Interface (JNI) library that is bundled with your APK (more of which below).
 
 ### Embedded platforms
