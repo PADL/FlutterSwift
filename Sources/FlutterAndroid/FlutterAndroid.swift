@@ -60,6 +60,15 @@ public extension FlutterBinaryMessenger {
     _ channel: String,
     binaryMessageHandler messageHandler: _FlutterSwiftBinaryMessageHandler.MessageHandler?
   ) -> Int64 {
+    // Drop any stale mapping for this channel from a prior registration: that
+    // channel deinits on its own schedule, and a cleanUpConnection() arriving
+    // after we take the channel over must not unregister it from under us.
+    connectionRegistry.withLock { registry in
+      for (staleConnection, staleEntry) in registry where staleEntry.channel == channel {
+        registry[staleConnection] = nil
+      }
+    }
+
     if let messageHandler {
       let binaryMessageHandler = _FlutterSwiftBinaryMessageHandler(messageHandler)
       let typeErasedBinaryMessageHandler = FlutterBinaryMessenger
@@ -68,7 +77,9 @@ public extension FlutterBinaryMessenger {
       setMessageHandler(channel, typeErasedBinaryMessageHandler)
       let connection = currentMessengerConnection
         .wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
-      connectionRegistry.withLock { $0[connection] = ConnectionEntry(channel: channel) }
+      connectionRegistry.withLock { registry in
+        registry[connection] = ConnectionEntry(channel: channel)
+      }
       return connection
     } else {
       setMessageHandler(channel, nil)

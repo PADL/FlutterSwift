@@ -125,24 +125,24 @@ extension _FlutterChannelDefaultBufferControl {
 extension _FlutterBinaryMessengerConnectionRepresentable {
   @FlutterPlatformThreadActor
   static func _removeMessageHandler(
-    on name: String,
     connection: FlutterBinaryMessengerConnection,
     binaryMessenger: FlutterBinaryMessenger
   ) {
-    if connection > 0 {
-      try? binaryMessenger.cleanUp(connection: connection)
-    } else {
-      _ = try? binaryMessenger.setMessageHandler(
-        on: name,
-        handler: nil,
-        priority: nil
-      )
-    }
+    // Only ever tear down our own registration. Connection IDs are positive, so
+    // 0 means we either never registered or removeMessageHandler() already ran.
+    //
+    // Clearing by name instead would take the channel from whoever holds it
+    // now: setMessageHandlerOnChannel: is documented to replace any existing
+    // handler, and deinit schedules this on a Task, so by the time it runs a
+    // newer channel of the same name may have registered. cleanUp() is scoped
+    // to the connection and no-ops once the name has been re-registered.
+    guard connection > 0 else { return }
+    try? binaryMessenger.cleanUp(connection: connection)
   }
 
   @FlutterPlatformThreadActor
   func removeMessageHandler() {
-    Self._removeMessageHandler(on: name, connection: connection, binaryMessenger: binaryMessenger)
+    Self._removeMessageHandler(connection: connection, binaryMessenger: binaryMessenger)
     connection = 0
   }
 

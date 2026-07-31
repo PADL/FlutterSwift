@@ -133,8 +133,12 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
   }
 
   public var binaryMessenger: FlutterBinaryMessenger? {
-    guard let registrar else { return nil }
-    return FlutterDesktopMessenger(messenger: registrar.pointee.engine.messenger())
+    guard registrar != nil else { return nil }
+    // one messenger instance per engine: the connection -> channel registry
+    // backing cleanUp(connection:) is per-instance, and minting a fresh
+    // messenger here would let one channel's teardown unregister another's
+    // handler for the same name
+    return engine.binaryMessenger
   }
 
   public var view: FlutterView? {
