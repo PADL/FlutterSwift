@@ -34,6 +34,10 @@ jobs:
           flutter-version: 3.38.3
       - name: Version
         run: swift --version
+      # Xcode refuses to run a package macro until it has been trusted, which
+      # cannot be done non-interactively; swift-binary-parsing brings one in.
+      - name: Trust package macros
+        run: defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
       - name: Build Flutter package
         run: |
           cd Examples/counter
