@@ -43,10 +43,21 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
 
   private typealias EventStreamTask = Task<(), Never>
 
+  /// A single `listen` invocation. `generation` distinguishes successive
+  /// invocations sharing an invocation ID, so a superseded task cannot disturb
+  /// the entry its replacement now owns; `name` is where its events go, kept so
+  /// the teardown paths can close the stream without the originating call.
+  private struct EventStreamEntry {
+    let generation: UInt64
+    let name: String
+    let task: EventStreamTask
+  }
+
   private let _connection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
   private let _channelBufferSize = ManagedAtomic<Int>(1)
   private let _channelBufferOverflowAllowed = ManagedAtomic<Bool>(false)
-  private let tasks: Mutex<[String: EventStreamTask]>
+  private let _nextGeneration = ManagedAtomic<UInt64>(0)
+  private let tasks: Mutex<[String: EventStreamEntry]>
 
   var connection: FlutterBinaryMessengerConnection {
     get {
@@ -104,45 +115,67 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
   }
 
   deinit {
-    tasks.withLock { tasks in
-      tasks.values.forEach { $0.cancel() }
+    // subscribers may still be attached, and cancelled tasks stay silent (see
+    // `_run`), so their streams are closed as part of teardown
+    _scheduleRemoveMessageHandler(
+      connection: connection,
+      binaryMessenger: binaryMessenger,
+      closing: _retireAllTasks().map(\.name)
+    )
+  }
+
+  /// Cancels and forgets every stream task, returning what was retired so the
+  /// caller can close the corresponding subscriptions.
+  private func _retireAllTasks() -> [EventStreamEntry] {
+    let retired = tasks.withLock { tasks -> [EventStreamEntry] in
+      let retired = Array(tasks.values)
+      tasks.removeAll()
+      return retired
     }
-    let binaryMessenger = self.binaryMessenger
-    let connection = self.connection
-    Task {
-      await Self._removeMessageHandler(
-        connection: connection,
-        binaryMessenger: binaryMessenger
-      )
-    }
+    retired.forEach { $0.task.cancel() }
+    return retired
   }
 
   private func _cancelTask(_ id: String) {
     var task: EventStreamTask?
 
     tasks.withLock { tasks in
-      task = tasks[id]
+      task = tasks[id]?.task
       tasks.removeValue(forKey: id) // shouldn't be necessary
     }
 
     task?.cancel()
   }
 
-  private func _removeTask(_ id: String) {
-    _ = tasks.withLock { tasks in
+  /// Removes the entry only if it is still the one this generation installed: a
+  /// re-`listen` on the same invocation ID replaces it, and the superseded task
+  /// finishing must not delete its successor.
+  private func _removeTask(_ id: String, generation: UInt64) {
+    tasks.withLock { tasks in
+      guard tasks[id]?.generation == generation else { return }
       tasks.removeValue(forKey: id)
     }
   }
 
-  private func _addTask(_ id: String, _ task: EventStreamTask) {
+  private func _addTask(_ id: String, _ entry: EventStreamEntry) {
     var oldTask: EventStreamTask?
 
     tasks.withLock { tasks in
-      oldTask = tasks[id]
-      tasks[id] = task
+      oldTask = tasks[id]?.task
+      tasks[id] = entry
     }
 
     oldTask?.cancel()
+  }
+
+  /// Sends only while the channel still has a handler: otherwise the message is
+  /// buffered and handed to the next subscriber to this name. The test and the
+  /// send share one hop on the platform actor, where `removeMessageHandler()`
+  /// also runs, so the handler cannot be retired between them.
+  @FlutterPlatformThreadActor
+  private func _send(on name: String, message: Data?) throws {
+    guard connection > 0 else { return }
+    try binaryMessenger.send(on: name, message: message)
   }
 
   private func _run<Event: Codable & Sendable>(
@@ -152,21 +185,20 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     do {
       for try await event in stream {
         let envelope = FlutterEnvelope.success(event)
-        try await binaryMessenger.send(
-          on: name,
-          message: codec.encode(envelope)
-        )
+        try await _send(on: name, message: codec.encode(envelope))
         try Task.checkCancellation()
       }
-      try await binaryMessenger.send(on: name, message: nil)
+      try await _send(on: name, message: nil)
     } catch let error as FlutterError {
       let envelope = FlutterEnvelope<Event>.failure(error)
-      try await binaryMessenger.send(on: name, message: codec.encode(envelope))
+      try await _send(on: name, message: codec.encode(envelope))
     } catch is CancellationError {
-      try await binaryMessenger.send(on: name, message: nil)
+      // No end-of-stream from here: cancellation means either the subscriber
+      // asked to stop, or the channel is being retired — and the retirement
+      // paths close the stream themselves, while the handler is still live.
     } catch {
       let envelope = FlutterEnvelope<Event>.failure(error.flutterError)
-      try await binaryMessenger.send(on: name, message: codec.encode(envelope))
+      try await _send(on: name, message: codec.encode(envelope))
     }
   }
 
@@ -191,6 +223,15 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     switch method.count > 1 ? String(method[0]) : call.method {
     case "listen":
       if !invocationID.isEmpty {
+        // Drain before arming, since a client that restarts invocation IDs
+        // reuses this name. This cannot rescue the current subscriber — the
+        // engine flushes the buffer when Dart registers its handler, before
+        // `listen` reaches us — it only cleans up for the next invocation.
+        try await _resizeChannelBuffer(
+          binaryMessenger: binaryMessenger,
+          on: name,
+          newSize: 0
+        )
         try await _resizeChannelBuffer(
           binaryMessenger: binaryMessenger,
           on: name,
@@ -203,12 +244,13 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         )
       }
 
+      let generation = _nextGeneration.wrappingIncrementThenLoad(by: 1, ordering: .relaxed)
       let stream = try await onListen(call.arguments)
       let task = EventStreamTask(priority: priority) { [weak self] in
         try? await self?._run(for: stream, name: name)
-        self?._removeTask(invocationID)
+        self?._removeTask(invocationID, generation: generation)
       }
-      _addTask(invocationID, task)
+      _addTask(invocationID, EventStreamEntry(generation: generation, name: name, task: task))
       envelope = FlutterEnvelope.success(nil)
     case "cancel":
       do {
@@ -220,6 +262,22 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
         envelope = FlutterEnvelope.failure(error.flutterError)
       }
       _cancelTask(invocationID)
+      // Nothing still queued under this name will ever be consumed. Not gated on
+      // the invocation ID: a stock Dart EventChannel sends a bare `cancel`, and
+      // those channels carry their events on the channel's own name.
+      try? await _resizeChannelBuffer(
+        binaryMessenger: binaryMessenger,
+        on: name,
+        newSize: 0
+      )
+      if invocationID.isEmpty {
+        // that name outlives the invocation, so restore it for the next listen
+        try? await _resizeChannelBuffer(
+          binaryMessenger: binaryMessenger,
+          on: name,
+          newSize: channelBufferSize
+        )
+      }
     default:
       envelope = nil
     }
@@ -240,6 +298,35 @@ public final class FlutterEventChannel: _FlutterBinaryMessengerConnectionReprese
     onListen: (@Sendable (Arguments?) async throws -> FlutterEventStream<Event>)?,
     onCancel: (@Sendable (Arguments?) async throws -> ())?
   ) throws {
+    // Any re-registration retires the previous incarnation: its streams belong
+    // to the handler that is going away, whether or not one replaces it. Left
+    // running, they would interleave into the new subscriber's stream and close
+    // it when they exhausted.
+    let wasRegistered = connection > 0
+    let retired = _retireAllTasks()
+
+    if wasRegistered {
+      for entry in retired {
+        // The subscriber is still attached and still waiting for end-of-stream;
+        // the handler is not unregistered until setMessageHandler() below, so
+        // this is delivered rather than buffered. Cancelled tasks stay silent.
+        try? binaryMessenger.send(on: entry.name, message: nil)
+      }
+    }
+
+    if onListen != nil {
+      // A new incarnation must not inherit the previous one's buffered messages;
+      // a retained end-of-stream would close it at once. Not gated on
+      // `connection > 0`: that is per object, and the case that matters is a new
+      // object taking over a name whose previous owner is already deallocated.
+      try? _resizeChannelBuffer(binaryMessenger: binaryMessenger, on: name, newSize: 0)
+      try? _resizeChannelBuffer(
+        binaryMessenger: binaryMessenger,
+        on: name,
+        newSize: channelBufferSize
+      )
+    }
+
     try setMessageHandler(onListen) { [weak self] unwrappedHandler in
       { [weak self] message in
         guard let self else {

@@ -122,27 +122,49 @@ extension _FlutterChannelDefaultBufferControl {
   }
 }
 
+@FlutterPlatformThreadActor
+private func _removeMessageHandler(
+  connection: FlutterBinaryMessengerConnection,
+  binaryMessenger: FlutterBinaryMessenger
+) {
+  // Only tear down our own registration: connection IDs are positive, so 0
+  // means there is nothing of ours to remove. Clearing by name would take the
+  // channel from whoever holds it now — deinit schedules this on a Task, by
+  // which time a newer channel of the same name may have registered.
+  guard connection > 0 else { return }
+  try? binaryMessenger.cleanUp(connection: connection)
+}
+
+/// `deinit` hook: schedules teardown on the platform actor, but only when there
+/// is a registration to tear down. Send-only channels never register a handler,
+/// so they would otherwise pay for a `Task` that does nothing.
+///
+/// Each name in `closing` is sent an end-of-stream first, while the handler is
+/// still registered: the message is then delivered to whoever is listening
+/// rather than left buffered against a name we are about to stop owning.
+///
+/// Known hazard: those sends are by name and run on a Task `deinit` cannot
+/// await, so a channel registering the same name inside that window is handed
+/// the end-of-stream. Closing it needs a connection-scoped send; retiring
+/// streams via `setStreamHandler(nil)` runs synchronously and avoids the window.
+func _scheduleRemoveMessageHandler(
+  connection: FlutterBinaryMessengerConnection,
+  binaryMessenger: FlutterBinaryMessenger,
+  closing names: [String] = []
+) {
+  guard connection > 0 else { return }
+  Task { @FlutterPlatformThreadActor in
+    for name in names {
+      try? binaryMessenger.send(on: name, message: nil)
+    }
+    _removeMessageHandler(connection: connection, binaryMessenger: binaryMessenger)
+  }
+}
+
 extension _FlutterBinaryMessengerConnectionRepresentable {
   @FlutterPlatformThreadActor
-  static func _removeMessageHandler(
-    connection: FlutterBinaryMessengerConnection,
-    binaryMessenger: FlutterBinaryMessenger
-  ) {
-    // Only ever tear down our own registration. Connection IDs are positive, so
-    // 0 means we either never registered or removeMessageHandler() already ran.
-    //
-    // Clearing by name instead would take the channel from whoever holds it
-    // now: setMessageHandlerOnChannel: is documented to replace any existing
-    // handler, and deinit schedules this on a Task, so by the time it runs a
-    // newer channel of the same name may have registered. cleanUp() is scoped
-    // to the connection and no-ops once the name has been re-registered.
-    guard connection > 0 else { return }
-    try? binaryMessenger.cleanUp(connection: connection)
-  }
-
-  @FlutterPlatformThreadActor
   func removeMessageHandler() {
-    Self._removeMessageHandler(connection: connection, binaryMessenger: binaryMessenger)
+    _removeMessageHandler(connection: connection, binaryMessenger: binaryMessenger)
     connection = 0
   }
 

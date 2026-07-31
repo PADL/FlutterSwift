@@ -107,14 +107,10 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
   }
 
   deinit {
-    let binaryMessenger = self.binaryMessenger
-    let connection = self.connection
-    Task {
-      await Self._removeMessageHandler(
-        connection: connection,
-        binaryMessenger: binaryMessenger
-      )
-    }
+    _scheduleRemoveMessageHandler(
+      connection: connection,
+      binaryMessenger: binaryMessenger
+    )
   }
 
   public func invoke<Arguments: Codable & Sendable>(
