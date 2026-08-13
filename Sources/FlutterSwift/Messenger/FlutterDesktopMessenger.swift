@@ -25,10 +25,34 @@ import FoundationEssentials
 import Foundation
 #endif
 
+typealias FlutterDesktopBinaryReplyHandler = @Sendable (UnsafePointer<UInt8>?, Int) -> ()
+
+typealias FlutterDesktopMessageCallbackHandler = @Sendable (
+  FlutterDesktopMessengerRef,
+  UnsafePointer<FlutterDesktopMessage>
+) -> ()
+
+private final class ReplyBox: Sendable {
+  let handler: FlutterDesktopBinaryReplyHandler
+
+  init(_ handler: @escaping FlutterDesktopBinaryReplyHandler) {
+    self.handler = handler
+  }
+}
+
+private final class MessageCallbackBox: Sendable {
+  let handler: FlutterDesktopMessageCallbackHandler
+
+  init(_ handler: @escaping FlutterDesktopMessageCallbackHandler) {
+    self.handler = handler
+  }
+}
+
 public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked Sendable {
   private let currentMessengerConnection = ManagedAtomic<FlutterBinaryMessengerConnection>(0)
   // connection -> channel, so cleanUp(connection:) can unregister the callback
   private let handlerChannels = Mutex<[FlutterBinaryMessengerConnection: String]>([:])
+  private let messageCallbackBoxes = Mutex<[String: MessageCallbackBox]>([:])
   private let messenger: FlutterDesktopMessengerRef
 
   // : - Initializers
@@ -72,16 +96,27 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
   private func send(
     on channel: String,
     message: Data?,
-    _ block: FlutterDesktopBinaryReplyBlock?
+    _ handler: FlutterDesktopBinaryReplyHandler?
   ) throws {
     guard try (message ?? Data()).withUnsafeBytes({ bytes in
       try withMessenger { messenger in
-        FlutterDesktopMessengerSendWithReplyBlock(
+        // consumed by the reply thunk, or by the cleanup thunk if the engine
+        // fails to send; still outstanding if the engine is torn down first
+        let userData = handler.map { Unmanaged.passRetained(ReplyBox($0)).toOpaque() }
+        return FlutterDesktopMessengerSendWithReply(
           messenger,
           channel,
-          bytes.count > 0 ? bytes.baseAddress : nil,
+          bytes.count > 0 ? bytes.bindMemory(to: UInt8.self).baseAddress : nil,
           bytes.count,
-          block
+          userData == nil ? nil : { data, dataSize, userData in
+            guard let userData else { return }
+            Unmanaged<ReplyBox>.fromOpaque(userData).takeRetainedValue().handler(data, dataSize)
+          },
+          userData,
+          userData == nil ? nil : { userData in
+            guard let userData else { return }
+            Unmanaged<ReplyBox>.fromOpaque(userData).release()
+          }
         )
       }
     }) == true else {
@@ -89,12 +124,30 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
     }
   }
 
-  private func setCallbackBlock(
+  private func setMessageCallback(
     on channel: String,
-    _ block: FlutterDesktopMessageCallbackBlock?
+    _ handler: FlutterDesktopMessageCallbackHandler?
   ) throws {
     try withMessenger { messenger in
-      FlutterDesktopMessengerSetCallbackBlock(messenger, channel, block)
+      let box = handler.map { MessageCallbackBox($0) }
+      let previous = messageCallbackBoxes.withLock { boxes -> MessageCallbackBox? in
+        let previous = boxes[channel]
+        boxes[channel] = box
+        return previous
+      }
+      let callback: FlutterDesktopMessageCallback? = box == nil ? nil :
+        { messenger, message, userData in
+          guard let messenger, let message, let userData else { return }
+          Unmanaged<MessageCallbackBox>.fromOpaque(userData).takeUnretainedValue()
+            .handler(messenger, message)
+        }
+      FlutterDesktopMessengerSetCallback(
+        messenger,
+        channel,
+        callback,
+        box.map { Unmanaged.passUnretained($0).toOpaque() }
+      )
+      withExtendedLifetime(previous) {}
     }
   }
 
@@ -134,7 +187,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
   ) async throws -> Data? {
     try await withPriority(priority) {
       try await withUnsafeThrowingContinuation { continuation in
-        let replyThunk: FlutterDesktopBinaryReplyBlock?
+        let replyThunk: FlutterDesktopBinaryReplyHandler?
 
         replyThunk = { bytes, count in
           let data: Data?
@@ -182,7 +235,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
         registry[connection] = channel
       }
 
-      try setCallbackBlock(on: channel) { [weak self] _, message in
+      try setMessageCallback(on: channel) { [weak self] _, message in
         let message = message.pointee
         var messageData: Data?
 
@@ -221,7 +274,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
           registry[staleConnection] = nil
         }
       }
-      try setCallbackBlock(on: channel, nil)
+      try setMessageCallback(on: channel, nil)
     }
 
     return connection
@@ -232,7 +285,7 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
     else {
       return
     }
-    try setCallbackBlock(on: channel, nil)
+    try setMessageCallback(on: channel, nil)
   }
 }
 #endif

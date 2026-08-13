@@ -72,12 +72,15 @@ public protocol FlutterBinaryMessenger: Sendable {
   @FlutterPlatformThreadActor
   func send(on channel: String, message: Data?, priority: TaskPriority?) async throws -> Data?
 
+  /// Call on the platform thread: replacing or clearing a handler frees the
+  /// callback the engine dispatches through, which it does on that thread.
   func setMessageHandler(
     on channel: String,
     handler: FlutterBinaryMessageHandler?,
     priority: TaskPriority?
   ) throws -> FlutterBinaryMessengerConnection
 
+  /// Call on the platform thread; see `setMessageHandler(on:handler:priority:)`.
   func cleanUp(connection: FlutterBinaryMessengerConnection) throws
 }
 

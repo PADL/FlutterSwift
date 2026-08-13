@@ -104,6 +104,30 @@ public protocol FlutterPluginRegistry {
   func valuePublished(by pluginKey: String) -> (any Sendable)?
 }
 
+typealias FlutterDesktopPluginRegistrarDestructor =
+  @Sendable (FlutterDesktopPluginRegistrarRef) -> ()
+
+// the embedder's destruction callback carries no user_data, so map the
+// registrar back to its destructors here. eLinux vends one registrar per engine
+// however many plugins ask for one, so every plugin's destructor must be kept
+private let registrarDestructors =
+  Mutex<[UInt: [FlutterDesktopPluginRegistrarDestructor]]>([:])
+
+private func addDestructor(
+  for registrar: FlutterDesktopPluginRegistrarRef,
+  _ destructor: @escaping FlutterDesktopPluginRegistrarDestructor
+) {
+  registrarDestructors.withLock { $0[UInt(bitPattern: registrar), default: []].append(destructor) }
+  FlutterDesktopPluginRegistrarSetDestructionHandler(registrar) { registrar in
+    guard let registrar else { return }
+    let destructors = registrarDestructors
+      .withLock { $0.removeValue(forKey: UInt(bitPattern: registrar)) }
+    for destructor in destructors ?? [] {
+      destructor(registrar)
+    }
+  }
+}
+
 public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unchecked Sendable {
   public let pluginKey: String
   public let engine: FlutterEngine
@@ -119,8 +143,7 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     self.engine = engine
     pluginKey = pluginName
     registrar = engine.getRegistrar(pluginName: pluginName)
-    // FIXME: use std::function
-    FlutterDesktopPluginRegistrarSetDestructionHandlerBlock(registrar!) { [weak self] _ in
+    addDestructor(for: registrar!) { [weak self] _ in
       guard let self else { return }
       self.detachFromEngineCallbacks.withLock { detachFromEngineCallbacks in
         for (channel, detachFromEngine) in detachFromEngineCallbacks {
