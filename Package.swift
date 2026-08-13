@@ -367,6 +367,7 @@ case .wayland:
 var Exclusions: [String] = [
   "flutter-embedded-linux/cmake",
   "flutter-embedded-linux/examples",
+  "flutter-embedded-linux/release",
   "flutter-embedded-linux/src/client_wrapper",
   "flutter-embedded-linux/src/flutter/shell/platform/common/client_wrapper/engine_method_result.cc",
 ]
