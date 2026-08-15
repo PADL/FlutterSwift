@@ -15,7 +15,13 @@ var platformCxxSettings: [CXXSetting] = []
 // ~Escapable `ParserSpan` (see FlutterStandardReader.swift); the attribute is
 // only accepted with this feature enabled. swift-binary-parsing enables it on
 // its own targets for the same reason.
-var platformSwiftSettings: [SwiftSetting] = [.enableExperimentalFeature("Lifetimes")]
+// `NonisolatedNonsendingByDefault` is the default in Swift 7. Unannotated async
+// API then inherits the caller's actor, so platform channel round trips stop
+// hopping out to the cooperative pool. It changes mangling: rebuild dependents.
+var platformSwiftSettings: [SwiftSetting] = [
+  .enableExperimentalFeature("Lifetimes"),
+  .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+]
 
 let EnvSysRoot = ProcessInfo.processInfo.environment["SYSROOT"]
 
