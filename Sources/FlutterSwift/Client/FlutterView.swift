@@ -18,25 +18,12 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-let kChannelName = "flutter/platform_views"
+let kPlatformViewsChannelName = "flutter/platform_views"
 
+// A handle onto the embedder's view, vended afresh on each access, so it holds
+// no state of its own: the platform views registry lives on the engine.
 public struct FlutterView {
   let view: flutter.FlutterELinuxView
-  var platformViewsPluginRegistrar: FlutterPluginRegistrar?
-  var platformViewsHandler: FlutterPlatformViewsPlugin?
-  weak var viewController: FlutterViewController? {
-    didSet {
-      if let viewController {
-        platformViewsPluginRegistrar = viewController.engine.registrar(for: kChannelName)
-        platformViewsHandler = try? FlutterPlatformViewsPlugin
-          .register(with: platformViewsPluginRegistrar!)
-        viewController.view = self
-      } else {
-        platformViewsPluginRegistrar = nil
-        platformViewsHandler = nil
-      }
-    }
-  }
 
   init(_ view: flutter.FlutterELinuxView) {
     self.view = view

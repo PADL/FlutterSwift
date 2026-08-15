@@ -26,11 +26,15 @@ public protocol FlutterPlugin: Sendable {
 
   init()
 
+  /// Called on the platform thread, as method call handlers are on every other
+  /// Flutter platform, so plugin state needs no locking of its own.
+  @FlutterPlatformThreadActor
   func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result
   func detachFromEngine(for registrar: FlutterPluginRegistrar)
 }
 
 public extension FlutterPlugin {
+  @FlutterPlatformThreadActor
   static func register(
     with registrar: FlutterPluginRegistrar,
     on channel: FlutterMethodChannel? = nil
@@ -61,7 +65,8 @@ extension FlutterPlugin {
 }
 
 struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendable>: FlutterPlugin {
-  let _handleMethod: @Sendable (FlutterMethodCall<Arguments>) throws -> Result
+  let _handleMethod: @FlutterPlatformThreadActor @Sendable (FlutterMethodCall<Arguments>) throws
+    -> Result
   let _detachFromEngine: @Sendable (FlutterPluginRegistrar)
     -> ()
 
@@ -75,6 +80,7 @@ struct AnyFlutterPlugin<Arguments: Codable & Sendable, Result: Codable & Sendabl
     _detachFromEngine = { plugin.detachFromEngine(for: $0) }
   }
 
+  @FlutterPlatformThreadActor
   func handleMethod(call: FlutterMethodCall<Arguments>) throws -> Result {
     try _handleMethod(call)
   }
@@ -89,6 +95,7 @@ public protocol FlutterPluginRegistrar {
   var binaryMessenger: FlutterBinaryMessenger? { get }
   var view: FlutterView? { get }
 
+  @FlutterPlatformThreadActor
   func register(
     viewFactory factory: FlutterPlatformViewFactory,
     with factoryId: String
@@ -170,29 +177,28 @@ public final class FlutterDesktopPluginRegistrar: FlutterPluginRegistrar, @unche
     return FlutterView(view)
   }
 
+  @FlutterPlatformThreadActor
   public func register(
     viewFactory factory: FlutterPlatformViewFactory,
     with factoryId: String
   ) throws {
-    guard let view, let platformViewsHandler = view.platformViewsHandler else {
-      throw FlutterSwiftError.viewNotFound
-    }
-    platformViewsHandler.register(viewType: factoryId, factory: factory)
+    try engine.platformViewsHandler().register(viewType: factoryId, factory: factory)
   }
 
   public func publish(_ value: any Sendable) {
     engine.pluginPublications.withLock { $0[pluginKey] = value }
   }
 
+  @FlutterPlatformThreadActor
   func addMethodCallDelegate<Arguments: Codable, Result: Codable>(
     _ delegate: AnyFlutterPlugin<Arguments, Result>,
     on channel: FlutterMethodChannel
   ) throws {
     let detachCallback = delegate._detachFromEngine
-    Task { [delegate, channel] in
-      try await channel.setMethodCallHandler { call in
-        try delegate.handleMethod(call: call)
-      }
+    // synchronously, so registration completes before we return: a spawned task
+    // would leave a window where the engine has no handler for the channel
+    try channel.setMethodCallHandler { call in
+      try await delegate.handleMethod(call: call)
     }
     detachFromEngineCallbacks.withLock { detachFromEngineCallbacks in
       detachFromEngineCallbacks[channel] = detachCallback

@@ -18,13 +18,20 @@
 @_implementationOnly
 import CxxFlutterSwift
 
-public protocol FlutterPlatformView {
+// A class, mirroring the embedder's `FlutterDesktopPlatformView*`: the plugin
+// keeps these in a registry and mutates them in place, which a value type
+// silently would not do.
+public protocol FlutterPlatformView: AnyObject {
   var registrar: FlutterPluginRegistrar { get }
   var viewId: Int { get }
   var textureId: Int { get set }
   var isFocused: Bool { get set }
 
   func dispose()
+  func clearFocus()
+  func resize(width: Double, height: Double)
+  func touch(deviceId: Int, eventType: Int, x: Double, y: Double)
+  func offset(top: Double, left: Double)
 }
 
 public protocol FlutterPlatformViewFactory {
@@ -40,11 +47,12 @@ enum FlutterPlatformViewMethod: String {
   case resize
   case setDirection
   case clearFocus
-  case touchMethod
+  case touch
   case acceptGesture
   case rejectGesture
   case enter
   case exit
+  case offset
 }
 
 enum FlutterPlatformViewKey: String, CaseIterable {
@@ -53,14 +61,57 @@ enum FlutterPlatformViewKey: String, CaseIterable {
   case width
   case height
   case params
+  case top
+  case left
 }
 
-public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendable {
-  var viewFactories = [String: FlutterPlatformViewFactory]()
-  var platformViews = [Int: FlutterPlatformView]()
-  var currentViewId: Int = -1
+// The arguments arrive already parsed, so read them off the enum directly:
+// `value(as:)` bridges via JSON, which is far too costly for a per-touch path.
+private extension AnyFlutterStandardCodable {
+  subscript(key: FlutterPlatformViewKey) -> AnyFlutterStandardCodable? {
+    guard case let .map(map) = self else { return nil }
+    return map[.string(key.rawValue)]
+  }
 
-  public required init() {}
+  var intValue: Int? {
+    switch self {
+    case let .int32(value): Int(value)
+    case let .int64(value): Int(value)
+    default: nil
+    }
+  }
+
+  var doubleValue: Double? {
+    guard case let .float64(value) = self else { return nil }
+    return value
+  }
+
+  var stringValue: String? {
+    guard case let .string(value) = self else { return nil }
+    return value
+  }
+
+  var listValue: [AnyFlutterStandardCodable]? {
+    guard case let .list(value) = self else { return nil }
+    return value
+  }
+
+  var uint8DataValue: [UInt8]? {
+    guard case let .uint8Data(value) = self else { return nil }
+    return value
+  }
+}
+
+// Owns the `flutter/platform_views` channel, in place of the embedder's own
+// PlatformViewsPlugin: registering here displaces that handler, so this must
+// cover every method it implements.
+@FlutterPlatformThreadActor
+public final class FlutterPlatformViewsPlugin: FlutterPlugin {
+  private var viewFactories = [String: FlutterPlatformViewFactory]()
+  private var platformViews = [Int: FlutterPlatformView]()
+  private var currentViewId: Int = -1
+
+  public nonisolated init() {}
 
   public func handleMethod(call: FlutterMethodCall<AnyFlutterStandardCodable>) throws
     -> AnyFlutterStandardCodable?
@@ -68,18 +119,28 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendabl
     guard let methodName = FlutterPlatformViewMethod(rawValue: call.method) else {
       throw FlutterSwiftError.methodNotImplemented
     }
+    let arguments = call.arguments ?? .nil
 
     switch methodName {
     case .create:
-      return try create(call.arguments)
+      return try create(arguments)
     case .dispose:
-      return try dispose(call.arguments)
-    default:
+      return try dispose(arguments)
+    case .resize:
+      return try resize(arguments)
+    case .clearFocus:
+      return try clearFocus(arguments)
+    case .touch:
+      return try touch(arguments)
+    case .offset:
+      return try offset(arguments)
+    case .setDirection, .acceptGesture, .rejectGesture, .enter, .exit:
+      // not implemented by the embedder either
       throw FlutterSwiftError.methodNotImplemented
     }
   }
 
-  public func detachFromEngine(for registrar: FlutterPluginRegistrar) {}
+  public nonisolated func detachFromEngine(for registrar: FlutterPluginRegistrar) {}
 
   public func register(viewType: String, factory: FlutterPlatformViewFactory) {
     guard !viewFactories.keys.contains(viewType) else {
@@ -89,24 +150,30 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendabl
     viewFactories[viewType] = factory
   }
 
-  func create(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
-    guard let arguments = arguments?.value as? [String: Any] else {
-      throw FlutterError(code: "Couldn't parse arguments")
+  private func view(for arguments: AnyFlutterStandardCodable) throws -> FlutterPlatformView {
+    guard let viewId = arguments[.id]?.intValue else {
+      throw FlutterError(code: "Couldn't find the view id in the arguments")
     }
+    guard let platformView = platformViews[viewId] else {
+      throw FlutterError(code: "Couldn't find the view id in the arguments")
+    }
+    return platformView
+  }
 
-    guard let viewType = arguments[FlutterPlatformViewKey.viewType.rawValue] as? String else {
+  func create(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    guard let viewType = arguments[.viewType]?.stringValue else {
       throw FlutterError(code: "Couldn't find the view type in the arguments")
     }
 
-    guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
+    guard let viewId = arguments[.id]?.intValue else {
       throw FlutterError(code: "Couldn't find the view id in the arguments")
     }
 
-    guard let width = arguments[FlutterPlatformViewKey.width.rawValue] as? Double else {
+    guard let width = arguments[.width]?.doubleValue else {
       throw FlutterError(code: "Couldn't find the width in the arguments")
     }
 
-    guard let height = arguments[FlutterPlatformViewKey.height.rawValue] as? Double else {
+    guard let height = arguments[.height]?.doubleValue else {
       throw FlutterError(code: "Couldn't find the height in the arguments")
     }
 
@@ -114,39 +181,80 @@ public final class FlutterPlatformViewsPlugin: FlutterPlugin, @unchecked Sendabl
       throw FlutterError(code: "Couldn't find the view type")
     }
 
-    let params = arguments[FlutterPlatformViewKey.params.rawValue] as? [UInt8]
     guard let view = factory.create(
       viewId: viewId,
       width: width,
       height: height,
-      params: params ?? []
+      params: arguments[.params]?.uint8DataValue ?? []
     ) else {
       throw FlutterError(code: "Failed to create a platform view")
     }
 
     platformViews[viewId] = view
-    if var currentView = platformViews[currentViewId] {
-      currentView.isFocused = false
-    }
+    platformViews[currentViewId]?.isFocused = false
     currentViewId = viewId
+    // the texture the view rendered into, which Dart composites the widget from
+    return .int64(Int64(view.textureId))
+  }
+
+  func dispose(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    let platformView = try view(for: arguments)
+    platformView.dispose()
+    platformViews.removeValue(forKey: platformView.viewId)
     return nil
   }
 
-  func dispose(_ arguments: AnyFlutterStandardCodable?) throws -> AnyFlutterStandardCodable? {
-    guard let arguments = arguments?.value as? [String: Any] else {
-      throw FlutterError(code: "Couldn't parse arguments")
+  func resize(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    guard let width = arguments[.width]?.doubleValue, width > 0,
+          let height = arguments[.height]?.doubleValue, height > 0
+    else {
+      throw FlutterError(code: "width and height must be greater than zero")
+    }
+    try view(for: arguments).resize(width: width, height: height)
+    return arguments
+  }
+
+  func clearFocus(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    let platformView = try view(for: arguments)
+    platformView.isFocused = false
+    platformView.clearFocus()
+    return nil
+  }
+
+  func offset(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    guard let top = arguments[.top]?.doubleValue,
+          let left = arguments[.left]?.doubleValue
+    else {
+      throw FlutterError(code: "Couldn't find the offset in the arguments")
+    }
+    try view(for: arguments).offset(top: top, left: left)
+    return nil
+  }
+
+  // Unlike the others this arrives as a positional list — a raw Android
+  // MotionEvent — so the indices below match the embedder's.
+  func touch(_ arguments: AnyFlutterStandardCodable) throws -> AnyFlutterStandardCodable? {
+    guard let event = arguments.listValue, event.count > 11,
+          let viewId = event[0].intValue,
+          let eventType = event[3].intValue,
+          let deviceId = event[11].intValue
+    else {
+      throw FlutterError(code: "Couldn't parse the touch event in the arguments")
     }
 
-    guard let viewId = arguments[FlutterPlatformViewKey.id.rawValue] as? Int else {
-      throw FlutterError(code: "Couldn't find the view id in the arguments")
+    guard let pointerCoords = event[6].listValue?.first?.listValue,
+          pointerCoords.count > 8,
+          let x = pointerCoords[7].doubleValue,
+          let y = pointerCoords[8].doubleValue
+    else {
+      throw FlutterError(code: "Couldn't find the pointer_coords in the arguments")
     }
 
     guard let platformView = platformViews[viewId] else {
       throw FlutterError(code: "Couldn't find the view id in the arguments")
     }
 
-    platformView.dispose()
-    platformViews.removeValue(forKey: viewId)
+    platformView.touch(deviceId: deviceId, eventType: eventType, x: x, y: y)
     return nil
   }
 }

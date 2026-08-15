@@ -119,6 +119,22 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
     return FlutterDesktopPluginRegistrar(engine: self, pluginKey)
   }
 
+  @FlutterPlatformThreadActor
+  private var _platformViewsHandler: FlutterPlatformViewsPlugin?
+
+  /// Registered on first use rather than at startup, so that it displaces the
+  /// handler the embedder's view installs in its own constructor.
+  @FlutterPlatformThreadActor
+  func platformViewsHandler() throws -> FlutterPlatformViewsPlugin {
+    if let _platformViewsHandler { return _platformViewsHandler }
+    guard let registrar = registrar(for: kPlatformViewsChannelName) else {
+      throw FlutterSwiftError.viewNotFound
+    }
+    let handler = try FlutterPlatformViewsPlugin.register(with: registrar)
+    _platformViewsHandler = handler
+    return handler
+  }
+
   public func has(plugin pluginKey: String) -> Bool {
     valuePublished(by: pluginKey) != nil
   }
