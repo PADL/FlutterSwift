@@ -57,11 +57,11 @@ public typealias FlutterPlatformThreadActor = MainActor
 // channels to be registered in awakeFromNib() without needing to spawn a
 // task, which eliminates some race conditions.
 //
-// The basic, method and event channels themselves do not have actor
-// annotations. They are classes which are thread-safe (they use mutexes
-// and/or atomics). Their methods will switch to the platform actor when they
-// call into the common messenger implementation. The basic and method channels
-// are completely synchronous except for this call to send(). An analysis of
+// The basic, method and event channels themselves are thread-safe classes
+// (mutexes and/or atomics). Under NonisolatedNonsendingByDefault their async
+// methods inherit the caller's actor rather than hopping, so the reply-less
+// sends are annotated for the platform actor instead, and codec work runs on
+// the platform thread as it does in Flutter's own channels. An analysis of
 // event channels is not provided here.
 //
 
@@ -85,11 +85,14 @@ public protocol FlutterBinaryMessenger: Sendable {
 }
 
 extension FlutterBinaryMessenger {
+  /// Runs `block` at `priority`. Without one it runs inline, so a caller already
+  /// on the platform actor stays there; a spawned task would not inherit it.
   func withPriority<Value: Sendable>(
     _ priority: TaskPriority?,
     _ block: @Sendable @escaping () async throws -> Value
   ) async throws -> Value {
-    try await Task<Value, Error>(priority: priority) {
+    guard let priority else { return try await block() }
+    return try await Task<Value, Error>(priority: priority) {
       try await block()
     }.value
   }

@@ -87,6 +87,18 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     )
   }
 
+  @FlutterPlatformThreadActor
+  private func _send(on channel: String, message: Data?) async -> Data? {
+    await withUnsafeContinuation(isolation: #isolation) { continuation in
+      _wrappedMessenger.send(
+        onChannel: channel,
+        message: message
+      ) { binaryReply in
+        continuation.resume(returning: binaryReply)
+      }
+    }
+  }
+
   // MARK: - public API
 
   @FlutterPlatformThreadActor
@@ -100,15 +112,10 @@ public final class FlutterPlatformMessenger: FlutterBinaryMessenger {
     message: Data?,
     priority: TaskPriority?
   ) async throws -> Data? {
+    // via the isolated _send, so the task withPriority spawns for a non-nil
+    // priority hops back instead of calling the engine off the platform thread
     try await withPriority(priority) {
-      await withUnsafeContinuation { continuation in
-        self._wrappedMessenger.send(
-          onChannel: channel,
-          message: message
-        ) { binaryReply in
-          continuation.resume(returning: binaryReply)
-        }
-      }
+      await self._send(on: channel, message: message)
     }
   }
 

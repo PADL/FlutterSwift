@@ -180,16 +180,10 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
   // MARK: - public API
 
   @FlutterPlatformThreadActor
-  public func send(
-    on channel: String,
-    message: Data?,
-    priority: TaskPriority?
-  ) async throws -> Data? {
-    try await withPriority(priority) {
-      try await withUnsafeThrowingContinuation { continuation in
-        let replyThunk: FlutterDesktopBinaryReplyHandler?
-
-        replyThunk = { bytes, count in
+  private func _send(on channel: String, message: Data?) async throws -> Data? {
+    try await withUnsafeThrowingContinuation(isolation: #isolation) { continuation in
+      do {
+        try send(on: channel, message: message) { bytes, count in
           let data: Data?
 
           if let bytes, count > 0 {
@@ -200,16 +194,23 @@ public final class FlutterDesktopMessenger: FlutterBinaryMessenger, @unchecked S
           }
           continuation.resume(returning: data)
         }
-
-        Task {
-          do {
-            try await self.send(on: channel, message: message, replyThunk)
-          } catch {
-            // send() threw before the reply block registered; it will never fire
-            continuation.resume(throwing: error)
-          }
-        }
+      } catch {
+        // send() threw before the reply block registered; it will never fire
+        continuation.resume(throwing: error)
       }
+    }
+  }
+
+  @FlutterPlatformThreadActor
+  public func send(
+    on channel: String,
+    message: Data?,
+    priority: TaskPriority?
+  ) async throws -> Data? {
+    // via the isolated _send, so the task withPriority spawns for a non-nil
+    // priority hops back instead of calling the engine off the platform thread
+    try await withPriority(priority) {
+      try await self._send(on: channel, message: message)
     }
   }
 

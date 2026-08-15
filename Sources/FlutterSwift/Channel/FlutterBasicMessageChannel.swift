@@ -74,8 +74,11 @@ public final class FlutterBasicMessageChannel: _FlutterBinaryMessengerConnection
     )
   }
 
-  public func send<Message: Encodable>(message: Message) async throws {
-    try await binaryMessenger.send(on: name, message: codec.encode(message))
+  /// Isolated rather than async: the underlying reply-less send is synchronous,
+  /// so the await only ever bought the hop onto the platform actor.
+  @FlutterPlatformThreadActor
+  public func send<Message: Encodable>(message: Message) throws {
+    try binaryMessenger.send(on: name, message: codec.encode(message))
   }
 
   public func send<Message: Encodable & Sendable, Reply: Decodable & Sendable>(

@@ -113,12 +113,15 @@ public final class FlutterMethodChannel: _FlutterBinaryMessengerConnectionRepres
     )
   }
 
+  /// Isolated rather than async: the underlying reply-less send is synchronous,
+  /// so the await only ever bought the hop onto the platform actor.
+  @FlutterPlatformThreadActor
   public func invoke<Arguments: Codable & Sendable>(
     method: String,
     arguments: Arguments?
-  ) async throws {
+  ) throws {
     let methodCall = FlutterMethodCall<Arguments>(method: method, arguments: arguments)
-    try await binaryMessenger.send(on: name, message: codec.encode(methodCall))
+    try binaryMessenger.send(on: name, message: codec.encode(methodCall))
   }
 
   public func invoke<Arguments: Codable & Sendable, Result: Codable>(
