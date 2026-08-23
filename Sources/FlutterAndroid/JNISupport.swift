@@ -17,7 +17,6 @@
 import Android
 import AndroidLogging
 import AndroidLooper
-import Atomics
 import FoundationEssentials
 import Logging
 import SwiftJava
@@ -30,6 +29,13 @@ private nonisolated(unsafe) var _flutterClassLoader: JavaClassLoader!
 
 private nonisolated(unsafe) var _logger: Logger!
 
+// The JVM invokes this when Java loads the consumer's JNI library (e.g.
+// System.loadLibrary("counter")). In this context FindClass resolves against
+// the loading class's loader, so capture the class pointers and loaders for
+// FlutterSwift's and Flutter's classes here — neither is visible to the JNI
+// system class loader from arbitrary threads later. If a loader was not
+// captured, SwiftJava falls back to JNI.shared's application class loader,
+// which is populated only when Java also does System.loadLibrary("SwiftJava").
 @_cdecl("JNI_OnLoad")
 public func JNI_OnLoad(
   _ jvm: UnsafeMutablePointer<JavaVM?>,

@@ -38,6 +38,9 @@ public typealias FlutterBinaryMessageHandler = _FlutterSwiftBinaryMessageHandler
 extension FlutterBinaryMessenger: @unchecked Sendable {}
 extension FlutterBinaryMessenger.BinaryReply: @unchecked Sendable {}
 
+// Fast path for class resolution: the loader captured in JNI_OnLoad. When it
+// is absent (nil), SwiftJava's default lookup runs, which itself falls back to
+// the application class loader if libSwiftJava.so was loaded from Java.
 extension FlutterBinaryMessenger: AnyJavaObjectWithCustomClassLoader {
   public static func getJavaClassLoader(in environment: JNIEnvironment) throws -> JavaClassLoader! {
     _getFlutterClassLoader()
