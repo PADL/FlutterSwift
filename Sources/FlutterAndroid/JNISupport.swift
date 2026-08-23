@@ -63,7 +63,7 @@ public func JNI_OnLoad(
   }
 }
 
-@_cdecl("JNI_OnUnLoad")
+@_cdecl("JNI_OnUnload")
 public func JNI_OnUnload(
   _ jvm: UnsafeMutablePointer<JavaVM?>,
   _ reserved: UnsafeMutableRawPointer
