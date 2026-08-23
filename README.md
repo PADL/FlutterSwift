@@ -173,8 +173,7 @@ In your Swift code (here, `initChannelManager()`), you can then register your pl
 
 ```swift
 import FlutterAndroid
-import JavaKit
-import JavaRuntime
+import SwiftJava
 
 @JavaClass("com.example.counter.ChannelManager")
 open class _ChannelManager: JavaObject {
