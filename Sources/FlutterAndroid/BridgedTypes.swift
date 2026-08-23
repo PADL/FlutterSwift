@@ -34,8 +34,7 @@ extension Data {
         dst.copyMemory(from: src.baseAddress!, byteCount: count)
       }
       // advance position to match put() semantics so flip() works correctly
-      let buffer = JavaNIOBuffer(javaHolder: byteBuffer.javaHolder)
-      buffer.position(Int32(count))
+      _ = byteBuffer.position(Int32(count))
     } else {
       byteBuffer.put(map { Int8(bitPattern: $0) }, 0, Int32(count))
     }
@@ -46,6 +45,9 @@ extension Data {
 
 extension ByteBuffer {
   func asData() throws -> Data {
+    // The position()/limit() getters live on java.nio.Buffer, which SwiftJava's
+    // ByteBuffer wrapper does not surface (it only has the covariant setters),
+    // so re-wrap into our own java.nio.Buffer projection to read them.
     let buffer = JavaNIOBuffer(javaHolder: javaHolder)
     let position = Int(buffer.position()), limit = Int(buffer.limit())
     let remaining = limit - position
