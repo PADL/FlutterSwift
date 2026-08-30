@@ -419,7 +419,7 @@ targets += [
       .define("DISPLAY_BACKEND_TYPE_\(FlutterELinuxBackend.displayBackendType)"),
       .define("FLUTTER_TARGET_BACKEND_\(FlutterELinuxBackend.flutterTargetBackend)"),
       // USE_DIRTY_REGION_MANAGEMENT OFF
-      // .define("USE_GLES3"),
+      .define("USE_GLES3"),
       .define("ENABLE_EGL_ALPHA_COMPONENT_OF_COLOR_BUFFER"),
       .define("ENABLE_VSYNC"),
       .define("USE_LIBSYSTEMD"),
