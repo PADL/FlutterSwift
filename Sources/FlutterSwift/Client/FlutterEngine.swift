@@ -36,29 +36,24 @@ public final class FlutterEngine: FlutterPluginRegistry, @unchecked Sendable {
 
     self.project = project
 
-    self.project.assetsPath.withWideChars { assetsPath in
-      properties.assets_path = assetsPath
-      self.project.icuDataPath.withWideChars { icuDataPath in
-        properties.icu_data_path = icuDataPath
-        self.project.aotLibraryPath.withWideChars { aotLibraryPath in
-          properties.aot_library_path = aotLibraryPath
-          withArrayOfCStrings(self.project.dartEntryPointArguments) { cStrings in
-            properties
-              .dart_entrypoint_argc = Int32(
-                self.project.dartEntryPointArguments
-                  .count
-              )
-            cStrings.withUnsafeMutableBufferPointer { pointer in
-              properties.dart_entrypoint_argv = pointer.baseAddress
-              let engine = FlutterDesktopEngineCreate(&properties)
-              self.engine = unsafeBitCast(engine, to: flutter.FlutterELinuxEngine.self)
-              setSwitches(switches.map { key, value in "--\(key)=\(String(describing: value))" })
-              self._binaryMessenger = FlutterDesktopMessenger(engine: self.engine)
-            }
-          }
-        }
-      }
-    }
+    let assetsPath = WideCString(project.assetsPath)
+    let icuDataPath = WideCString(project.icuDataPath)
+    let aotLibraryPath = WideCString(project.aotLibraryPath)
+    let dartEntryPointArguments = CStringArray(project.dartEntryPointArguments)
+
+    properties.assets_path = UnsafePointer(assetsPath.pointer)
+    properties.icu_data_path = UnsafePointer(icuDataPath.pointer)
+    properties.aot_library_path = UnsafePointer(aotLibraryPath.pointer)
+    properties.dart_entrypoint_argc = Int32(dartEntryPointArguments.count)
+    properties.dart_entrypoint_argv = dartEntryPointArguments.pointer
+
+    // FlutterDesktopEngineCreate copies every string into its FlutterProjectBundle,
+    // and the noncopyable owners above live until the end of this scope.
+    let engine = FlutterDesktopEngineCreate(&properties)
+
+    self.engine = unsafeBitCast(engine, to: flutter.FlutterELinuxEngine.self)
+    setSwitches(switches.map { key, value in "--\(key)=\(String(describing: value))" })
+    _binaryMessenger = FlutterDesktopMessenger(engine: self.engine)
   }
 
   deinit {

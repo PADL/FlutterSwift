@@ -1,14 +1,18 @@
-//===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift.org open source project
+// Copyright (c) 2023-2025 PADL Software Pty Ltd
 //
-// Copyright (c) 2014 - 2018 Apple Inc. and the Swift project authors
-// Licensed under Apache License v2.0 with Runtime Library Exception
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// See https://swift.org/LICENSE.txt for license information
-// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//===----------------------------------------------------------------------===//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an 'AS IS' BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #if os(Linux) && canImport(Glibc)
 
@@ -16,53 +20,55 @@
 import CxxFlutterSwift
 import CxxStdlib
 
-/// Compute the prefix sum of `seq`.
-func scan<
-  S: Sequence, U
->(_ seq: S, _ initial: U, _ combine: (U, S.Element) -> U) -> [U] {
-  var result: [U] = []
-  result.reserveCapacity(seq.underestimatedCount)
-  var runningResult = initial
-  for element in seq {
-    runningResult = combine(runningResult, element)
-    result.append(runningResult)
-  }
-  return result
-}
+/// A heap-allocated, NUL-terminated `wchar_t` copy of a string whose pointer
+/// stays valid for the lifetime of the value, so it can be stored in a C struct
+/// without nesting `withUnsafeBufferPointer` closures.
+struct WideCString: ~Copyable {
+  let pointer: UnsafeMutablePointer<CWideChar>
 
-func withArrayOfCStrings<R>(
-  _ args: [String],
-  _ body: (inout [UnsafePointer<CChar>?]) -> R
-) -> R {
-  let argsCounts = Array(args.map { $0.utf8.count + 1 })
-  let argsOffsets = [0] + scan(argsCounts, 0, +)
-  let argsBufferSize = argsOffsets.last!
-
-  var argsBuffer: [UInt8] = []
-  argsBuffer.reserveCapacity(argsBufferSize)
-  for arg in args {
-    argsBuffer.append(contentsOf: arg.utf8)
-    argsBuffer.append(0)
+  init(_ string: String) {
+    let scalars = string.unicodeScalars
+    pointer = .allocate(capacity: scalars.count + 1)
+    for (i, scalar) in scalars.enumerated() {
+      pointer[i] = CWideChar(scalar)
+    }
+    pointer[scalars.count] = CWideChar(0 as UInt8)
   }
 
-  return argsBuffer.withUnsafeMutableBufferPointer {
-    argsBuffer in
-    let ptr = UnsafeRawPointer(argsBuffer.baseAddress!).bindMemory(
-      to: CChar.self, capacity: argsBuffer.count
-    )
-    var cStrings: [UnsafePointer<CChar>?] = argsOffsets.map { ptr + $0 }
-    cStrings[cStrings.count - 1] = nil
-    return body(&cStrings)
+  deinit {
+    pointer.deallocate()
   }
 }
 
-// https://stackoverflow.com/questions/49451164/convert-swift-string-to-wchar-t
-extension String {
-  /// Calls the given closure with a pointer to the contents of the string,
-  /// represented as a null-terminated wchar_t array.
-  func withWideChars<Result>(_ body: (UnsafePointer<CWideChar>) -> Result) -> Result {
-    let u32: [CWideChar] = unicodeScalars.map { CWideChar($0.value)! } + [CWideChar(0)]
-    return u32.withUnsafeBufferPointer { body($0.baseAddress!) }
+/// A NULL-terminated `char *[]` copy of an array of strings whose pointer
+/// stays valid for the lifetime of the value. Two allocations: one contiguous
+/// buffer for the NUL-terminated strings and one pointer table into it.
+struct CStringArray: ~Copyable {
+  let pointer: UnsafeMutablePointer<UnsafePointer<CChar>?>
+  let count: Int
+  private let buffer: UnsafeMutablePointer<CChar>
+
+  init(_ strings: [String]) {
+    count = strings.count
+    pointer = .allocate(capacity: count + 1)
+    buffer = .allocate(capacity: strings.reduce(0) { $0 + $1.utf8.count + 1 })
+
+    var cursor = buffer
+    for (i, string) in strings.enumerated() {
+      pointer[i] = UnsafePointer(cursor)
+      for byte in string.utf8 {
+        cursor.pointee = CChar(bitPattern: byte)
+        cursor += 1
+      }
+      cursor.pointee = 0
+      cursor += 1
+    }
+    pointer[count] = nil
+  }
+
+  deinit {
+    buffer.deallocate()
+    pointer.deallocate()
   }
 }
 
