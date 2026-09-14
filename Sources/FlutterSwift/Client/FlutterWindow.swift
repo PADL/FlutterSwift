@@ -51,6 +51,7 @@ public struct FlutterWindow: Sendable {
     precondition(viewController.view.frameRate != 0)
     // note: frame rate is not in Hz, rather it's 1000*Hz (i.e. 60000 for 60Hz)
     let framePeriod = TimeInterval(1000.0) / TimeInterval(viewController.view.frameRate)
+    let framePeriodNS = UInt64(framePeriod * TimeInterval(NanosecondsPerSecond))
 
     return Timer(
       timeInterval: framePeriod,
@@ -58,11 +59,13 @@ public struct FlutterWindow: Sendable {
     ) { [self] timer in
       let waitDurationNS = viewController.engine.processMessages()
 
-      if waitDurationNS > UInt64(framePeriod * TimeInterval(NanosecondsPerSecond)) &&
-        waitDurationNS < Int64.max
-      {
+      // tasks due within a frame are serviced early, with a 1ms floor
+      if waitDurationNS != framePeriodNS && waitDurationNS < Int64.max {
         timer.fireDate = Date.now
-          .addingTimeInterval(TimeInterval(waitDurationNS) / TimeInterval(NanosecondsPerSecond))
+          .addingTimeInterval(
+            TimeInterval(max(waitDurationNS, NanosecondsPerMillisecond)) /
+              TimeInterval(NanosecondsPerSecond)
+          )
       }
 
       guard viewController.view.dispatchEvent() else {
@@ -97,7 +100,10 @@ public struct FlutterWindow: Sendable {
       var deadline: ContinuousClock.Instant = .now
       let waitDurationNS = viewController.engine.processMessages()
 
-      if waitDurationNS > framePeriodNS && waitDurationNS < Int64.max {
+      // tasks due within a frame are serviced early, with a 1ms floor
+      if waitDurationNS < framePeriodNS {
+        deadline += .nanoseconds(max(waitDurationNS, NanosecondsPerMillisecond))
+      } else if waitDurationNS < Int64.max {
         deadline += .nanoseconds(waitDurationNS)
       } else {
         deadline += .nanoseconds(framePeriodNS)
