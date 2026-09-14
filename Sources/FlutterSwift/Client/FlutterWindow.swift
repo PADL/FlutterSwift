@@ -103,7 +103,7 @@ public struct FlutterWindow: Sendable {
         deadline += .nanoseconds(framePeriodNS)
       }
 
-      try await Task.sleep(until: deadline)
+      try await Task.sleep(until: deadline, tolerance: .zero)
     } while viewController.view.dispatchEvent()
   }
 }
